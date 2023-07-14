@@ -1,0 +1,12 @@
+- Angenehm, dass keine Typ deklaration passieren muss
+- keine wildcards? machen code übersichtlicher
+- Ungleichheit Artithm. / Strings?
+- ; Syntax fuer Uebersichtlichkeit
+- (z.b. ?x+?y >10)
+- unäre ausdrücke 0 - ?x
+- einfacheres Parsen von DOOP-Facts files -> load-tsv
+					 -> 
+
+wie funktionieren Overflows? arithm. ausdrücke  über i64
+
+
