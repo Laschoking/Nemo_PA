@@ -1,0 +1,199 @@
+@source DirectSuperclass[string, string] : load-tsv("DirectSuperclass.facts") .
+@source DirectSuperinterface[string, string] : load-tsv("DirectSuperinterface.facts") .
+@source MainClass[string] : load-tsv("MainClass.facts") .
+@source Method_Modifier[string, string] : load-tsv("Method-Modifier.facts") .
+@source FormalParam[string, string,string] : load-tsv("FormalParam.facts") .
+@source Var_Type[string, string] : load-tsv("Var-string.facts") .
+@source ComponentType[string, string] : load-tsv("ComponentType.facts") .
+@source AssignReturnValue[string, string] : load-tsv("AssignReturnValue.facts") .
+@source ActualParam[integer,string, string] : load-tsv("ActualParam.facts") .
+@source ClassType[string] : load-tsv("ClassType.facts") .
+@source ArrayType[string] : load-tsv("ArrayType.facts") .
+@source InterfaceType[string] : load-tsv("InterfaceType.facts") .
+@source Var_DeclaringMethod[string, string] : load-tsv("Var-DeclaringMethod.facts") .
+@source ApplicationClass[string] : load-tsv("ApplicationClass.facts") .
+@source ThisVar[string, string] : load-tsv("ThisVar.facts") .
+@source NormalHeap[string, string] : load-tsv("NormalHeap.facts") .
+@source StringConstant[string] : load-tsv("StringConstant.facts") .
+@source AssignHeapAllocation[string, integer, string,string, string,integer] : load-tsv("AssignHeapAllocation.facts") .
+@source AssignLocal[string, integer, string,string, string] : load-tsv("AssignLocal.facts") .
+@source AssignCast[string, integer, string,string, string,string] : load-tsv("AssignCast.facts") .
+@source Field[string, string,string, string] : load-tsv("Field.facts") .
+@source StaticMethodInvocation[string,integer, string, string] : load-tsv("StaticMethodInvocation.facts") .
+@source SpecialMethodInvocation[string,integer, string,string, string] : load-tsv("SpecialMethodInvocation.facts") .
+@source VirtualMethodInvocation[string, integer, string,string, string] : load-tsv("VirtualMethodInvocation.facts") .
+@source Method[string, string,string, string,string, string,integer] : load-tsv("Method.facts") .
+@source StoreInstanceField[string, integer, string,string, string,string] : load-tsv("StoreInstanceField.facts") .
+@source LoadInstanceField[string, integer, string, string, string, string] : load-tsv("LoadInstanceField.facts") .
+@source StoreStaticField[string, integer, string, string, string] : load-tsv("StoreStaticField.facts") .
+@source LoadStaticField[string, integer, string, string, string] : load-tsv("LoadStaticField.facts") .
+@source StoreArrayIndex[string, integer, string, string, string] : load-tsv("StoreArrayIndex.facts") .
+@source LoadArrayIndex[string, integer, string, string, string] : load-tsv("LoadArrayIndex.facts") .
+@source Return[string, integer, string, string] : load-tsv("Return.facts") .
+
+
+@declare MethodLookup(string, string, string, string) .
+@declare MethodImplemented(string, string, string, string) .
+@declare DirectSubclass(string, string) .
+@declare Subclass(string, string) .
+@declare Superclass(string,string) .
+@declare Superinterface(string, string) .
+@declare SubtypeOf(string, string) .
+@declare SupertypeOf(string, string) .
+@declare SubtypeOfDifferent(string, string) .
+@declare MainMethodDeclaration(string) .
+
+MethodLookup(?simplename, ?descriptor, ?type, ?method) :-
+  MethodImplemented(?simplename, ?descriptor, ?type, ?method).
+
+MethodLookup(?simplename, ?descriptor, ?type, ?method) :-
+   DirectSuperinterface(?type, ?supertype),
+  MethodLookup(?simplename, ?descriptor, ?supertype, ?method),
+  ~ MethodImplemented(?simplename, ?descriptor, ?type, ?a).
+
+MethodLookup(?simplename, ?descriptor, ?type, ?method) :-
+  DirectSuperclass(?type, ?supertype),
+  MethodLookup(?simplename, ?descriptor, ?supertype, ?method),
+  ~ MethodImplemented(?simplename, ?descriptor, ?type, ?a).
+
+
+
+MethodImplemented(?simplename, ?descriptor, ?type, ?method) :-
+  Method_SimpleName(?method, ?simplename),
+  Method_Descriptor(?method, ?descriptor),
+  Method_DeclaringType(?method, ?type),
+  ~Method_Modifier("abstract", ?method).
+
+
+DirectSubclass(?a, ?c) :-
+  DirectSuperclass(?a, ?c).
+Subclass(?c, ?a) :-
+  DirectSubclass(?a, ?c).
+
+Subclass(?c, ?a) :-
+  Subclass(?b, ?a),
+  DirectSubclass(?b, ?c).
+
+Superclass(?c, ?a) :-
+  Subclass(?a, ?c).
+Superinterface(?k, ?c) :-
+  DirectSuperinterface(?c, ?k).
+
+Superinterface(?k, ?c) :-
+  DirectSuperinterface(?c, ?j),
+  Superinterface(?k, ?j).
+
+Superinterface(?k, ?c) :-
+  DirectSuperclass(?c, ?super),
+  Superinterface(?k, ?super).
+
+SupertypeOf(?s, ?t) :-
+  SubtypeOf(?t, ?s).
+
+SubtypeOf(?s, ?s) :-
+  isClassType(?s).
+  
+SubtypeOf(?s, ?t) :-
+  Subclass(?t, ?s).
+
+SubtypeOf(?s, ?t) :-
+  isClassType(?s),
+  Superinterface(?t, ?s).
+
+SubtypeOf(?s, ?t) :-
+  isInterfaceType(?s),
+  isType(?t),
+  ?t = "java.lang.Object".
+
+SubtypeOf(?s, ?s) :-
+  isInterfaceType(?s).
+
+SubtypeOf(?s, ?t) :-
+  isInterfaceType(?s),
+  Superinterface(?t, ?s).
+
+SubtypeOf(?s, ?t) :-
+  isArrayType(?s),
+  isType(?t),
+  ?t = "java.lang.Object".
+
+SubtypeOf(?s, ?t) :-
+  ComponentType(?s, ?sc),
+  ComponentType(?t, ?tc),
+  isReferenceType(?sc),
+  isReferenceType(?tc),
+  SubtypeOf(?sc, ?tc).
+
+SubtypeOf(?s, ?t) :-
+  isArrayType(?s),
+  isInterfaceType(?t),
+  isType(?t),
+  ?t = "java.lang.Cloneable".
+
+SubtypeOf(?s, ?t) :-
+  isArrayType(?s),
+  isInterfaceType(?t),
+  isType(?t),
+  ?t = "java.io.Serializable".
+
+SubtypeOf(?t, ?t) :-
+  isType(?t).
+  
+%this is causing the error !!
+
+SameSubtypeOf(?s,?s):-
+    SubtypeOf(?s,?t).
+
+
+SameSubtypeOf(?t,?t):-
+    SubtypeOf(?s,?t).
+%%
+
+
+
+
+SubtypeOfDifferent(?s, ?t) :-
+    ~ SameSubtypeOf(?s,?t),
+    SubtypeOf(?s,?t).
+
+SameMethod(?method):-
+  MainClass(?type),
+  Method_DeclaringType(?method, ?type),
+  ?method = "<java.util.prefs.Base64: void main(java.lang.String[])>".
+
+SameMethod(?method):-
+  MainClass(?type),
+  Method_DeclaringType(?method, ?type),
+  ?method = "<sun.java2d.loops.GraphicsPrimitiveMgr: void main(java.lang.String[])>".
+
+SameMethod(?method):-
+  MainClass(?type),
+  Method_DeclaringType(?method, ?type),
+  ?method = "<sun.security.provider.PolicyParser: void main(java.lang.String[])>".
+
+MainMethodDeclaration(?method) :-
+  MainClass(?type),
+  Method_DeclaringType(?method, ?type),
+  Method_SimpleName(?method, "main"),
+  ~ SameMethod(?method),
+  Method_Descriptor(?method, "void(java.lang.String[])"),
+  Method_Modifier("public", ?method),
+  Method_Modifier("static", ?method).
+
+@declare VarPointsTo(string, string) .
+
+
+VarPointsTo(?heap,?var):-
+    AssignHeapAllocation(?ins, ?a, ?heap, ?var, ?meth, ?b).
+
+VarPointsTo(?heap,?var_to):-
+    VarPointsTo(?var_from, ?heap),
+    AssignLocal(?ins, ?n, ?var_from, ?var_to, ?meth).
+
+
+@output VarPointsTo .
+@output Method_Modifier .
+
+
+%currently doesnt work since multi-file input is not supported
+%however this works for 2 file inputs
