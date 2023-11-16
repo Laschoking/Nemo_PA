@@ -1,0 +1,70 @@
+(A:0) Program
+└──┬(A:1) List
+   └──┬(A:2) CompilationUnit PackageDecl=""
+      ├───(A:3) List
+      └──┬(A:4) List
+         └──┬(A:5) ClassDecl ID="DeletionInsertion"
+            ├──┬(A:6) Modifiers
+            │  └───(A:7) List
+            ├───(A:8) Opt
+            ├───(A:9) List
+            └──┬(A:10) List
+               └──┬(A:11) MethodDecl ID="foo"
+                  ├──┬(A:12) Modifiers
+                  │  └───(A:13) List
+                  ├───(A:14) PrimitiveTypeAccess Package="@primitive" ID="void"
+                  ├───(A:15) List
+                  ├───(A:16) List
+                  └──┬(A:17) Opt
+                    └──┬(A:18) Block
+
+                        └──┬(A:19) List
+                           ├──┬(A:20) VarDeclStmt
+                           │  ├──┬(A:21) Modifiers
+                           │  │  └───(A:22) List
+                           │  ├───(A:23) PrimitiveTypeAccess Package="@primitive" ID="int"
+                           │  └──┬(A:24) List
+                           │     └──┬(A:25) VariableDeclarator ID="a"
+                           │        ├───(A:26) List
+                           │        └───(A:27) Opt
+                           ├──┬(A:28) VarDeclStmt
+                           │  ├──┬(A:29) Modifiers
+                           │  │  └───(A:30) List
+                           │  ├───(A:31) PrimitiveTypeAccess Package="@primitive" ID="int"
+                           │  └──┬(A:32) List
+                           │     └──┬(A:33) VariableDeclarator ID="b"
+                           │        ├───(A:34) List
+                           │        └───(A:35) Opt
+                           ├──┬(A:36) ExprStmt
+                           │  └──┬(A:37) AssignSimpleExpr
+                           │     ├───(A:38) VarAccess ID="a"
+                           │     └───(A:39) IntegerLiteral LITERAL="1"
+                           ├──┬(A:40) IfStmt
+                           │  ├──┬(A:41) EQExpr
+                           │  │  ├───(A:42) VarAccess ID="a"
+                           │  │  └───(A:43) IntegerLiteral LITERAL="1"
+
+                           │  ├──┬(A:44) Block
+                           │  │  └──┬(A:45) List
+                           │  │     └──┬(A:46) ExprStmt
+                           │  │        └──┬(A:47) AssignSimpleExpr
+                           │  │           ├───(A:48) VarAccess ID="b"
+                           │  │           └───(A:49) IntegerLiteral LITERAL="2"
+
+                           │  └──┬(A:50) Opt
+                           │     └──┬(A:51) Block
+                           │        └──┬(A:52) List
+                           │           └──┬(A:53) ExprStmt
+                           │              └──┬(A:54) AssignSimpleExpr
+                           │                 ├───(A:55) VarAccess ID="b"
+                           │                 └───(A:56) IntegerLiteral LITERAL="3"
+                           
+                           └──┬(A:57) VarDeclStmt
+                              ├──┬(A:58) Modifiers
+                              │  └───(A:59) List
+                              ├───(A:60) PrimitiveTypeAccess Package="@primitive" ID="int"
+                              └──┬(A:61) List
+                                 └──┬(A:62) VariableDeclarator ID="c"
+                                    ├───(A:63) List
+                                    └──┬(A:64) Opt
+                                       └───(A:65) IntegerLiteral LITERAL="5"

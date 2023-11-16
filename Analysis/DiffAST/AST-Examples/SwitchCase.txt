@@ -1,0 +1,59 @@
+(A:0) Program
+└──┬(A:1) List
+   └──┬(A:2) CompilationUnit PackageDecl=""
+      ├───(A:3) List
+      └──┬(A:4) List
+         └──┬(A:5) ClassDecl ID="ForLoop"
+            ├──┬(A:6) Modifiers
+            │  └───(A:7) List
+            ├───(A:8) Opt
+            ├───(A:9) List
+            └──┬(A:10) List
+               └──┬(A:11) MethodDecl ID="foo"
+                  ├──┬(A:12) Modifiers
+                  │  └───(A:13) List
+                  ├───(A:14) PrimitiveTypeAccess Package="@primitive" ID="void"
+                  ├───(A:15) List
+                  ├───(A:16) List
+                  └──┬(A:17) Opt
+                     └──┬(A:18) Block
+                        └──┬(A:19) List
+                           ├──┬(A:20) VarDeclStmt
+                           │  ├──┬(A:21) Modifiers
+                           │  │  └───(A:22) List
+                           │  ├───(A:23) PrimitiveTypeAccess Package="@primitive" ID="int"
+                           │  └──┬(A:24) List
+                           │     └──┬(A:25) VariableDeclarator ID="a"
+                           │        ├───(A:26) List
+                           │        └──┬(A:27) Opt
+                           │           └───(A:28) IntegerLiteral LITERAL="1"
+                           ├──┬(A:29) VarDeclStmt
+                           │  ├──┬(A:30) Modifiers
+                           │  │  └───(A:31) List
+                           │  ├───(A:32) PrimitiveTypeAccess Package="@primitive" ID="int"
+                           │  └──┬(A:33) List
+                           │     └──┬(A:34) VariableDeclarator ID="b"
+                           │        ├───(A:35) List
+                           │        └───(A:36) Opt
+                           └──┬(A:37) SwitchStmt
+                              ├───(A:38) VarAccess ID="a"
+                              └──┬(A:39) Block
+                                 └──┬(A:40) List
+                                    ├──┬(A:41) ConstCase
+                                    │  └───(A:42) IntegerLiteral LITERAL="1"
+                                    ├──┬(A:43) Block
+                                    │  └──┬(A:44) List
+                                    │     ├──┬(A:45) ExprStmt
+                                    │     │  └──┬(A:46) AssignSimpleExpr
+                                    │     │     ├───(A:47) VarAccess ID="b"
+                                    │     │     └───(A:48) IntegerLiteral LITERAL="1"
+                                    │     └───(A:49) BreakStmt Label=""
+                                    ├──┬(A:50) ConstCase
+                                    │  └───(A:51) IntegerLiteral LITERAL="2"
+                                    └──┬(A:52) Block
+                                       └──┬(A:53) List
+                                          ├──┬(A:54) ExprStmt
+                                          │  └──┬(A:55) AssignSimpleExpr
+                                          │     ├───(A:56) VarAccess ID="b"
+                                          │     └───(A:57) IntegerLiteral LITERAL="2"
+                                          └───(A:58) BreakStmt Label=""

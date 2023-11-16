@@ -1,0 +1,58 @@
+@source AST[integer,string,string,string,integer] : load-csv("TargetCSV.csv").
+%idea: CFG Connection btw. the end of one BB with the beginn of the next BB
+%thus we dont need to know which Head has the BB
+%ASTTypes(?type) :-
+%    AST(?a,?type,?id,?lit,?fr,?fr1).
+@declare CFG(integer,string,string,integer).
+
+
+% root of CFG is the first Block after a Variable Declaration
+BBHead(?nr3, "List"):-
+    AST(?nr,"MethodDecl",_,_,_),
+    AST(?nr1,_ ,_,_,?nr),
+    AST(?nr2,"Block",_,_,?nr1),
+    AST(?nr3,"List",_ ,_,?nr2).
+
+
+%handle IF-Statements
+MinIf(?ifNr,#min(?condNr)):-
+    AST(?ifNr,"IfStmt",_,_,_),  
+    AST(?condNr,?cond,_,_,?ifNr).
+
+BBTail(?condNr,?cond):-
+    MinIf(?ifNr, ?condNr),
+    AST(?condNr, ?cond, _,_, ?ifNr).
+
+%Connect the IfCondition(BBTail) with Then(BBHead) & Else(BBHead)  
+TailHeadCFG(?condNr, ?cond,?thenElseNr,?type):-
+    MinIf(?ifNr, ?condNr),
+    AST(?condNr, ?cond, _,_, ?ifNr),
+    AST(?thenElseNr,?type,_,_,?ifNr),
+    ?thenElseNr != ?condNr.
+
+%introduce a new BB after the If/Then/Else branches are finished
+MinIfNextBB(#min(?succNr)):-
+    AST(?ifNr,"IfStmt",_,_,?parNr),
+    AST(?succNr, ?succType, _,_, ?parNr),
+    ?succNr > ?ifNr.
+
+BBHead(?nr,?type):-
+    MinIfNextBB(?nr),
+    AST(?nr, ?type,_,_,_).
+
+
+
+
+BBHead(?nr,?type):-
+    TailHeadCFG(_,_,?nr,?type).
+
+%Maybe we do not even need to connect all BB, we just find, Beginnings and Ends
+% and the closest ones are getting connected
+
+
+@output MinIf.
+@output MinIfNextBB.
+@output BBHead.
+@output TailHeadCFG.
+@output AST.
+@output BBTail.

@@ -1,0 +1,6 @@
+% support of inequality
+foo(1,"a").
+foo(2,"b").
+
+Min(#min(?a)) :- foo(?a,?b).
+A(?a,?b) :- foo(?a,?b).

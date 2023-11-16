@@ -1,0 +1,79 @@
+(A:0) Program
+└──┬(A:1) List
+   └──┬(A:2) CompilationUnit PackageDecl=""
+      ├───(A:3) List
+      └──┬(A:4) List
+         └──┬(A:5) ClassDecl ID="ForLoop"
+            ├──┬(A:6) Modifiers
+            │  └───(A:7) List
+            ├───(A:8) Opt
+            ├───(A:9) List
+            └──┬(A:10) List
+               ├──┬(A:11) MethodDecl ID="foo"
+               │  ├──┬(A:12) Modifiers
+               │  │  └───(A:13) List
+               │  ├───(A:14) PrimitiveTypeAccess Package="@primitive" ID="void"
+               │  ├───(A:15) List
+               │  ├───(A:16) List
+               │  └──┬(A:17) Opt
+               │     └──┬(A:18) Block
+               │        └──┬(A:19) List
+               │           ├──┬(A:20) VarDeclStmt
+               │           │  ├──┬(A:21) Modifiers
+               │           │  │  └───(A:22) List
+               │           │  ├───(A:23) PrimitiveTypeAccess Package="@primitive" ID="int"
+               │           │  └──┬(A:24) List
+               │           │     └──┬(A:25) VariableDeclarator ID="a"
+               │           │        ├───(A:26) List
+               │           │        └───(A:27) Opt
+               │           ├──┬(A:28) VarDeclStmt
+               │           │  ├──┬(A:29) Modifiers
+               │           │  │  └───(A:30) List
+               │           │  ├───(A:31) PrimitiveTypeAccess Package="@primitive" ID="int"
+               │           │  └──┬(A:32) List
+               │           │     └──┬(A:33) VariableDeclarator ID="b"
+               │           │        ├───(A:34) List
+               │           │        └───(A:35) Opt
+               │           ├──┬(A:36) ExprStmt
+               │           │  └──┬(A:37) AssignSimpleExpr
+               │           │     ├───(A:38) VarAccess ID="a"
+               │           │     └───(A:39) IntegerLiteral LITERAL="1"
+               │           └──┬(A:40) ExprStmt
+               │              └──┬(A:41) AssignSimpleExpr
+               │                 ├───(A:42) VarAccess ID="b"
+               │                 └──┬(A:43) ConditionalExpr
+               │                    ├──┬(A:44) GTExpr
+               │                    │  ├───(A:45) VarAccess ID="a"
+               │                    │  └───(A:46) IntegerLiteral LITERAL="0"
+               │                    ├──┬(A:47) MethodAccess ID="B"
+               │                    │  └──┬(A:48) List
+               │                    │     └───(A:49) IntegerLiteral LITERAL="1"
+               │                    └──┬(A:50) MethodAccess ID="B"
+               │                       └──┬(A:51) List
+               │                          └───(A:52) IntegerLiteral LITERAL="0"
+               └──┬(A:53) MethodDecl ID="B"
+                  ├──┬(A:54) Modifiers
+                  │  └───(A:55) List
+                  ├───(A:56) PrimitiveTypeAccess Package="@primitive" ID="int"
+                  ├──┬(A:57) List
+                  │  └──┬(A:58) ParameterDeclaration ID="b"
+                  │     ├──┬(A:59) Modifiers
+                  │     │  └───(A:60) List
+                  │     └───(A:61) PrimitiveTypeAccess Package="@primitive" ID="int"
+                  ├───(A:62) List
+                  └──┬(A:63) Opt
+                     └──┬(A:64) Block
+                        └──┬(A:65) List
+                           └──┬(A:66) IfStmt
+                              ├──┬(A:67) EQExpr
+                              │  ├──┬(A:68) ModExpr
+                              │  │  ├───(A:69) VarAccess ID="b"
+                              │  │  └───(A:70) IntegerLiteral LITERAL="2"
+                              │  └───(A:71) IntegerLiteral LITERAL="1"
+                              ├──┬(A:72) ReturnStmt
+                              │  └──┬(A:73) Opt
+                              │     └───(A:74) IntegerLiteral LITERAL="1"
+                              └──┬(A:75) Opt
+                                 └──┬(A:76) ReturnStmt
+                                    └──┬(A:77) Opt
+                                       └───(A:78) IntegerLiteral LITERAL="0"

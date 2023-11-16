@@ -1,8 +1,0 @@
-@source AssignUnop[string, integer, string, string] : load-csv("ex_nemo/src/10CF_Ex/AssignUnop.csv") .
-@source OperatorAt[2] : load-csv("ex_nemo/src/10CF_Ex/OperatorAt.csv") .
-
-
-test(?op):-
-    OperatorAt(?ins, ?op).
-
-@output test .
