@@ -1,0 +1,72 @@
+@source AST[integer,string,string,string,integer] : load-csv("TargetCSV.csv").
+%idea: CFG Connection btw. the end of one BB with the beginn of the next BB
+%thus we dont need to know which Head has the BB
+%ASTTypes(?type) :-
+%    AST(?a,?type,?id,?lit,?fr,?fr1).
+
+
+% set the root of CFG for each Method
+BBHead(?nr):-
+    AST(?nr,"MethodDecl",_,_,_).
+
+% IF-Statements
+
+% find the Condition
+IfCondition(?ifNr,#min(?condNr)):-
+    AST(?ifNr,"IfStmt",_,_,_),  
+    AST(?condNr,?cond,_,_,?ifNr).
+
+% Add Then &Else Branch as new BB
+BBHead(?thenElseNr):-
+    IfCondition(?ifNr,?condNr),
+    AST(?thenElseNr,_,_,_,?ifNr),
+    ?thenElseNr > ?condNr.
+
+% Introduce a new BB after the If/Then/Else branches are finished
+MinIfNextBB(#min(?succNr)):-
+    AST(?ifNr,"IfStmt",_,_,?parNr),
+    AST(?succNr, ?succType, _,_, ?parNr),
+    ?succNr > ?ifNr.
+
+BBHead(?nr):-
+    MinIfNextBB(?nr).
+
+
+% While loops -- assume the first part is the condition
+WhileCondition(?nr, #min(?condNr)):-
+    AST(?nr,?type,_,_,_),
+    AST(?condNr,_,_,_,?nr),
+    ?type = "WhileStmt".
+
+BBHead(?followNr):-
+    WhileCondition(?whileNr, ?condNr),
+    AST(?followNr, _, _, _, ?whileNr),
+    ?followNr > ?condNr.
+
+% For loops -- assume that the last appending statement is the for loop
+ForFollow(?nr, #max(?followNr)):-
+    AST(?nr,?type,_,_,_),
+    ?type = "ForStmt",
+    AST(?followNr,_, _, _, ?nr).
+
+BBHead(?followNr):-
+    ForFollow(_, ?followNr).
+
+
+CFG(?BBnr,?BBnr,?type,?id,?lit,?parNr):-
+    BBHead(?BBnr),
+    AST(?BBnr,?type,?id,?lit,?parNr).
+
+%
+CFG(?BBnr,?nr,?type,?id,?lit,?parNr):-
+    CFG(?BBnr, ?BBsuccNr,_,_,_,_),
+    ?nr = ?BBsuccNr + 1,
+    AST(?nr, ?type, ?id, ?lit,?parNr),
+    ~BBHead(?nr).
+
+@output OrderBB.
+@output IfCondition.
+@output MinIfNextBB.
+@output BBHead.
+@output AST.
+@output CFG.

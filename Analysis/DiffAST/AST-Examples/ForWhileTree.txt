@@ -73,7 +73,6 @@
                            │           └──┬(A:72) AssignPlusExpr
                            │              ├───(A:73) VarAccess ID="b"
                            │              └───(A:74) IntegerLiteral LITERAL="1"
-
                            └──┬(A:75) ExprStmt
                               └──┬(A:76) AssignSimpleExpr
                                  ├───(A:77) VarAccess ID="b"

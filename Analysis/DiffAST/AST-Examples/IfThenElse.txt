@@ -17,7 +17,6 @@
                   ├───(A:16) List
                   └──┬(A:17) Opt
                     └──┬(A:18) Block
-
                         └──┬(A:19) List
                            ├──┬(A:20) VarDeclStmt
                            │  ├──┬(A:21) Modifiers
@@ -43,14 +42,12 @@
                            │  ├──┬(A:41) EQExpr
                            │  │  ├───(A:42) VarAccess ID="a"
                            │  │  └───(A:43) IntegerLiteral LITERAL="1"
-
                            │  ├──┬(A:44) Block
                            │  │  └──┬(A:45) List
                            │  │     └──┬(A:46) ExprStmt
                            │  │        └──┬(A:47) AssignSimpleExpr
                            │  │           ├───(A:48) VarAccess ID="b"
                            │  │           └───(A:49) IntegerLiteral LITERAL="2"
-
                            │  └──┬(A:50) Opt
                            │     └──┬(A:51) Block
                            │        └──┬(A:52) List
@@ -58,7 +55,6 @@
                            │              └──┬(A:54) AssignSimpleExpr
                            │                 ├───(A:55) VarAccess ID="b"
                            │                 └───(A:56) IntegerLiteral LITERAL="3"
-                           
                            └──┬(A:57) VarDeclStmt
                               ├──┬(A:58) Modifiers
                               │  └───(A:59) List
