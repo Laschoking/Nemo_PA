@@ -16,7 +16,7 @@
                   ├───(A:15) List
                   ├───(A:16) List
                   └──┬(A:17) Opt
-                    └──┬(A:18) Block
+                     └──┬(A:18) Block
                         └──┬(A:19) List
                            ├──┬(A:20) VarDeclStmt
                            │  ├──┬(A:21) Modifiers

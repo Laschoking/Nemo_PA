@@ -1,0 +1,95 @@
+(A:0) Program
+└──┬(A:1) List
+   └──┬(A:2) CompilationUnit PackageDecl=""
+      ├───(A:3) List
+      └──┬(A:4) List
+         └──┬(A:5) ClassDecl ID="DeletionInsertion"
+            ├──┬(A:6) Modifiers
+            │  └───(A:7) List
+            ├───(A:8) Opt
+            ├───(A:9) List
+            └──┬(A:10) List
+               └──┬(A:11) MethodDecl ID="foo"
+                  ├──┬(A:12) Modifiers
+                  │  └───(A:13) List
+                  ├───(A:14) PrimitiveTypeAccess Package="@primitive" ID="void"
+                  ├───(A:15) List
+                  ├───(A:16) List
+                  └──┬(A:17) Opt
+                     └──┬(A:18) Block
+                        └──┬(A:19) List
+                           ├──┬(A:20) VarDeclStmt
+                           │  ├──┬(A:21) Modifiers
+                           │  │  └───(A:22) List
+                           │  ├───(A:23) PrimitiveTypeAccess Package="@primitive" ID="int"
+                           │  └──┬(A:24) List
+                           │     └──┬(A:25) VariableDeclarator ID="a"
+                           │        ├───(A:26) List
+                           │        └───(A:27) Opt
+                           ├──┬(A:28) VarDeclStmt
+                           │  ├──┬(A:29) Modifiers
+                           │  │  └───(A:30) List
+                           │  ├───(A:31) PrimitiveTypeAccess Package="@primitive" ID="int"
+                           │  └──┬(A:32) List
+                           │     └──┬(A:33) VariableDeclarator ID="b"
+                           │        ├───(A:34) List
+                           │        └───(A:35) Opt
+                           ├──┬(A:36) ExprStmt
+                           │  └──┬(A:37) AssignSimpleExpr
+                           │     ├───(A:38) VarAccess ID="a"
+                           │     └───(A:39) IntegerLiteral LITERAL="1"
+                           ├──┬(A:40) IfStmt
+                           │  ├──┬(A:41) GTExpr
+                           │  │  ├───(A:42) VarAccess ID="a"
+                           │  │  └───(A:43) IntegerLiteral LITERAL="0"
+                           │  ├──┬(A:44) Block
+                           │  │  └──┬(A:45) List
+                           │  │     ├──┬(A:46) ExprStmt
+                           │  │     │  └──┬(A:47) AssignSimpleExpr
+                           │  │     │     ├───(A:48) VarAccess ID="b"
+                           │  │     │     └───(A:49) IntegerLiteral LITERAL="0"
+                           │  │     ├──┬(A:50) IfStmt
+                           │  │     │  ├──┬(A:51) GTExpr
+                           │  │     │  │  ├───(A:52) VarAccess ID="a"
+                           │  │     │  │  └───(A:53) IntegerLiteral LITERAL="0"
+                           │  │     │  ├──┬(A:54) Block
+                           │  │     │  │  └──┬(A:55) List
+                           │  │     │  │     └──┬(A:56) IfStmt
+                           │  │     │  │        ├──┬(A:57) GTExpr
+                           │  │     │  │        │  ├───(A:58) VarAccess ID="a"
+                           │  │     │  │        │  └───(A:59) IntegerLiteral LITERAL="0"
+                           │  │     │  │        ├──┬(A:60) Block
+                           │  │     │  │        │  └──┬(A:61) List
+                           │  │     │  │        │     └──┬(A:62) ExprStmt
+                           │  │     │  │        │        └──┬(A:63) AssignSimpleExpr
+                           │  │     │  │        │           ├───(A:64) VarAccess ID="b"
+                           │  │     │  │        │           └───(A:65) IntegerLiteral LITERAL="0"
+                           │  │     │  │        └──┬(A:66) Opt
+                           │  │     │  │           └──┬(A:67) Block
+                           │  │     │  │              └──┬(A:68) List
+                           │  │     │  │                 └──┬(A:69) ExprStmt
+                           │  │     │  │                    └──┬(A:70) AssignSimpleExpr
+                           │  │     │  │                       ├───(A:71) VarAccess ID="b"
+                           │  │     │  │                       └───(A:72) IntegerLiteral LITERAL="0"
+                           │  │     │  └──┬(A:73) Opt
+                           │  │     │     └──┬(A:74) Block
+                           │  │     │        └──┬(A:75) List
+                           │  │     │           └──┬(A:76) ExprStmt
+                           │  │     │              └──┬(A:77) AssignSimpleExpr
+                           │  │     │                 ├───(A:78) VarAccess ID="b"
+                           │  │     │                 └───(A:79) IntegerLiteral LITERAL="0"
+                           │  │     └──┬(A:80) ExprStmt
+                           │  │        └──┬(A:81) AssignSimpleExpr
+                           │  │           ├───(A:82) VarAccess ID="b"
+                           │  │           └───(A:83) IntegerLiteral LITERAL="0"
+                           │  └──┬(A:84) Opt
+                           │     └──┬(A:85) Block
+                           │        └──┬(A:86) List
+                           │           └──┬(A:87) ExprStmt
+                           │              └──┬(A:88) AssignSimpleExpr
+                           │                 ├───(A:89) VarAccess ID="b"
+                           │                 └───(A:90) IntegerLiteral LITERAL="0"
+                           └──┬(A:91) ExprStmt
+                              └──┬(A:92) AssignSimpleExpr
+                                 ├───(A:93) VarAccess ID="b"
+                                 └───(A:94) IntegerLiteral LITERAL="0"

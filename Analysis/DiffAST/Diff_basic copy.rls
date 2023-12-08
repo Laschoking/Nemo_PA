@@ -24,3 +24,66 @@ CFG("IfStmt", ?nr, ?side, ?parType,?parNr, ?side):-
 
 @output CFG.
 @output AST.
+
+% Switch/Case
+
+ %   AST(?nr, "SwitchStmt",_,_,_),
+ %   AST(?blockNr,"Block",_,_,?nr),
+ %   AST(?listNr,"List",_,_,?blockNr),
+ %   AST()
+
+
+%Connect BBs
+%OrderBB(?nr1, #count(?nr2)):-
+%    BBHead(?nr1),
+%    BBHead(?nr2),
+%    ?nr1 > ?nr2.
+
+
+% Initialise Control Flow Graph (1)
+AST_BB(?BBnr,?BBnr,?type,?id,?lit,?parNr):-
+    BBHead(?BBnr),
+    AST(?BBnr,?type,?id,?lit,?parNr).
+
+% Propagate the BB-Number to next line
+
+AST_BB(?BBnr,?nr,?type,?id,?lit,?parNr):-
+    AST_BB(?BBnr, ?BBsuccNr,_,_,_,_),
+    ?nr = ?BBsuccNr + 1,
+    AST(?nr, ?type, ?id, ?lit,?parNr),
+    ~BBHead(?nr).
+
+
+
+% If an indirect connection is the onliest connection of a BB it is also direct 
+CFG(?BB1,?BB2):-
+    IndirectConnection(?nr1,?BB2),
+    Lookup_BB(?nr1,?BB1),
+    ~DirectConnection(?BB1,_),
+    ~IndirectConnection(?nr1, ?BB3),
+    ?BB2 < ?BB3.
+
+
+
+% Upper BB splits up 
+% -> The BB has indirect & direct connections we pass the information of the indirect connection further
+IndirectConnection(?BB2,?BB3):-
+    DirectConnection(?nr1,?BB2),
+    Lookup_BB(?nr1,?BB1),
+    IndirectConnection(?BB1,?BB3).
+
+
+% If two indirect connection exist and no direct, use the closer one 
+% This may occur in nested If-Trees 
+CountIC(?BB1, #min(?BB2)):-
+    IndirectConnection(?nr1,?BB2),
+    Lookup_BB(?nr1,?BB1),
+    ~DirectConnection(?BB1,_).
+
+CFG(?BB1,?BB2):-
+    CountIC(?BB1,?BB2).
+
+IndirectConnection(?BB2,?BB3):-
+    CountIC(?BB1,?BB2),
+    IndirectConnection(?BB1,?BB3),
+    ?BB2 != ?BB3.
