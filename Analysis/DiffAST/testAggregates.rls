@@ -1,7 +1,0 @@
-%A(1,"test").
-@import A[integer,string]: csv{resource = "A.csv"}.
-
-B(?nr2):-
-    A(?nr1,"test"),
-    ?nr2 = ?nr1 + 1.
-
