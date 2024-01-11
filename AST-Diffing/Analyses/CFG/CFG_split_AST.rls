@@ -3,8 +3,10 @@
 % This demands more memory but is easy, since only few rules have been refactored
 
 @source AST[integer,string, string,string,string,integer, string] : load-csv("TargetAST.csv").
-@declare SplitAST(integer,string, string,string,string,integer).
+@declare SplitAST(string,integer, string,string,string,integer).
 @declare MaxAST(integer).
+@declare ASTBB(string,integer,integer, string,string,string,integer).
+
 % set the root for each Method
 
 %Side("left", "left").
@@ -12,28 +14,29 @@
 Side("target", "right").
 Side("right", "right").
 
-SplitAST(?nr,?side2, ?type,?id,?val, ?parNr):-
+SplitAST(?side2,?nr, ?type,?id,?val, ?parNr):-
     AST(?nr,?side,?type,?id,?val,?parNr,_),
     Side(?side,?side2).
 
 BBHead(?side,?nr):-
-    SplitAST(?nr,?side,"MethodDecl",_,_,_).
+    SplitAST(?side,?nr,"MethodDecl",_,_,_).
 
 BBHead(?side, ?nr):-
-    SplitAST(?nr,?side, "ClassDecl",_,_,_).
+    SplitAST(?side,?nr, "ClassDecl",_,_,_).
+
 
 %-----------------------------%
 % IF-Statements 
 
 % Find the Condition of If-statement
 IfCondition(?side, ?ifNr,#min(?condNr)):-
-    SplitAST(?ifNr,?side, "IfStmt",_,_,_),  
-    SplitAST(?condNr,?side, ?cond,_,_,?ifNr).
+    SplitAST(?side,?ifNr,"IfStmt",_,_,_),  
+    SplitAST(?side,?condNr,?cond,_,_,?ifNr).
 
 % Find  Then &Else Branch
 ThenElse(?side,?ifNr,?thenElseNr):-
     IfCondition(?side,?ifNr,?condNr),
-    SplitAST(?thenElseNr,?side,_,_,_,?ifNr),
+    SplitAST(?side,?thenElseNr,_,_,_,?ifNr),
     ?thenElseNr > ?condNr.
 
 % Add Then&Else as BBs
@@ -42,8 +45,8 @@ BBHead(?side,?thenElseNr):-
 
 % Find first statement after If-Tree
 IfSucc(?side,?ifNr,#min(?succNr)):-
-    SplitAST(?ifNr,?side,"IfStmt",_,_,?parNr),
-    SplitAST(?succNr,?side,?succType, _,_, ?parNr),
+    SplitAST(?side,?ifNr,"IfStmt",_,_,?parNr),
+    SplitAST(?side,?succNr,?succType, _,_, ?parNr),
     ?succNr > ?ifNr.
 
 % Add a new BB after the If-Tree 
@@ -65,14 +68,14 @@ IndirectConnection(?side,?thenElseBB,?succBB):-
 
 % Find While-Condition
 WhileCondition(?side,?whileNr, #min(?condNr)):-
-    SplitAST(?whileNr,?side,?type,_,_,_),
-    SplitAST(?condNr,?side,_,_,_,?whileNr),
+    SplitAST(?side,?whileNr,?type,_,_,_),
+    SplitAST(?side,?condNr,_,_,_,?whileNr),
     ?type = "WhileStmt".
 
 % Find body of While-Tree
 WhileBody(?side,?whileNr,?followNr):-
     WhileCondition(?side,?whileNr, ?condNr),
-    SplitAST(?followNr,?side, _, _, _, ?whileNr),
+    SplitAST(?side,?followNr, _, _, _, ?whileNr),
     ?followNr > ?condNr.
 
 % Add body of While-Tree as BB
@@ -86,8 +89,8 @@ DirectConnection(?side, ?whileNr,?bodyNr):-
 % Find Successor of WhileStmt & WhileBody
 WhileSucc(?side,?whileNr, #min(?succNr)):-
     WhileBody(?side,?whileNr, _),
-    SplitAST(?whileNr,?side,_,_,_,?parNr),
-    SplitAST(?succNr,?side,_,_,_,?parNr),
+    SplitAST(?side,?whileNr,_,_,_,?parNr),
+    SplitAST(?side,?succNr,_,_,_,?parNr),
     ?succNr > ?whileNr.
 
 BBHead(?side,?whileSucc):-
@@ -112,15 +115,15 @@ IndirectConnection(?side,?whileNr, ?succNr):-
 
 % Find last child
 ForBody(?side,?forNr, #max(?bodyNr)):-
-    SplitAST(?forNr,?side,?type,_,_,_),
+    SplitAST(?side,?forNr,?type,_,_,_),
     ?type = "ForStmt",
-    SplitAST(?bodyNr,?side,_, _, _, ?forNr).
+    SplitAST(?side,?bodyNr,_, _, _, ?forNr).
 
 % Find Successor of For-Tree
 ForSucc(?side,?forNr, #min(?succNr)):-
     ForBody(?side,?forNr,_),
-    SplitAST(?forNr,?side,_,_,_,?parNr),
-    SplitAST(?succNr,?side,_,_,_,?parNr),
+    SplitAST(?side,?forNr,_,_,_,?parNr),
+    SplitAST(?side,?succNr,_,_,_,?parNr),
     ?succNr > ?forNr.
 
 % Add For-Body as BB
@@ -153,40 +156,75 @@ LookupBB(?side,?BBnr,?BBnr):-
 % Propagate the BB-Number to next line in same block
 
 MaxAST(#max(?nr)):-
-    SplitAST(?nr,_,_,_,_,_).
+    SplitAST(?side,?nr,_,_,_,_).
 
-Iter(0,1).
-Iter(?a,?a +1):-
-    Iter(_,?a),
+% dirty fix bc. of bug
+% https://github.com/knowsys/nemo/issues/448
+Succ(0,1).
+Succ(?a,?a +1):-
+    Succ(_,?a),
     ~MaxAST(?a).
 
-LookupBB(?side,?succNr,?BB):-
-    LookupBB(?side,?nr, ?BB),
-    Iter(?nr, ?succNr),
-    ~BBHead(?side,?succNr).
+LastStmtBB(?side,?BB,#max(?nr)):-
+    BBHead(?side,?BB),
+    ASTBB(?side,?BB,?nr,_,_,_,_).
 
-%Error: , would be correct
 
+
+NextLineBB(?side,?BB,?nr1,?nr2):-
+    Succ(?nr1,?nr2),
+    ASTBB(?side,?BB,?nr1,_,_,_,_),
+    ASTBB(?side,?BB,?nr2,_,_,_,_).
+
+GapStartBB(?side,?BB,?nr1):-
+    ASTBB(?side,?BB,?nr1,_,_,_,_),
+    Succ(?nr1,?nr2),
+    ~ASTBB(?side,_,?nr2,_,_,_,_),
+    ASTBB(?side,?BB,?nr3,_,_,_,_),
+    ?nr3 > ?nr1 .
+
+GapEndBB(?side,?BB,?nr3):-
+    ASTBB(?side,?BB,?nr1,_,_,_,_),
+    Succ(?nr2,?nr3),
+    ~ASTBB(?side,?BB,?nr2,_,_,_,_),
+    ASTBB(?side,?BB,?nr3,_,_,_,_),
+    ?nr3 > ?nr1 .
+
+% Start: 10, 23; End: 15,25
+NextLineBB(?side,?BB,?startNr,#min(?endNr)):-
+    GapStartBB(?side,?BB,?startNr),
+    GapEndBB(?side,?BB,?endNr),
+    ?startNr < ?endNr.
+
+LookupBB(?side,?BB,?nr2):-
+    LookupBB(?side,?BB,?nr1),
+    Succ(?nr1,?nr2),
+    ~BBHead(?side,?nr2).
+
+    %NextLineBB(?side,?BB,?nr1,?nr2).
 
 % Fill in BB-numbers where we only used statement numbers
 DirectConnectionBB(?side,?BB1,?BB2):-
     DirectConnection(?side,?nr1,?nr2),
-    LookupBB(?side,?nr1,?BB1),
-    LookupBB(?side,?nr2,?BB2).
+    LookupBB(?side,?BB1,?nr1),
+    LookupBB(?side,?BB2,?nr2).
 
 % Fill in BB-numbers where we only used statement numbers
 IndirectConnectionBB(?side,?BB1,?BB2):-
     IndirectConnection(?side,?nr1,?nr2),
-    LookupBB(?side,?nr1,?BB1),
-    LookupBB(?side,?nr2,?BB2).
+    LookupBB(?side,?BB1,?nr1),
+    LookupBB(?side,?BB2,?nr2).
 
 % Create extended AST with BB numbers
-ASTBB(?BB,?nr,?side,?type,?id,?lit,?par,?side):-
-    SplitAST(?nr,?side,?type,?id,?lit,?par),
-    LookupBB(?side,?nr,?BB).
+ASTBB(?side,?BB,?nr,?type,?id,?lit,?par):-
+    SplitAST(?side,?nr,?type,?id,?lit,?par),
+    LookupBB(?side,?BB,?nr).
+
+%TODO LookupBB durch <,> ersetzen wenn moeglich
 
 %-----------------------------%
 % Create CFG based on direct & indirect connections
+
 
 % A direct connection is always included the CFG, because no other BB can be inbetween
 CFG(?side,?BB1,?BB2):-
@@ -219,8 +257,8 @@ CFG(?side,?BB1,?BB2):-
 
 %save Root (Method start) of CFG
 CFGRoot(?side,?class, ?method,?nr2):-
-    SplitAST(?nr1,?side,"ClassDecl",?class,_,_),
-    SplitAST(?nr2,?side,"MethodDecl",?method,_,_).
+    SplitAST(?side,?nr1,"ClassDecl",?class,_,_),
+    SplitAST(?side,?nr2,"MethodDecl",?method,_,_).
 
 % Initialise relation
 BBMethodHead(?side,?class,?method,?nr):-    
@@ -231,6 +269,7 @@ BBMethodHead(?side,?class,?method,?nr):-
 BBMethodHead(?side,?class,?method,?BB2):-
     CFG(?side,?BB1,?BB2),
     BBMethodHead(?side,?class,?method,?BB1).
+
 
 %@output IfCondition.
 %@output IfSucc.
@@ -244,12 +283,16 @@ BBMethodHead(?side,?class,?method,?BB2):-
 %@output DirectConnectionBB.
 %@output CountIC.
 
+@output NextLineBB.
+%@output PossNextLineBB.
+%@output MaxAST.
+%@output Succ.
+@output CFGRoot.
 @output BBHead.
 @output LookupBB.
 @output CFG.
 @output BBMethodHead.
 @output ASTBB.
 @output SplitAST.
-@output MaxAST.
-@output Iter.
-@output CFGRoot.
+@output GapEndBB.
+@output GapStartBB.
