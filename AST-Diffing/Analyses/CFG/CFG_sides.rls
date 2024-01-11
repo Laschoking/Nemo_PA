@@ -1,0 +1,257 @@
+% not working atm:
+% the idea is, whether the CFG implemenation for both sides can be done in parallel
+% i.e. if the AST node is "target" if we can inver this, to only do computation once
+% instead of 2 for "left","right"
+
+
+@source AST[integer,string, string,string,string,integer, string] : load-csv("TargetAST.csv").
+
+% set the root for each Method
+
+Side("target", "left").
+Side("target", "right").
+Side("left", "left").
+Side("right", "right").
+
+Split_AST(?nr,?side, ?type,?id,?val, ?parNr):-
+    AST(?nr,?s,?type,?id,?val,?parNr,_),
+    Side(?s,?side).
+
+
+
+BBHead(?s,?nr):-
+    AST(?nr,?side,"MethodDecl",_,_,_,_),
+    Side(?side, ?s).
+
+BBHead(?s, ?nr):-
+    AST(?nr,?side, "ClassDecl",_,_,_,_),
+    Side(?side, ?s).
+
+
+%-----------------------------%
+% IF-Statements 
+
+% Find the Condition of If-statement
+IfCondition(?s, ?ifNr,#min(?condNr)):-
+    AST(?ifNr,?side, "IfStmt",_,_,_,_),  
+    AST(?condNr,?side, ?cond,_,_,?ifNr,?side),
+    Side(?side, ?s).
+
+% Find  Then &Else Branch
+ThenElse(?s,?ifNr,?thenElseNr):-
+    IfCondition(?s,?ifNr,?condNr),
+    AST(?thenElseNr,?side,_,_,_,?ifNr,?side),
+    ?thenElseNr > ?condNr,
+    Side(?side, ?s).
+
+% Add Then&Else as BBs
+BBHead(?s,?thenElseNr):-
+    ThenElse(?s,_,?thenElseNr).
+
+% Find first statement after If-Tree
+IfSucc(?s,?ifNr,#min(?succNr)):-
+    AST(?ifNr,?side,"IfStmt",_,_,?parNr,?side),
+    AST(?succNr,?side,?succType, _,_, ?parNr,?side),
+    ?succNr > ?ifNr,
+    Side(?side, ?s).
+
+% Add a new BB after the If-Tree 
+BBHead(?s,?succNr):-
+    IfSucc(?s,_,?succNr).
+
+% Connect If-Stmt with Then/Else branches (even though we dont know to which BB ?ifNr belongs)
+DirectConnection(?s,?ifNr,?thenElseBB):-
+    ThenElse(?s,?ifNr,?thenElseBB).
+
+% Link then&else BBs to IfSucc
+IndirectConnection(?s,?thenElseBB,?succBB):-
+    IfSucc(?s,?ifNr,?succBB),
+    ThenElse(?s,?ifNr,?thenElseBB).
+
+%-----------------------------%
+% While loops 
+% -- assume that Condition is 1. child & While-Body is 2. child
+
+% Find While-Condition
+WhileCondition(?s,?whileNr, #min(?condNr)):-
+    AST(?whileNr,?side,?type,_,_,_,_),
+    AST(?condNr,?side,_,_,_,?whileNr,_),
+    ?type = "WhileStmt",
+    Side(?side, ?s).
+
+% Find body of While-Tree
+WhileBody(?s,?whileNr,?followNr):-
+    WhileCondition(?s,?whileNr, ?condNr),
+    AST(?followNr,?side, _, _, _, ?whileNr,?side),
+    ?followNr > ?condNr,
+    Side(?side, ?s).
+
+% Add body of While-Tree as BB
+BBHead(?s,?body):-
+    WhileBody(?s,_,?body).
+
+% Create connection between WhileStmt and the body
+DirectConnection(?s, ?whileNr,?bodyNr):-
+    WhileBody(?s,?whileNr, ?bodyNr).
+
+% Find Successor of WhileStmt & WhileBody
+WhileSucc(?s,?whileNr, #min(?succNr)):-
+    WhileBody(?s,?whileNr, _),
+    AST(?whileNr,?side,_,_,_,?parNr,?side),
+    AST(?succNr,?side,_,_,_,?parNr,?side),
+    ?succNr > ?whileNr,
+    Side(?side, ?s).
+
+BBHead(?s,?whileSucc):-
+    WhileSucc(?s,_,?whileSucc).
+
+% Create connection between WhileStmt and body
+DirectConnection(?s,?whileNr,?bodyNr):-
+    WhileBody(?s,?whileNr,?bodyNr).
+
+% Add direct connection from WhileStmt to Successor
+DirectConnection(?s,?whileNr, ?succNr):-
+    WhileSucc(?s,?whileNr,?succNr).
+
+% Add indirect connection from WhileBody to Successor
+IndirectConnection(?s,?whileNr, ?succNr):-
+    WhileBody(?s,?whileNr, ?bodyNr),
+    WhileSucc(?s,?whileNr,?succNr).
+
+%-----------------------------%
+% For loops
+% -- assume that the last child of For-statement is the body
+
+% Find last child
+ForBody(?s,?forNr, #max(?bodyNr)):-
+    AST(?forNr,?side,?type,_,_,_,?side),
+    ?type = "ForStmt",
+    AST(?bodyNr,?side,_, _, _, ?forNr,?side),
+    Side(?side, ?s).
+
+% Find Successor of For-Tree
+ForSucc(?s,?forNr, #min(?succNr)):-
+    ForBody(?s,?forNr,_),
+    AST(?forNr,?side,_,_,_,?parNr,?side),
+    AST(?succNr,?side,_,_,_,?parNr,?side),
+    ?succNr > ?forNr,
+    Side(?side, ?s).
+
+% Add For-Body as BB
+BBHead(?s,?bodyNr):-
+    ForBody(?s,_, ?bodyNr).
+
+BBHead(?s,?forSucc):-
+    ForSucc(?s,_,?forSucc).
+
+% Create connection between ForStmt and the body
+DirectConnection(?s,?forNr,?bodyNr):-
+    ForBody(?s,?forNr, ?bodyNr).
+
+% Create connection between ForStmt and successor
+DirectConnection(?s,?forNr,?succNr):-
+    ForSucc(?s,?forNr,?succNr).
+
+% Create indirect connection between body and For-Succ
+IndirectConnection(?s,?bodyBB,?succNr):-
+    ForBody(?s,?forNr,?bodyBB),
+    ForSucc(?s,?forNr,?succNr).
+
+%-----------------------------%
+% Assign a BB to each Statement (propagate BB information within single block)
+
+% Initialise with BB-Leaders
+Lookup_BB(?s,?BBnr,?BBnr):-
+    BBHead(?s,?BBnr).
+
+% Propagate the BB-Number to next line in same block
+Lookup_BB(?s,?succNr,?BB):-
+    Lookup_BB(?s,?nr, ?BB),
+    ?succNr = ?nr + 1,
+    AST(?succNr,?side,_,_,_,_,?side),
+    ~BBHead(?s,?succNr),
+    Side(?side, ?s).
+
+% Fill in BB-numbers where we only used statement numbers
+DirectConnectionBB(?s,?BB1,?BB2):-
+    DirectConnection(?s,?nr1,?nr2),
+    Lookup_BB(?s,?nr1,?BB1),
+    Lookup_BB(?s,?nr2,?BB2).
+
+% Fill in BB-numbers where we only used statement numbers
+IndirectConnectionBB(?s,?BB1,?BB2):-
+    IndirectConnection(?s,?nr1,?nr2),
+    Lookup_BB(?s,?nr1,?BB1),
+    Lookup_BB(?s,?nr2,?BB2).
+
+% Create extended AST with BB numbers
+AST_BB(?BB,?side,?nr,?type,?id,?lit,?par,?side):-
+    AST(?nr,?side,?type,?id,?lit,?par,?side),
+    Lookup_BB(?s,?nr,?BB),
+    Side(?side, ?s).
+
+%-----------------------------%
+% Create CFG based on direct & indirect connections
+
+% A direct connection is always included the CFG, because no other BB can be inbetween
+CFG(?s,?BB1,?BB2):-
+    DirectConnectionBB(?s,?BB1, ?BB2).
+
+% Forward indirect connection to KNOWN BB-Successor
+% Example: nested IfStatements
+IndirectConnectionBB(?s,?BB2, ?BB3):-
+    DirectConnectionBB(?s,?BB1,?BB2),
+    IndirectConnectionBB(?s,?BB1,?BB3).
+
+% Forward indirect connection to POSSIBLE BB-Successors
+IndirectConnectionBB(?s,?BB2, ?BB3):-
+    IndirectConnectionBB(?s,?BB1,?BB2),
+    IndirectConnectionBB(?s,?BB1,?BB3),
+    ?BB2 < ?BB3,
+    ~DirectConnectionBB(?s,?BB1,_).
+
+% Find the closest IndirectConnectionBB iff. no DirectConnection
+CountIC(?s,?BB1, #min(?BB2)):-
+    IndirectConnectionBB(?s,?BB1,?BB2),
+    ~DirectConnectionBB(?s,?BB1,_).
+
+% Add closest IndirectConnectionBB to CFG iff. no DirectConnection
+CFG(?s,?BB1,?BB2):-
+    CountIC(?s,?BB1,?BB2).
+
+%-----------------------------%
+% Save methodname for each BB
+
+% Initialise relation
+BBMethodHead(?s,?method,?nr):-
+    AST(?nr,?side,"ClassDecl",?method,_,_,?side),
+    Side(?side, ?s).
+
+% !! Assume that no inter-procedural connections are made
+% Propagate methodname through CFG
+BBMethodHead(?s,?method,?BB2):-
+    CFG(?s,?BB1,?BB2),
+    BBMethodHead(?s,?method,?BB1).
+
+
+
+
+
+%@output IfCondition.
+%@output IfSucc.
+%@output AST.
+%@output WhileBody.
+%@output WhileSucc.
+%@output ForBody.
+%@output ForSucc.
+%@output DirectConnection.
+%@output IndirectConnection.
+%@output DirectConnectionBB.
+%@output CountIC.
+
+@output BBHead.
+@output Lookup_BB.
+@output CFG.
+@output BBMethodHead.
+@output AST_BB.
+@output Split_AST.

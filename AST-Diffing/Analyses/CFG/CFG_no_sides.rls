@@ -1,0 +1,229 @@
+% This CFG implemenation considers an AST, without side information
+% Thus it only works if JDIME output does not contain infos like "left,right,target"
+
+@source AST[integer,string,string,string,integer] : load-csv("AST.csv").
+
+% set the root for each Method
+
+BBHead(?nr):-
+    AST(?nr,"MethodDecl",_,_,_).
+
+BBHead(?nr):-
+    AST(?nr,"ClassDecl",_,_,_).
+
+
+%-----------------------------%
+% IF-Statements 
+
+% Find the Condition of If-statement
+IfCondition(?ifNr,#min(?condNr)):-
+    AST(?ifNr,"IfStmt",_,_,_),  
+    AST(?condNr,?cond,_,_,?ifNr).
+
+% Find  Then &Else Branch
+ThenElse(?ifNr,?thenElseNr):-
+    IfCondition(?ifNr,?condNr),
+    AST(?thenElseNr,_,_,_,?ifNr),
+    ?thenElseNr > ?condNr.
+
+% Add Then&Else as BBs
+BBHead(?thenElseNr):-
+    ThenElse(_,?thenElseNr).
+
+% Find first statement after If-Tree
+IfSucc(?ifNr,#min(?succNr)):-
+    AST(?ifNr,"IfStmt",_,_,?parNr),
+    AST(?succNr, ?succType, _,_, ?parNr),
+    ?succNr > ?ifNr.
+
+% Add a new BB after the If-Tree 
+BBHead(?succNr):-
+    IfSucc(_,?succNr).
+
+% Connect If-Stmt with Then/Else branches (even though we dont know to which BB ?ifNr belongs)
+DirectConnection(?ifNr,?thenElseBB):-
+    ThenElse(?ifNr,?thenElseBB).
+
+% Link then&else BBs to IfSucc
+IndirectConnection(?thenElseBB,?succBB):-
+    IfSucc(?ifNr,?succBB),
+    ThenElse(?ifNr,?thenElseBB).
+
+%-----------------------------%
+% While loops 
+% -- assume that Condition is 1. child & While-Body is 2. child
+
+% Find While-Condition
+WhileCondition(?whileNr, #min(?condNr)):-
+    AST(?whileNr,?type,_,_,_),
+    AST(?condNr,_,_,_,?whileNr),
+    ?type = "WhileStmt".
+
+% Find body of While-Tree
+WhileBody(?whileNr,?followNr):-
+    WhileCondition(?whileNr, ?condNr),
+    AST(?followNr, _, _, _, ?whileNr),
+    ?followNr > ?condNr.
+
+% Add body of While-Tree as BB
+BBHead(?body):-
+    WhileBody(_,?body).
+
+% Create connection between WhileStmt and the body
+DirectConnection(?whileNr,?bodyNr):-
+    WhileBody(?whileNr, ?bodyNr).
+
+% Find Successor of WhileStmt & WhileBody
+WhileSucc(?whileNr, #min(?succNr)):-
+    WhileBody(?whileNr, _),
+    AST(?whileNr,_,_,_,?parNr),
+    AST(?succNr,_,_,_,?parNr),
+    ?succNr > ?whileNr.
+
+BBHead(?whileSucc):-
+    WhileSucc(_,?whileSucc).
+
+% Create connection between WhileStmt and body
+DirectConnection(?whileNr,?bodyNr):-
+    WhileBody(?whileNr,?bodyNr).
+
+% Add direct connection from WhileStmt to Successor
+DirectConnection(?whileNr, ?succNr):-
+    WhileSucc(?whileNr,?succNr).
+
+% Add indirect connection from WhileBody to Successor
+IndirectConnection(?whileNr, ?succNr):-
+    WhileBody(?whileNr, ?bodyNr),
+    WhileSucc(?whileNr,?succNr).
+
+%-----------------------------%
+% For loops
+% -- assume that the last child of For-statement is the body
+
+% Find last child
+ForBody(?forNr, #max(?bodyNr)):-
+    AST(?forNr,?type,_,_,_),
+    ?type = "ForStmt",
+    AST(?bodyNr,_, _, _, ?forNr).
+
+% Find Successor of For-Tree
+ForSucc(?forNr, #min(?succNr)):-
+    ForBody(?forNr,_),
+    AST(?forNr,_,_,_,?parNr),
+    AST(?succNr,_,_,_,?parNr),
+    ?succNr > ?forNr.
+
+% Add For-Body as BB
+BBHead(?bodyNr):-
+    ForBody(_, ?bodyNr).
+
+BBHead(?forSucc):-
+    ForSucc(_,?forSucc).
+
+% Create connection between ForStmt and the body
+DirectConnection(?forNr,?bodyNr):-
+    ForBody(?forNr, ?bodyNr).
+
+% Create connection between ForStmt and successor
+DirectConnection(?forNr,?succNr):-
+    ForSucc(?forNr,?succNr).
+
+% Create indirect connection between body and For-Succ
+IndirectConnection(?bodyBB,?succNr):-
+    ForBody(?forNr,?bodyBB),
+    ForSucc(?forNr,?succNr).
+
+%-----------------------------%
+% Assign a BB to each Statement (propagate BB information within single block)
+
+% Initialise with BB-Leaders
+Lookup_BB(?BBnr,?BBnr):-
+    BBHead(?BBnr).
+
+% Propagate the BB-Number to next line in same block
+Lookup_BB(?succNr,?BB):-
+    Lookup_BB(?nr, ?BB),
+    ?succNr = ?nr + 1,
+    AST(?succNr,_,_,_,_),
+    ~BBHead(?succNr).
+
+% Fill in BB-numbers where we only used statement numbers
+DirectConnectionBB(?BB1,?BB2):-
+    DirectConnection(?nr1,?nr2),
+    Lookup_BB(?nr1,?BB1),
+    Lookup_BB(?nr2,?BB2).
+
+% Fill in BB-numbers where we only used statement numbers
+IndirectConnectionBB(?BB1,?BB2):-
+    IndirectConnection(?nr1,?nr2),
+    Lookup_BB(?nr1,?BB1),
+    Lookup_BB(?nr2,?BB2).
+
+% Create extended AST with BB numbers
+AST_BB(?BB,?nr,?type,?id,?lit,?par):-
+    AST(?nr,?type,?id,?lit,?par),
+    Lookup_BB(?nr,?BB).
+
+%-----------------------------%
+% Create CFG based on direct & indirect connections
+
+% A direct connection is always included the CFG, because no other BB can be inbetween
+CFG(?BB1,?BB2):-
+    DirectConnectionBB(?BB1, ?BB2).
+
+% Forward indirect connection to KNOWN BB-Successor
+% Example: nested IfStatements
+IndirectConnectionBB(?BB2, ?BB3):-
+    DirectConnectionBB(?BB1,?BB2),
+    IndirectConnectionBB(?BB1,?BB3).
+
+% Forward indirect connection to POSSIBLE BB-Successors
+IndirectConnectionBB(?BB2, ?BB3):-
+    IndirectConnectionBB(?BB1,?BB2),
+    IndirectConnectionBB(?BB1,?BB3),
+    ?BB2 < ?BB3,
+    ~DirectConnectionBB(?BB1,_).
+
+% Find the closest IndirectConnectionBB iff. no DirectConnection
+CountIC(?BB1, #min(?BB2)):-
+    IndirectConnectionBB(?BB1,?BB2),
+    ~DirectConnectionBB(?BB1,_).
+
+% Add closest IndirectConnectionBB to CFG iff. no DirectConnection
+CFG(?BB1,?BB2):-
+    CountIC(?BB1,?BB2).
+
+%-----------------------------%
+% Save methodname for each BB
+% TODO: Methodname is not a unique Idenifier, maybe add Classname !
+
+% Initialise relation
+BBMethodHead(?method,?nr):-
+    AST(?nr,"ClassDecl",?method,_,_).
+
+% !! Assume that no inter-procedural connections are made
+% Propagate methodname through CFG
+BBMethodHead(?method,?BB2):-
+    CFG(?BB1,?BB2),
+    BBMethodHead(?method,?BB1).
+
+
+
+
+
+%@output IfCondition.
+%@output IfSucc.
+%@output AST.
+@output BBHead.
+@output Lookup_BB.
+@output DirectConnection.
+@output IndirectConnection.
+@output DirectConnectionBB.
+@output CFG.
+@output CountIC.
+@output BBMethodHead.
+@output AST_BB.
+@output WhileBody.
+@output WhileSucc.
+@output ForBody.
+@output ForSucc.

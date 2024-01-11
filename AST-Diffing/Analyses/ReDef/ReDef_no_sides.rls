@@ -1,0 +1,91 @@
+% Basic Implementation which does not take sides
+% -> can be used to check functionality of the analysis
+% works with output of CFG_no_sides.rls
+
+@import CFG[integer,integer]: csv{resource = "CFG.csv"}.
+@import BBMethodHead[integer,integer]: csv{resource = "BBMethodHead.csv"}.
+@import Lookup_BB[integer,integer]: csv{resource = "Lookup_BB.csv"}.
+@import AST_BB[integer,integer,string,string,string,integer]: csv{resource = "AST_BB.csv"}.
+
+
+% in which statements is variable V used, before redeclaration?
+
+% find all declarations (DEF)
+% follow BB-Flow for Use 
+
+% VariablenDeklaration (int a;)
+% gehe davon aus, dass VariableDeclarator immer an VarDeclStmt haengt
+DECL(?BB, ?nr, ?var):-
+    AST_BB(?BB,?nr,"VariableDeclarator",?var,_,_).
+
+% only if a declared Variable has further statements in "Opt" it is defined
+% if "Opt" is not empty expressions, constants etc. are assigned there
+DEF(?BB,?decNr,?var):-
+    DECL(?BB, ?decNr, ?var),
+    AST_BB(?BB,?optNr,"Opt",_,_,?decNr),
+    AST_BB(?BB,_,_,_,_,?optNr).
+
+% VariablenAssignment (a = b;) -> has 2 Entries of VarAccess as children
+% (a = b+c;) creates an "AddExpr" as second child with b&c as children
+MIN_VA(?nr,#min(?nr2)):-
+    AST_BB(?BB,?nr,"AssignSimpleExpr",_,_,_),
+    AST_BB(?BB,?nr2,"VarAccess",_,_,?nr).
+
+% Consider the first child as being defined
+DEF(?BB, ?nr, ?var):-
+    MIN_VA(_,?nr),
+    AST_BB(?BB,?nr,_,?var,_,_).
+
+POSS_USE(?BB,?defNr,?useNr, ?type,?var):-
+    MIN_VA(?parNr,?defNr),
+    AST_BB(?BB,?useNr,?type ,?var,_,?parNr),
+    ?useNr > ?defNr.
+
+
+% Find all Sub-Tree nodes of a Variable Declarator
+% even if they are just placeholders
+POSS_USE(?BB,?defNr,?useNr,?type,?id):-
+    DEF(?BB, ?defNr, ?var),
+    AST_BB(?BB,?useNr,?type,?id,_,?defNr).
+
+%transitive closure
+POSS_USE(?BB,?defNr,?useNr2,?type,?id):-
+    POSS_USE(?BB,?defNr, ?useNr1,_ ,_),
+    AST_BB(?BB,?useNr2,?type,?id,_,?useNr1).
+
+% Extract use-Variables that have a "VarAccess"
+USE(?BB,?defNr,?defVar, ?useNr,?useVar):-
+    POSS_USE(?BB,?defNr,?useNr,"VarAccess",?useVar),
+    DEF(?BB,?defNr,?defVar).
+
+% TODO: Specify additional uses for function calls i.e. a= foo(b) or foo(b).
+
+
+% Check if all Variables have a Declaration
+
+CheckDeclaration(?var,?method):-
+    DEF(?BB1,?nr1,?var),
+    USE(?BB2,_,_,?nr2,?var),
+    BBMethodHead(?method,?BB1),
+    BBMethodHead(?method,?BB2).
+
+ReachingBB(?BB1,?BB1):-
+    CFG(?BB1,_).
+
+ReachingBB(?BB1,?BB1):-
+    CFG(_,?BB1).
+
+ReachingBB(?BB1,?BB3):-
+    CFG(?BB1, ?BB2),
+    CFG(?BB2,?BB3).
+
+% TODO: check if Var is defined before use
+
+% Connect DEF & USE through CFG
+ReachingDef(?defUseNr, ?useNr,?useVar,?defNr,?defVar):-
+    DEF(?BB1,?defUseNr,?useVar),
+    USE(?BB2,?defNr,?defVar,?useNr,?useVar),
+    ReachingBB(?BB1,?BB2).
+
+
+

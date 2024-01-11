@@ -1,0 +1,12 @@
+right,ForLoop,foo,25,34
+right,ForLoop,foo,34,52
+right,ForLoop,foo,52,63
+right,ForLoop,foo,63,75
+right,ForLoop,foo,63,83
+right,ForLoop,foo,75,90
+right,ForLoop,foo,83,90
+right,ForLoop,fox,116,125
+right,ForLoop,fox,125,134
+right,ForLoop,fox,134,145
+right,ForLoop,fox,145,151
+right,ForLoop,fox,151,159

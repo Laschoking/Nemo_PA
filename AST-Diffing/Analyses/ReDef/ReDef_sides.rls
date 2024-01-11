@@ -1,0 +1,163 @@
+% currently takes 1 CFG file, with separated sides 
+
+@import CFG[string, integer,integer]: csv{resource = "CFG.csv"}.
+@import CFGRoot[string,string,string,integer]: csv{resource = "CFGRoot.csv"}.
+@import BBMethodHead[string,string,string,integer]: csv{resource = "BBMethodHead.csv"}.
+@import LookupBB[string,integer,integer]: csv{resource = "LookupBB.csv"}.
+@import ASTBB[integer,integer,string,string,string,string,integer,string]: csv{resource = "ASTBB.csv"}.
+@import Iter[integer,integer]: csv{resource= "Iter.csv"}.
+
+% in which statements is variable V used, before redeclaration?
+
+% find all declarations (Def)
+% follow BB-Flow for Use 
+
+% VariablenDeklaration (int a;)
+% gehe davon aus, dass VariableDeclarator immer an VarDeclStmt haengt
+Decl(?side,?BB,?nr,?var):-
+    ASTBB(?BB,?nr,?side,"VariableDeclarator",?var,_,_,?side).
+
+% only if a declared Variable has further statements in "Opt" it is defined
+% if "Opt" is not empty expressions, constants etc. are assigned there
+Def(?side,?BB,?decNr,?var):-
+    Decl(?side,?BB,?decNr,?var),
+    ASTBB(?BB,?optNr,?side,"Opt",_,_,?decNr,?side),
+    ASTBB(?BB,_,?side,_,_,_,?optNr,?side).
+
+% VariablenAssignment (a = b;) -> has 2 Entries of VarAccess as children
+% (a = b+c;) creates an "AddExpr" as second child with b&c as children
+MinVarAcc(?side,?nr, #min(?nr2)):-
+    ASTBB(?BB,?nr,?side,"AssignSimpleExpr",_,_,_,?side),
+    ASTBB(?BB,?nr2,?side,"VarAccess",_,_,?nr,?side).
+
+% Consider the first child as being defined
+Def(?side,?BB,?nr,?var):-
+    MinVarAcc(?side,_,?nr),
+    ASTBB(?BB,?nr,?side,_,?var,_,_,?side).
+
+PossUse(?side,?BB,?defNr,?useNr,?type,?var):-
+    MinVarAcc(?side,?parNr,  ?defNr),
+    ASTBB(?BB,?useNr,?side,?type ,?var,_,?parNr,?side),
+    ?useNr > ?defNr.
+
+
+% Find all Sub-Tree nodes of a Variable Declarator
+% even if they are just placeholders
+PossUse(?side,?BB,?defNr,?useNr,?type,?id):-
+    Def(?side,?BB,?defNr,?var),
+    ASTBB(?BB,?useNr,?side,?type,?id,_,?defNr,?side).
+
+%transitive closure
+PossUse(?side,?BB,?defNr,?useNr2,?type,?id):-
+    PossUse(?side,?BB,?defNr,?useNr1,_,_),
+    ASTBB(?BB,?useNr2,?side,?type,?id,_,?useNr1,?side).
+
+% Extract use-Variables that have a "VarAccess"
+Use(?side,?BB,?defNr,?defVar,?useNr,?useVar):-
+    PossUse(?side,?BB,?defNr,?useNr,"VarAccess",?useVar),
+    Def(?side,?BB,?defNr,?defVar).
+
+% TODO: Specify additional uses for function calls i.e. a= foo(b) or foo(b).
+
+
+% Check if all Variables have a Declaration
+
+%CheckDeclaration(?side,?var,?method):-
+%    Def(?side,?BB1,?nr1,?var),
+%    Use(?side,?BB2,_,_,?nr2,?var),
+%    BBMethodHead(?side,?class,?method,?BB1),
+%    BBMethodHead(?side,?class,?method,?BB2).
+
+% Transitive Closure over the direct connections of the CFG
+ReachingBB(?side,?BB1,?BB1):-
+    CFG(?side,?BB1,_).
+
+ReachingBB(?side,?BB1,?BB1):-
+    CFG(?side,_,?BB1).
+
+ReachingBB(?side,?BB1,?BB2):-
+    CFG(?side,?BB1,?BB2).
+
+ReachingBB(?side,?BB1,?BB3):-
+    CFG(?side,?BB1,?BB2),
+    CFG(?side,?BB2,?BB3).
+
+% Propagate Variables through Tree (full mode)
+% linewise will increase memory consumption A LOT !!!!!
+
+% Identify the first statement where a variable is defined for each BB
+FirstDefEachBB(?side,?class,?method,?BB,#min(?defNr)):-
+    Def(?side,?BB,?defNr,?defVar),
+    BBMethodHead(?side,?class,?method,?BB).
+
+% Identify the last statement where a variable is defined for each BB
+LastDefEachBB(?side,?class,?method,?BB,#max(?defNr)):-
+    Def(?side,?BB,?defNr,?defVar),
+    BBMethodHead(?side,?class,?method,?BB).
+
+% Connect Defs between BBs
+ConnectDef(?side,?class,?method,?defNr1,?defNr2):-
+    LastDefEachBB(?side,?class,?method,?BB1,?defNr1),
+    FirstDefEachBB(?side,?class,?method,?BB2,?defNr2),
+    CFG(?side,?BB1,?BB2).
+
+% Connect Defs within each BB
+PossibleConnectDef(?side,?class,?method,?BB,?defNr,?nr):-
+    FirstDefEachBB(?side,?class,?method,?BB,?defNr),
+    Iter(?defNr,?nr).
+
+% It is possible, that a ?nr/?succNr does not exist in AST, bc. there is a gap in the numbers
+% This may happen, if we insert a line from one side, 
+% the AST-Numbers in the other side will not be consecutive any more
+% thus we try to iterate through the AST until we reach the next BB
+PossibleConnectDef(?side,?class,?method,?BB,?defNr,?succNr):-
+    PossibleConnectDef(?side,?class,?method,?BB,?defNr,?nr),
+    Iter(?nr,?succNr),
+    ~Def(?side,?BB,?nr,_),
+    LastDefEachBB(?side,?class,?method,?BB,?lastDefNr),
+    ?succNr <= ?lastDefNr.
+
+
+ConnectDefBB(?side,?class,?method,?BB,?defNr1,?defNr2):-
+    PossibleConnectDef(?side,?class,?method,?BB,?defNr1,?nr),
+    Iter(?nr,?defNr2),
+    Def(?side,?BB,?defNr2,_).
+
+ConnectDef(?side,?class,?method,?defNr1,?defNr2):-
+    ConnectDefBB(?side,?class,?method,_,?defNr1,?defNr2).
+
+PossibleConnectDef(?side,?class,?method,?BB,?defNr2,?succNr):-
+    ConnectDefBB(?side,?class,?method,?BB,_,?defNr2),
+    Iter(?defNr2,?succNr),
+    LastDefEachBB(?side,?class,?method,?BB,?lastDefNr),
+    ?succNr <= ?lastDefNr.
+
+
+
+
+
+
+% Determine the first Definition in each Method (it is not necessary within the first BB)
+MinDef(?side,?class,?method,#min(?defNr), ?defVar):-
+    Def(?side,?BB1,?defNr,?defVar),
+    BBMethodHead(?side,?class,?method,?BB1),
+    CFGRoot(?side,?class,?method,?BB0).
+
+DefGraph(?side,?class,?method,?defNr,?defVar,?defNr):-
+    MinDef(?side,?class,?method,?defNr,?defVar).
+
+
+% TODO: sicherstellen dass CFG auch bei mehreren Funktionen was erkennt
+% auch wenn Funktion nur aus 1 BB besteht
+% MinDef
+
+
+% Consider the case, that var is getting reassigned in same BB:
+
+
+% Connect Def & Use through CFG
+ReachingDef(?side,?defUseNr,?useNr,?useVar,?defNr,?defVar):-
+    Def(?side,?BB1,?defUseNr,?useVar),
+    Use(?side,?BB2,?defNr,?defVar,?useNr,?useVar),
+    ReachingBB(?side,?BB1,?BB2).
+

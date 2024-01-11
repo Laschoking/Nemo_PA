@@ -1,0 +1,11 @@
+@declare A(integer).
+@declare max(integer).
+@declare B(integer).
+
+A(1).
+max(10).
+
+B(?b):-
+    A(?a),
+    ?b = ?a + 1 ,
+    ~max(?b).
