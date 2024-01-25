@@ -1,6 +1,6 @@
 #!/bin/bash
 
-input="ForLoop"
+input="Schwarz"
 nemo=/home/kotname/Documents/Diplom/Code/nemo/nemo
 ex_nemo=/home/kotname/Documents/Diplom/Code/ex_nemo
 jdime=/home/kotname/Documents/Diplom/Code/cpec-doop-and-jdime-experiments/jdime_application/jdime

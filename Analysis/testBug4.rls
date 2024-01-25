@@ -1,0 +1,11 @@
+@declare EnvironmentUse(string,integer,string).
+@declare VarActive(string,integer,integer,string,integer).
+
+VarActive("right",11,40,"a",82).
+EnvironmentUse("right",82,"a").
+
+DefUs(?side,?BB1,?defNr,?var,?useNr):-
+    EnvironmentUse(?side,?useNr,var),
+    VarActive(?side,?BB1,?defNr,?var,?useNr).
+
+@output DefUs.

@@ -9,8 +9,8 @@
 
 % set the root for each Method
 
-%Side("left", "left").
-%Side("target", "left").
+Side("left", "left").
+Side("target", "left").
 Side("target", "right").
 Side("right", "right").
 
@@ -270,11 +270,22 @@ BBMethodHead(?side,?class,?method,?BB2):-
     CFG(?side,?BB1,?BB2),
     BBMethodHead(?side,?class,?method,?BB1).
 
+% subtree
+Subtree(?side,?BB2,?subHeader,?subHeader):-
+    ASTBB(?side,?BB1,?nr1,"Block",_,_,_),
+    ASTBB(?side,?BB1,?nr2,"List",_,_,?nr1),
+    ASTBB(?side,?BB2,?subHeader,_,_,_,?nr2).
 
-%@output IfCondition.
+Subtree(?side, ?BB, ?subHeader, ?subNr2):-
+    Subtree(?side,?BB,?subHeader,?subNr1),
+    ASTBB(?side,?BB,?subNr2,_,_,_,?subNr1).
+
+%@output Subtree.
+@output IfCondition.
 %@output IfSucc.
 %@output ThenElse.
 %@output WhileBody.
+@output WhileCondition.
 %@output WhileSucc.
 %@output ForBody.
 %@output ForSucc.
@@ -296,3 +307,4 @@ BBMethodHead(?side,?class,?method,?BB2):-
 @output SplitAST.
 @output GapEndBB.
 @output GapStartBB.
+@output LastStmtBB.

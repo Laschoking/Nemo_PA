@@ -1,43 +1,86 @@
 % currently takes 1 CFG file, with separated sides 
-
+@import IfCondition[string,integer,integer]: csv{resource="IfCondition.csv"}.
+@import WhileCondition[string,integer,integer]: csv{resource="WhileCondition.csv"}.
 @import CFG[string, integer,integer]: csv{resource = "CFG.csv"}.
 @import CFGRoot[string,string,string,integer]: csv{resource = "CFGRoot.csv"}.
 @import BBMethodHead[string,string,string,integer]: csv{resource = "BBMethodHead.csv"}.
 @import LookupBB[string,integer,integer]: csv{resource = "LookupBB.csv"}.
-@import ASTBB[integer,integer,string,string,string,string,integer,string]: csv{resource = "ASTBB.csv"}.
+@import ASTBB[string,integer,integer,string,string,string,integer]: csv{resource = "ASTBB.csv"}.
 @import Iter[integer,integer]: csv{resource= "Iter.csv"}.
-
+@import NextLineBB[string,integer,integer,integer] : csv{resource= "NextLineBB.csv"}.
+@import LastStmtBB[string,integer,integer] :csv{resource= "LastStmtBB.csv"}.
+@declare EnvironmentUse(string,integer,string,string).
+@declare DefUse(string, integer,integer,string,integer,string).
 % in which statements is variable V used, before redeclaration?
 
 % find all declarations (Def)
 % follow BB-Flow for Use 
 
 % VariablenDeklaration (int a;)
-% gehe davon aus, dass VariableDeclarator immer an VarDeclStmt haengt
+% assume that "VariableDeclarator" is the child of "VarDeclStmt"
 Decl(?side,?BB,?nr,?var):-
-    ASTBB(?BB,?nr,?side,"VariableDeclarator",?var,_,_,?side).
+    ASTBB(?side,?BB,?nr,"VariableDeclarator",?var,_,_).
 
-% only if a declared Variable has further statements in "Opt" it is defined
+% only if a declared variable has further statements in "Opt" it is also DEFINED
 % if "Opt" is not empty expressions, constants etc. are assigned there
 Def(?side,?BB,?decNr,?var):-
     Decl(?side,?BB,?decNr,?var),
-    ASTBB(?BB,?optNr,?side,"Opt",_,_,?decNr,?side),
-    ASTBB(?BB,_,?side,_,_,_,?optNr,?side).
+    ASTBB(?side,?BB,?optNr,"Opt",_,_,?decNr),
+    ASTBB(?side,?BB,_,_,_,_,?optNr).
 
-% VariablenAssignment (a = b;) -> has 2 Entries of VarAccess as children
-% (a = b+c;) creates an "AddExpr" as second child with b&c as children
-MinVarAcc(?side,?nr, #min(?nr2)):-
-    ASTBB(?BB,?nr,?side,"AssignSimpleExpr",_,_,_,?side),
-    ASTBB(?BB,?nr2,?side,"VarAccess",_,_,?nr,?side).
+% VariableAssignment if variable is declared already:
+% (a = b) has 2 entries of "VarAccess" after the "VariableAssignment" (first is "a", second "b") 
+% (a = b+c;) creates a subtree "AddExpr" as second child 
+FirstVarAccess(?side,?nr, #min(?nr2)):-
+    ASTBB(?side,?BB,?nr,"AssignSimpleExpr",_,_,_),
+    ASTBB(?side,?BB,?nr2,"VarAccess",_,_,?nr).
 
-% Consider the first child as being defined
+% First child is being defined
 Def(?side,?BB,?nr,?var):-
-    MinVarAcc(?side,_,?nr),
-    ASTBB(?BB,?nr,?side,_,?var,_,_,?side).
+    FirstVarAccess(?side,_,?nr),
+    ASTBB(?side,?BB,?nr,_,?var,_,_).
+
+% -------------------------------------------- %
+% detect Uses that are not by assignement (a=b;)
+Comp("GTExpr").
+Comp("GEExpr").
+Comp("EQExpr").
+Comp("LTExpr").
+Comp("LEExpr").
+Comp("NEExpr").
+
+% Logische Operatoren kommen eh nur nach If-Stmt
+Comp("LogNotExpr").
+Comp("AndLogicalExpr").
+Comp("OrLogicalExpr").
+
+% In most cases, a binary operator is parent of the "VarAccess"
+
+EnvironmentUse(?side,?nrVar,?var,?op):-
+    Comp(?op),
+    ASTBB(?side,_, ?nrOp,?op,_,_,_),
+    ASTBB(?side,_,?nrVar,"VarAccess",?var,_,?nrOp).
+
+% But sometimes not i.e. if(a){} ->
+% Those cases need to be checked for each structure (if,while, return a; meth(a); )...
+
+% If (a)
+EnvironmentUse(?side,?ifCond,?var,"ifCond"):-
+    IfCondition(?side,_,?ifCond),
+    ASTBB(?side,_,?ifCond,"VarAccess",?var,_,_).
+
+% while(a)
+EnvironmentUse(?side,?whileCond,?var, "whileCond"):-
+    WhileCondition(?side,_, ?whileCond),
+    ASTBB(?side,_,?whileCond,"VarAccess",?var,_,_).
+
+% -------------------------------------------- %
+
+% detect Uses through assignment (a = b;)
 
 PossUse(?side,?BB,?defNr,?useNr,?type,?var):-
-    MinVarAcc(?side,?parNr,  ?defNr),
-    ASTBB(?BB,?useNr,?side,?type ,?var,_,?parNr,?side),
+    FirstVarAccess(?side,?parNr, ?defNr),
+    ASTBB(?side,?BB,?useNr,?type ,?var,_,?parNr),
     ?useNr > ?defNr.
 
 
@@ -45,119 +88,91 @@ PossUse(?side,?BB,?defNr,?useNr,?type,?var):-
 % even if they are just placeholders
 PossUse(?side,?BB,?defNr,?useNr,?type,?id):-
     Def(?side,?BB,?defNr,?var),
-    ASTBB(?BB,?useNr,?side,?type,?id,_,?defNr,?side).
+    ASTBB(?side,?BB,?useNr,?type,?id,_,?defNr).
 
 %transitive closure
 PossUse(?side,?BB,?defNr,?useNr2,?type,?id):-
     PossUse(?side,?BB,?defNr,?useNr1,_,_),
-    ASTBB(?BB,?useNr2,?side,?type,?id,_,?useNr1,?side).
+    ASTBB(?side,?BB,?useNr2,?type,?id,_,?useNr1).
 
 % Extract use-Variables that have a "VarAccess"
 Use(?side,?BB,?defNr,?defVar,?useNr,?useVar):-
     PossUse(?side,?BB,?defNr,?useNr,"VarAccess",?useVar),
     Def(?side,?BB,?defNr,?defVar).
 
-% TODO: Specify additional uses for function calls i.e. a= foo(b) or foo(b).
+% -------------------------------------------- %
 
-
-% Check if all Variables have a Declaration
-
-%CheckDeclaration(?side,?var,?method):-
-%    Def(?side,?BB1,?nr1,?var),
-%    Use(?side,?BB2,_,_,?nr2,?var),
-%    BBMethodHead(?side,?class,?method,?BB1),
-%    BBMethodHead(?side,?class,?method,?BB2).
-
-% Transitive Closure over the direct connections of the CFG
-ReachingBB(?side,?BB1,?BB1):-
-    CFG(?side,?BB1,_).
-
-ReachingBB(?side,?BB1,?BB1):-
-    CFG(?side,_,?BB1).
-
-ReachingBB(?side,?BB1,?BB2):-
-    CFG(?side,?BB1,?BB2).
-
-ReachingBB(?side,?BB1,?BB3):-
-    CFG(?side,?BB1,?BB2),
-    CFG(?side,?BB2,?BB3).
 
 % Propagate Variables through Tree (full mode)
-% linewise will increase memory consumption A LOT !!!!!
 
-% Identify the first statement where a variable is defined for each BB
-FirstDefEachBB(?side,?class,?method,?BB,#min(?defNr)):-
-    Def(?side,?BB,?defNr,?defVar),
-    BBMethodHead(?side,?class,?method,?BB).
+% variables get active once we leave their subtree
+% first find parent node (AssignSimpleExpr) and then take all children as subtree
+TraverseSubtree(?side,?BB,?var,?defNr,?nr):-
+    ASTBB(?side, ?BB, ?defNr,_,_,_,?parNr),
+    Def(?side,?BB,?defNr,?var),
+    ASTBB(?side,?BB,?nr,_,_,_,?parNr).
 
-% Identify the last statement where a variable is defined for each BB
-LastDefEachBB(?side,?class,?method,?BB,#max(?defNr)):-
-    Def(?side,?BB,?defNr,?defVar),
-    BBMethodHead(?side,?class,?method,?BB).
+TraverseSubtree(?side,?BB,?var,?defNr,?nr2):-
+    TraverseSubtree(?side,?BB,?var,?defNr,?nr1),
+    ASTBB(?side,?BB,?nr2,_,_,_,?nr1).
 
-% Connect Defs between BBs
-ConnectDef(?side,?class,?method,?defNr1,?defNr2):-
-    LastDefEachBB(?side,?class,?method,?BB1,?defNr1),
-    FirstDefEachBB(?side,?class,?method,?BB2,?defNr2),
+LastStmtInDef(?side,?BB,?var,?defNr,#max(?nr)):-
+    TraverseSubtree(?side,?BB,?var,?defNr,?nr).
+
+% Initialise relation
+% Variable becomes active AFTER its assignment in BB
+VarActive(?side,?BB,?defNr,?var, ?nextStmt):-
+    Def(?side,?BB,?defNr,?var),
+    LastStmtInDef(?side,?BB,?var,?defNr,?lastStmt),
+    NextLineBB(?side,?BB,?lastStmt, ?nextStmt).
+
+% if var-Assignment was last stmt in BB -> propagate VarActivity further
+VarActive(?side,?BB2,?defNr,?var, ?BB2):-
+    Def(?side,?BB1,?defNr,?var),
+    LastStmtInDef(?side,?BB1,?var,?defNr,?lastStmt),
     CFG(?side,?BB1,?BB2).
 
-% Connect Defs within each BB
-PossibleConnectDef(?side,?class,?method,?BB,?defNr,?nr):-
-    FirstDefEachBB(?side,?class,?method,?BB,?defNr),
-    Iter(?defNr,?nr).
+% Copy live-variables from predecessor if the variable is not re-defined
+VarActive(?side,?BB,?defNr,?var,?nr2):-
+    VarActive(?side,?BB,?defNr,?var,?nr1),
+    NextLineBB(?side,?BB,?nr1,?nr2),
+    ~LastStmtInDef(?side,?BB,?var,_,?nr2).
 
-% It is possible, that a ?nr/?succNr does not exist in AST, bc. there is a gap in the numbers
-% This may happen, if we insert a line from one side, 
-% the AST-Numbers in the other side will not be consecutive any more
-% thus we try to iterate through the AST until we reach the next BB
-PossibleConnectDef(?side,?class,?method,?BB,?defNr,?succNr):-
-    PossibleConnectDef(?side,?class,?method,?BB,?defNr,?nr),
-    Iter(?nr,?succNr),
-    ~Def(?side,?BB,?nr,_),
-    LastDefEachBB(?side,?class,?method,?BB,?lastDefNr),
-    ?succNr <= ?lastDefNr.
+% TODO rethink the lower part & fuse results
+% Detect redefinition i.e. (a = 1; b = a; a = 2; c = a;) 
+RedefineVar(?side,?BB,?defNr,?var,?nr2):-
+    VarActive(?side,?BB,?defNr,?var,?nr1),
+    NextLineBB(?side,?BB,?nr1,?nr2),
+    Def(?side,?BB,?nr2,?var).
 
+% propagate live-variables across BBs
+VarActive(?side,?BB2,?defNr,?var,?BB2):-
+    VarActive(?side,?BB1,?defNr,?var,?nr),
+    LastStmtBB(?side,?BB1,?nr),
+    CFG(?side,?BB1,?BB2).
 
-ConnectDefBB(?side,?class,?method,?BB,?defNr1,?defNr2):-
-    PossibleConnectDef(?side,?class,?method,?BB,?defNr1,?nr),
-    Iter(?nr,?defNr2),
-    Def(?side,?BB,?defNr2,_).
+%
+DefUse(?side,?BB,?defNr,?var,?newDefNr,?newDefVar):-
+    VarActive(?side,?BB1,?defNr,?var,?useNr),
+    Use(?side,?BB,?newDefNr,?newDefVar,?useNr,?var). 
 
-ConnectDef(?side,?class,?method,?defNr1,?defNr2):-
-    ConnectDefBB(?side,?class,?method,_,?defNr1,?defNr2).
+DefUse(?side,?BB1,?defNr,?var,?useNr,?cond):-
+    EnvironmentUse(?side,?useNr,?var,?cond),
+    VarActive(?side,?BB1,?defNr,?var,?useNr).
 
-PossibleConnectDef(?side,?class,?method,?BB,?defNr2,?succNr):-
-    ConnectDefBB(?side,?class,?method,?BB,_,?defNr2),
-    Iter(?defNr2,?succNr),
-    LastDefEachBB(?side,?class,?method,?BB,?lastDefNr),
-    ?succNr <= ?lastDefNr.
-
-
+SpecialReassignment(?side,?BB,?newDefNr, ?var, ?useNr):-
+    Use(?side, ?BB, ?newDefNr,?var,?useNr,?var).
 
 
 
 
-% Determine the first Definition in each Method (it is not necessary within the first BB)
-MinDef(?side,?class,?method,#min(?defNr), ?defVar):-
-    Def(?side,?BB1,?defNr,?defVar),
-    BBMethodHead(?side,?class,?method,?BB1),
-    CFGRoot(?side,?class,?method,?BB0).
-
-DefGraph(?side,?class,?method,?defNr,?defVar,?defNr):-
-    MinDef(?side,?class,?method,?defNr,?defVar).
-
-
-% TODO: sicherstellen dass CFG auch bei mehreren Funktionen was erkennt
-% auch wenn Funktion nur aus 1 BB besteht
-% MinDef
-
-
-% Consider the case, that var is getting reassigned in same BB:
-
-
-% Connect Def & Use through CFG
-ReachingDef(?side,?defUseNr,?useNr,?useVar,?defNr,?defVar):-
-    Def(?side,?BB1,?defUseNr,?useVar),
-    Use(?side,?BB2,?defNr,?defVar,?useNr,?useVar),
-    ReachingBB(?side,?BB1,?BB2).
-
+@output TraverseSubtree.
+@output LastStmtInDef.
+@output SpecialReassignment.
+@output VarActive.
+%@output TraverseSubtree.
+@output Def.
+@output RedefineVar.
+@output Use.
+@output DefUse.
+@output EnvironmentUse.

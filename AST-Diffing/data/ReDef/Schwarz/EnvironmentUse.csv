@@ -1,0 +1,8 @@
+right,40,x,GTExpr
+right,52,y,GTExpr
+right,79,z,GTExpr
+right,129,i,LTExpr
+left,40,x,GTExpr
+left,52,y,GTExpr
+left,79,z,GTExpr
+left,129,i,LTExpr
