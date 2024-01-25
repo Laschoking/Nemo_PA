@@ -174,10 +174,10 @@ isReferenceType(?class):-
 isClassType(?class) :-
   ClassType(?class).
 
-isType(?arrayType),
-isReferenceType(?arrayType),
-isArrayType(?arrayType) :-
-  z_ArrayType(?arrayType).
+isType(_rrayType),
+isReferenceType(_rrayType),
+isArrayType(_rrayType) :-
+  z_ArrayType(_rrayType).
 
 isType(?interface),
 isReferenceType(?interface),
@@ -205,21 +205,21 @@ HeapAllocation_Type(?id, "java.lang.String") :-
 Instruction_Method(?instruction, ?method),
 AssignInstruction_To(?instruction, ?to),
 AssignHeapAllocation_Heap(?instruction, ?heap) :-
-  z_AssignHeapAllocation(?instruction, ?a, ?heap, ?to, ?method, ?b).
+  z_AssignHeapAllocation(?instruction, _, ?heap, ?to, ?method, _).
 
 Instruction_Method(?instruction, ?method),
 AssignLocal_From(?instruction, ?from),
 AssignInstruction_To(?instruction, ?to) :-
-  z_AssignLocal(?instruction, ?a, ?from, ?to, ?method).
+  z_AssignLocal(?instruction, _, ?from, ?to, ?method).
 
 Instruction_Method(?instruction, ?method),
 AssignCast_Type(?instruction, ?type),
 AssignCast_From(?instruction, ?from),
 AssignInstruction_To(?instruction, ?to) :-
-  z_AssignCast(?instruction, ?a, ?from, ?to, ?type, ?method).
+  z_AssignCast(?instruction, _, ?from, ?to, ?type, ?method).
 
 Field_DeclaringType(?signature, ?declaringType) :-
-  z_Field(?signature, ?declaringType, ?a, ?b).
+  z_Field(?signature, ?declaringType, _, _).
 
 MethodInvocation_Base(?invocation, ?base) :-
   VirtualMethodInvocation_Base(?invocation, ?base).
@@ -230,24 +230,24 @@ MethodInvocation_Base(?invocation, ?base) :-
 Instruction_Method(?instruction, ?method),
 isStaticMethodInvocation_Insn(?instruction),
 MethodInvocation_Method(?instruction, ?signature) :-
-  z_StaticMethodInvocation(?instruction, ?a, ?signature, ?method).
+  z_StaticMethodInvocation(?instruction, _, ?signature, ?method).
 
 Instruction_Method(?instruction, ?method),
 SpecialMethodInvocation_Base(?instruction, ?base),
 MethodInvocation_Method(?instruction, ?signature) :-
-  z_SpecialMethodInvocation(?instruction, ?a, ?signature, ?base, ?method).
+  z_SpecialMethodInvocation(?instruction, _, ?signature, ?base, ?method).
 
 Instruction_Method(?instruction, ?method),
 isVirtualMethodInvocation_Insn(?instruction),
 VirtualMethodInvocation_Base(?instruction, ?base),
 MethodInvocation_Method(?instruction, ?signature) :-
-  z_VirtualMethodInvocation(?instruction, ?a, ?signature, ?base, ?method).
+  z_VirtualMethodInvocation(?instruction, _, ?signature, ?base, ?method).
 
 Method_SimpleName(?method, ?simplename),
 Method_ParamTypes(?method, ?params),
 Method_DeclaringType(?method, ?declaringType),
 Method_ReturnType(?method, ?returnType) :-
-  z_Method(?method, ?simplename, ?params, ?declaringType, ?returnType, ?a, ?b).
+  z_Method(?method, ?simplename, ?params, ?declaringType, ?returnType, _, _).
   
 % Method_Descriptor(?method, ?returnType ) :-
 %  Method_ReturnType(?method, ?returnType),
@@ -259,36 +259,36 @@ Instruction_Method(?instruction, ?method),
 FieldInstruction_Signature(?instruction, ?signature),
 StoreInstanceField_Base(?instruction, ?base),
 StoreInstanceField_From(?instruction, ?from) :-
-  z_StoreInstanceField(?instruction, ?a, ?from, ?base, ?signature, ?method).
+  z_StoreInstanceField(?instruction, _, ?from, ?base, ?signature, ?method).
 
 Instruction_Method(?instruction, ?method),
 FieldInstruction_Signature(?instruction, ?signature),
 LoadInstanceField_Base(?instruction, ?base),
 LoadInstanceField_To(?instruction, ?to) :-
-  z_LoadInstanceField(?instruction, ?a, ?to, ?base, ?signature, ?method).
+  z_LoadInstanceField(?instruction, _, ?to, ?base, ?signature, ?method).
 
 Instruction_Method(?instruction, ?method),
 FieldInstruction_Signature(?instruction, ?signature),
 StoreStaticField_From(?instruction, ?from) :-
-  z_StoreStaticField(?instruction, ?a, ?from, ?signature, ?method).
+  z_StoreStaticField(?instruction, _, ?from, ?signature, ?method).
 
 Instruction_Method(?instruction, ?method),
 FieldInstruction_Signature(?instruction, ?signature),
 LoadStaticField_To(?instruction, ?to) :-
-  z_LoadStaticField(?instruction, ?a, ?to, ?signature, ?method).
+  z_LoadStaticField(?instruction, _, ?to, ?signature, ?method).
 
 Instruction_Method(?instruction, ?method),
 StoreArrayIndex_Base(?instruction, ?base),
 StoreArrayIndex_From(?instruction, ?from) :-
-  z_StoreArrayIndex(?instruction, ?a, ?from, ?base, ?method).
+  z_StoreArrayIndex(?instruction, _, ?from, ?base, ?method).
 Instruction_Method(?instruction, ?method),
 LoadArrayIndex_Base(?instruction, ?base),
 LoadArrayIndex_To(?instruction, ?to) :-
-  z_LoadArrayIndex(?instruction, ?a, ?to, ?base, ?method).
+  z_LoadArrayIndex(?instruction, _, ?to, ?base, ?method).
 
 Instruction_Method(?instruction, ?method),
 ReturnNonvoid_Var(?instruction, ?var) :-
-  z_Return(?instruction, ?a, ?var, ?method).
+  z_Return(?instruction, _, ?var, ?method).
 
 % fat schema population
 LoadInstanceField(?base, ?sig, ?to, ?inmethod) :-
@@ -370,12 +370,12 @@ MethodLookup(?simplename, ?descriptor, ?type, ?method) :-
 MethodLookup(?simplename, ?descriptor, ?type, ?method) :-
    DirectSuperinterface(?type, ?supertype),
   MethodLookup(?simplename, ?descriptor, ?supertype, ?method),
-  ~ MethodImplemented(?simplename, ?descriptor, ?type, ?a).
+  ~ MethodImplemented(?simplename, ?descriptor, ?type, _).
 
 MethodLookup(?simplename, ?descriptor, ?type, ?method) :-
   DirectSuperclass(?type, ?supertype),
   MethodLookup(?simplename, ?descriptor, ?supertype, ?method),
-  ~ MethodImplemented(?simplename, ?descriptor, ?type, ?a).
+  ~ MethodImplemented(?simplename, ?descriptor, ?type, _).
 
 MethodImplemented(?simplename, ?descriptor, ?type, ?method) :-
   Method_SimpleName(?method, ?simplename),
@@ -383,17 +383,17 @@ MethodImplemented(?simplename, ?descriptor, ?type, ?method) :-
   Method_DeclaringType(?method, ?type),
   ~Method_Modifier("abstract", ?method).
 
-DirectSubclass(?a, ?c) :-
-  DirectSuperclass(?a, ?c).
-Subclass(?c, ?a) :-
-  DirectSubclass(?a, ?c).
+DirectSubclass(_, ?c) :-
+  DirectSuperclass(_, ?c).
+Subclass(?c, _) :-
+  DirectSubclass(_, ?c).
 
-Subclass(?c, ?a) :-
-  Subclass(?b, ?a),
-  DirectSubclass(?b, ?c).
+Subclass(?c, _) :-
+  Subclass(_, _),
+  DirectSubclass(_, ?c).
 
-Superclass(?c, ?a) :-
-  Subclass(?a, ?c).
+Superclass(?c, _) :-
+  Subclass(_, ?c).
 Superinterface(?k, ?c) :-
   DirectSuperinterface(?c, ?k).
 
@@ -515,7 +515,7 @@ InitializedClass(?class) :-
 
 InitializedClass(?class) :-
    Reachable(?inmethod),
-   AssignHeapAllocation(?heap, ?a, ?inmethod),
+   AssignHeapAllocation(?heap, _, ?inmethod),
    HeapAllocation_Type(?heap, ?class).
 
 InitializedClass(?class) :-
@@ -527,12 +527,12 @@ InitializedClass(?class) :-
 
 InitializedClass(?classOrInterface) :-
    Reachable(?inmethod),
-   StoreStaticField(?a, ?signature, ?inmethod),
+   StoreStaticField(_, ?signature, ?inmethod),
    Field_DeclaringType(?signature, ?classOrInterface).
 
 InitializedClass(?classOrInterface) :-
    Reachable(?inmethod),
-   LoadStaticField(?signature, ?a, ?inmethod),
+   LoadStaticField(?signature, _, ?inmethod),
    Field_DeclaringType(?signature, ?classOrInterface).
 
 Reachable(?clinit) :-
@@ -555,10 +555,10 @@ Reachable(?clinit) :-
 @declare Reachable(string) .
 %@output Reachable .
 
-Assign(?actual, ?formal) :-
+Assign(_ctual, ?formal) :-
   CallGraphEdge(?invocation, ?method),
   FormalParam(?index, ?method, ?formal),
-  ActualParam(?index, ?invocation, ?actual).
+  ActualParam(?index, ?invocation, _ctual).
 
 Assign(?return, ?local) :-
   CallGraphEdge(?invocation, ?method),
@@ -665,8 +665,6 @@ VarPointsTo(?heap, ?this) :-
  
 Reachable(?method) :-
   MainMethodDeclaration(?method).
-
-
 
 
 %currently doesnt work since multi-file input is not supported

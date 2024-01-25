@@ -1,6 +1,6 @@
 % own relations:
 @declare ConstFold_nemo(string, string, integer,string) .
-@declare IntConst_nemo(string, integer,  string) .
+@declare IntConst_nemo(string, integer,string) .
 
 
 % dive into doop-syntax:
@@ -75,7 +75,7 @@ ConstFold_nemo(?ins,?var_to, ?val,  ?meth) :-
 
 IntConst_nemo(?var, 0 - ?val1 , ?meth),
 ConstFold_nemo(?ins,?var, 0 - ?val1 ,  ?meth) :-
-    AssignUnop(?ins,?x, ?var, ?meth) ,
+    AssignUnop(?ins,_, ?var, ?meth) ,
     OperatorAt(?ins, ?op) ,
     ?op = "~" ,
     AssignOperFrom(?ins, ?pos1, ?var1) ,
@@ -83,7 +83,7 @@ ConstFold_nemo(?ins,?var, 0 - ?val1 ,  ?meth) :-
 
 IntConst_nemo(?var, 0 - ?val1 , ?meth),
 ConstFold_nemo(?ins,?var, 0 - ?val1 ,  ?meth) :-
-    AssignUnop(?ins,?x, ?var, ?meth) ,
+    AssignUnop(?ins,_, ?var, ?meth) ,
     OperatorAt(?ins, ?op) ,
     ?op = "~" ,
     AssignOperFromConstant(?ins, ?pos1, ?val1) .
@@ -94,7 +94,7 @@ ConstFold_nemo(?ins,?var, 0 - ?val1 ,  ?meth) :-
 
 IntConst_nemo(?var, ?val1 + ?val2, ?meth),
 ConstFold_nemo(?ins,?var, ?val1 + ?val2,  ?meth) :-
-    AssignBinop(?ins,?x, ?var, ?meth) ,
+    AssignBinop(?ins,_, ?var, ?meth) ,
     OperatorAt(?ins, ?op) ,
     ?op = "+" ,
     AssignOperFromConstant(?ins, ?pos1, ?val1) ,
@@ -103,7 +103,7 @@ ConstFold_nemo(?ins,?var, ?val1 + ?val2,  ?meth) :-
 
 IntConst_nemo(?var, ?val1 + ?val2, ?meth),
 ConstFold_nemo(?ins,?var, ?val1 + ?val2, ?meth) :-
-    AssignBinop(?ins,?x, ?var, ?meth) ,
+    AssignBinop(?ins,_, ?var, ?meth) ,
     OperatorAt(?ins, ?op) ,
     ?op = "+" ,
     AssignOperFromConstant(?ins, ?pos1, ?val1) ,
@@ -112,7 +112,7 @@ ConstFold_nemo(?ins,?var, ?val1 + ?val2, ?meth) :-
 
 IntConst_nemo(?var, ?val1 + ?val2, ?meth),
 ConstFold_nemo(?ins,?var, ?val1 + ?val2,  ?meth) :-
-    AssignBinop(?ins,?x, ?var, ?meth) ,
+    AssignBinop(?ins,_, ?var, ?meth) ,
     OperatorAt(?ins, ?op) ,
     ?op = "+" ,
     AssignOperFrom(?ins, ?pos1, ?var1) ,
@@ -127,7 +127,7 @@ ConstFold_nemo(?ins,?var, ?val1 + ?val2,  ?meth) :-
 
 IntConst_nemo(?var, ?val1 - ?val2, ?meth),
 ConstFold_nemo(?ins,?var, ?val1 - ?val2,  ?meth) :-
-    AssignBinop(?ins,?x, ?var, ?meth) ,
+    AssignBinop(?ins,_, ?var, ?meth) ,
     OperatorAt(?ins, ?op) ,
     ?op = "-" ,
     AssignOperFromConstant(?ins, ?pos1, ?val1) ,
@@ -137,7 +137,7 @@ ConstFold_nemo(?ins,?var, ?val1 - ?val2,  ?meth) :-
 
 IntConst_nemo(?var, ?val1 - ?val2, ?meth),
 ConstFold_nemo(?ins,?var, ?val1 - ?val2,  ?meth) :-
-    AssignBinop(?ins,?x, ?var, ?meth) ,
+    AssignBinop(?ins,_, ?var, ?meth) ,
     OperatorAt(?ins, ?op) ,
     ?op = "-" ,
     AssignOperFrom(?ins, ?pos1, ?var1) ,
@@ -147,7 +147,7 @@ ConstFold_nemo(?ins,?var, ?val1 - ?val2,  ?meth) :-
 
 IntConst_nemo(?var, ?val1 - ?val2, ?meth),
 ConstFold_nemo(?ins,?var, ?val1 - ?val2,  ?meth) :-
-    AssignBinop(?ins,?x, ?var, ?meth) ,
+    AssignBinop(?ins,_, ?var, ?meth) ,
     OperatorAt(?ins, ?op) ,
     ?op = "-" ,
     AssignOperFromConstant(?ins, ?pos1, ?val1) ,
@@ -156,7 +156,7 @@ ConstFold_nemo(?ins,?var, ?val1 - ?val2,  ?meth) :-
 
 IntConst_nemo( ?var, ?val1 - ?val2, ?meth),
 ConstFold_nemo(?ins,?var, ?val1 - ?val2,  ?meth) :-
-    AssignBinop(?ins,?x, ?var, ?meth) ,
+    AssignBinop(?ins,_, ?var, ?meth) ,
     OperatorAt(?ins, ?op) ,
     ?op = "-" ,
     AssignOperFrom(?ins, ?pos1, ?var1) ,
@@ -171,7 +171,7 @@ ConstFold_nemo(?ins,?var, ?val1 - ?val2,  ?meth) :-
 
 IntConst_nemo(?var, ?val1 * ?val2, ?meth),
 ConstFold_nemo(?ins,?var, ?val1 * ?val2,  ?meth) :-
-    AssignBinop(?ins,?x, ?var, ?meth) ,
+    AssignBinop(?ins,_, ?var, ?meth) ,
     OperatorAt(?ins, ?op) ,
     ?op = "*" ,
     AssignOperFromConstant(?ins, ?pos1, ?val1) ,
@@ -180,7 +180,7 @@ ConstFold_nemo(?ins,?var, ?val1 * ?val2,  ?meth) :-
 
 IntConst_nemo( ?var, ?val1 * ?val2, ?meth),
 ConstFold_nemo(?ins,?var, ?val1 * ?val2,  ?meth) :-
-    AssignBinop(?ins,?x, ?var, ?meth) ,
+    AssignBinop(?ins,_, ?var, ?meth) ,
     OperatorAt(?ins, ?op) ,
     ?op = "*" ,
     AssignOperFromConstant(?ins, ?pos1, ?val1) ,
@@ -189,7 +189,7 @@ ConstFold_nemo(?ins,?var, ?val1 * ?val2,  ?meth) :-
 
 IntConst_nemo(?var, ?val1 * ?val2, ?meth),
 ConstFold_nemo(?ins,?var, ?val1 * ?val2,  ?meth) :-
-    AssignBinop(?ins,?x, ?var, ?meth) ,
+    AssignBinop(?ins,_, ?var, ?meth) ,
     OperatorAt(?ins, ?op) ,
     ?op = "*" ,
     AssignOperFrom(?ins, ?pos1, ?var1) ,
@@ -198,13 +198,11 @@ ConstFold_nemo(?ins,?var, ?val1 * ?val2,  ?meth) :-
     IntConst_nemo(?var1, ?val1, ?meth) ,
     IntConst_nemo(?var2, ?val2,?meth) .
 
-
-
 % Division
 
 IntConst_nemo(?var, ?val1 / ?val2, ?meth),
 ConstFold_nemo(?ins,?var, ?val1 / ?val2,  ?meth) :-
-    AssignBinop(?ins,?x, ?var, ?meth) ,
+    AssignBinop(?ins,_, ?var, ?meth) ,
     OperatorAt(?ins, ?op) ,
     ?op = "/" ,
     AssignOperFromConstant(?ins, ?pos1, ?val1) ,
@@ -214,7 +212,7 @@ ConstFold_nemo(?ins,?var, ?val1 / ?val2,  ?meth) :-
 
 IntConst_nemo(?var, ?val1 / ?val2, ?meth),
 ConstFold_nemo(?ins,?var, ?val1 / ?val2,  ?meth) :-
-    AssignBinop(?ins,?x, ?var, ?meth) ,
+    AssignBinop(?ins,_, ?var, ?meth) ,
     OperatorAt(?ins, ?op) ,
     ?op = "/" ,
     AssignOperFrom(?ins, ?pos1, ?var1) ,
@@ -224,7 +222,7 @@ ConstFold_nemo(?ins,?var, ?val1 / ?val2,  ?meth) :-
 
 IntConst_nemo(?var, ?val1 / ?val2, ?meth),
 ConstFold_nemo(?ins,?var, ?val1 / ?val2,  ?meth) :-
-    AssignBinop(?ins,?x, ?var, ?meth) ,
+    AssignBinop(?ins,_, ?var, ?meth) ,
     OperatorAt(?ins, ?op) ,
     ?op = "/" ,
     AssignOperFromConstant(?ins, ?pos1, ?val1) ,
@@ -233,7 +231,7 @@ ConstFold_nemo(?ins,?var, ?val1 / ?val2,  ?meth) :-
 
 IntConst_nemo(?var, ?val1 / ?val2, ?meth),
 ConstFold_nemo(?ins,?var, ?val1 / ?val2,  ?meth) :-
-    AssignBinop(?ins,?x, ?var, ?meth) ,
+    AssignBinop(?ins,_, ?var, ?meth) ,
     OperatorAt(?ins, ?op) ,
     ?op = "/" ,
     AssignOperFrom(?ins, ?pos1, ?var1) ,

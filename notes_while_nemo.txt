@@ -6,7 +6,51 @@
 - unäre ausdrücke 0 - ?x
 - einfacheres Parsen von DOOP-Facts files -> load-tsv
 					 -> 
+					 
+					 
 
-wie funktionieren Overflows? arithm. ausdrücke  über i64
+ERROR Message more accurate (i.e. 
+ERROR nmo] error: No such file or directory (os error 2)
+ File nennen) -> verify
+ 
+ Fehler, wenn Relation nicht initialisiert wurde (nur im Body vorkommt)
+-> verify 
+-> Reproduzieren & gh issue
+
+- werden timing & memory logs gespeichert?
+
+Negation ~ muss space rundherum haben
+
+Ungleichheit von Strings wäre nice
+
+Assignments im body z.b. ?a = "test".
 
 
+
+
+
+
+
+
+Transform von SOUFFLE in NEMO:
+
+.decl -> @declare . 
+.output -> @output .
+_ -> ?a
+Worte die mit _ beginnen ersetzen
+splitten von regeln bei ; oder mehrfach-Head
+
+Ersetzen von Ungleichheit !=
+
+
+Vergleich SOuffle TSV vs NEMO CSV
+
+sed -i 's/\t/,/g'
+
+ggf. enhaelt nemo noch " ->
+sed -i 's/"//g' *
+
+ for file in PointsTo/; do diff <(sort PointsTo/$file) <(sort test-selfcontained/$file) > diff/$file; done
+
+cd diff
+wc -l *| sort -g
