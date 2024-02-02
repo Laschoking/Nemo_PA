@@ -1,92 +1,109 @@
-@declare isType(string) .
-%@output isType .
-@declare isReferenceType(string) .
-%@output isReferenceType .
-@declare isArrayType(string) .
-%@output isArrayType .
-@declare isClassType(string) .
-%@output isClassType .
-@declare isInterfaceType(string) .
-%@output isInterfaceType .
-@declare ApplicationClass(string) .
-%@output ApplicationClass .
-@declare Field_DeclaringType(string, string) .
-%@output Field_DeclaringType .
-@declare Method_DeclaringType(string, string) .
-%@output Method_DeclaringType .
-@declare Method_ReturnType(string, string) .
-%@output Method_ReturnType .
-@declare Method_SimpleName(string, string) .
-%@output Method_SimpleName .
-@declare Method_ParamTypes(string, string) .
-%@output Method_ParamTypes .
-@declare ThisVar(string, string) .
-%@output ThisVar .
-@declare Var_DeclaringMethod(string, string) .
-%@output Var_DeclaringMethod .
-@declare HeapAllocation_Type(string, string) .
-%@output HeapAllocation_Type .
-@declare MainMethodArgArray(string) .
-%@output MainMethodArgArray .
-@declare MainMethodArgArrayContent(string) .
-%@output MainMethodArgArrayContent .
-@declare Instruction_Method(string, string) .
-%@output Instruction_Method .
-@declare isVirtualMethodInvocation_Insn(string) .
-%@output isVirtualMethodInvocation_Insn .
-@declare isStaticMethodInvocation_Insn(string) .
-%@output isStaticMethodInvocation_Insn .
-@declare FieldInstruction_Signature(string, string) .
-%@output FieldInstruction_Signature .
-@declare LoadInstanceField_Base(string, string) .
-%@output LoadInstanceField_Base .
-@declare LoadInstanceField_To(string, string) .
-%@output LoadInstanceField_To .
-@declare StoreInstanceField_From(string, string) .
-%@output StoreInstanceField_From .
-@declare StoreInstanceField_Base(string, string) .
-%@output StoreInstanceField_Base .
-@declare LoadStaticField_To(string, string) .
-%@output LoadStaticField_To .
-@declare StoreStaticField_From(string, string) .
-%@output StoreStaticField_From .
-@declare LoadArrayIndex_Base(string, string) .
-%@output LoadArrayIndex_Base .
-@declare LoadArrayIndex_To(string,string) .
-%@output LoadArrayIndex_To .
-@declare StoreArrayIndex_From(string, string) .
-%@output StoreArrayIndex_From .
-@declare StoreArrayIndex_Base(string, string) .
-%@output StoreArrayIndex_Base .
-@declare AssignInstruction_To(string, string) .
-%@output AssignInstruction_To .
-@declare AssignCast_From(string, string) .
-%@output AssignCast_From .
-@declare AssignCast_Type(string, string) .
-%@output AssignCast_Type .
-@declare AssignLocal_From(string, string) .
-%@output AssignLocal_From .
-@declare AssignHeapAllocation_Heap(string, string) .
-%@output AssignHeapAllocation_Heap .
-@declare ReturnNonvoid_Var(string, string) .
-%@output ReturnNonvoid_Var .
-@declare MethodInvocation_Method(string, string) .
-%@output MethodInvocation_Method .
-@declare VirtualMethodInvocation_Base(string, string) .
-%@output VirtualMethodInvocation_Base .
-@declare VirtualMethodInvocation_SimpleName(string, string) .
-%@output VirtualMethodInvocation_SimpleName .
-@declare VirtualMethodInvocation_Descriptor(string, string) .
-%@output VirtualMethodInvocation_Descriptor .
-@declare SpecialMethodInvocation_Base(string, string) .
-%@output SpecialMethodInvocation_Base .
-@declare MethodInvocation_Base(string, string) .
-%@output MethodInvocation_Base .
+% Current State: needs manual adaption of file MainClass (since no substring stuff is possible)
+% Import Method_Descriptor from self-contained.dl from souffle (bc. string concatenation does not work yet)
 
-@source Method_Descriptor[string, string] : load-tsv("Method-Descriptor.csv") .
+@declare Assign(string,string) .
+
+@declare VarPointsTo(string,string) .
+
+@declare InstanceFieldPointsTo(string,string, string) .
+
+@declare StaticFieldPointsTo(string,string) .
+
+@declare CallGraphEdge(string,string) .
+
+@declare ArrayIndexPointsTo(string,string) .
+
+@declare Reachable(string) .
+
+@declare isType(string) .
+
+@declare isReferenceType(string) .
+
+@declare isArrayType(string) .
+
+@declare isClassType(string) .
+
+@declare isInterfaceType(string) .
+
+@declare ApplicationClass(string) .
+
+@declare Field_DeclaringType(string, string) .
+
+@declare Method_DeclaringType(string, string) .
+
+@declare Method_ReturnType(string, string) .
+
+@declare Method_SimpleName(string, string) .
+
+@declare Method_ParamTypes(string, string) .
+
+@declare ThisVar(string, string) .
+
+@declare Var_DeclaringMethod(string, string) .
+
+@declare HeapAllocation_Type(string, string) .
+
+@declare MainMethodArgArray(string) .
+
+@declare MainMethodArgArrayContent(string) .
+
+@declare Instruction_Method(string, string) .
+
+@declare isVirtualMethodInvocation_Insn(string) .
+
+@declare isStaticMethodInvocation_Insn(string) .
+
+@declare FieldInstruction_Signature(string, string) .
+
+@declare LoadInstanceField_Base(string, string) .
+
+@declare LoadInstanceField_To(string, string) .
+
+@declare StoreInstanceField_From(string, string) .
+
+@declare StoreInstanceField_Base(string, string) .
+
+@declare LoadStaticField_To(string, string) .
+
+@declare StoreStaticField_From(string, string) .
+
+@declare LoadArrayIndex_Base(string, string) .
+
+@declare LoadArrayIndex_To(string,string) .
+
+@declare StoreArrayIndex_From(string, string) .
+
+@declare StoreArrayIndex_Base(string, string) .
+
+@declare AssignInstruction_To(string, string) .
+
+@declare AssignCast_From(string, string) .
+
+@declare AssignCast_Type(string, string) .
+
+@declare AssignLocal_From(string, string) .
+
+@declare AssignHeapAllocation_Heap(string, string) .
+
+@declare ReturnNonvoid_Var(string, string) .
+
+@declare MethodInvocation_Method(string, string) .
+
+@declare VirtualMethodInvocation_Base(string, string) .
+
+@declare VirtualMethodInvocation_SimpleName(string, string) .
+
+@declare VirtualMethodInvocation_Descriptor(string, string) .
+
+@declare SpecialMethodInvocation_Base(string, string) .
+
+@declare MethodInvocation_Base(string, string) .
+
+
+@source Method_Descriptor[string, string] : load-tsv("Method_Descriptor.csv") .
 @source DirectSuperclass[string, string] : load-tsv("DirectSuperclass.facts") .
 @source DirectSuperinterface[string, string] : load-tsv("DirectSuperinterface.facts") .
-@source MainClass[string] : load-tsv("MainClass.facts") .
+@source MainClass[string] : load-tsv("MainClass.csv") . %%facts file is not modified, csv file comes from souffle
 @source Method_Modifier[string, string] : load-tsv("Method-Modifier.facts") .
 @source FormalParam[integer, string,string] : load-tsv("FormalParam.facts") .
 @source Var_Type[string, string] : load-tsv("Var-Type.facts") .
@@ -117,51 +134,51 @@
 @source z_LoadArrayIndex[string, integer, string, string, string] : load-tsv("LoadArrayIndex.facts") .
 @source z_Return[string, integer, string, string] : load-tsv("Return.facts") .
 
-%@output Method_Descriptor .
+
 @declare MethodLookup(string, string, string, string) .
-%@output MethodLookup .
+
 @declare MethodImplemented(string, string, string, string) .
-%@output MethodImplemented .
+
 @declare DirectSubclass(string, string) .
-%@output DirectSubclass .
+
 @declare Subclass(string, string) .
-%@output Subclass .
+
 @declare Superclass(string,string) .
-%@output Superclass .
+
 @declare Superinterface(string, string) .
-%@output Superinterface .
+
 @declare SubtypeOf(string, string) .
-%@output SubtypeOf .
+
 @declare SupertypeOf(string, string) .
-%@output SupertypeOf .
+
 @declare SubtypeOfDifferent(string, string) .
-%@output SubtypeOfDifferent .
+
 @declare MainMethodDeclaration(string) .
-%@output MainMethodDeclaration .
+
 
 % Fat schema
 @declare LoadInstanceField(string, string, string, string)  .
-%@output LoadInstanceField .
+
 @declare StoreInstanceField(string, string, string, string)  .
-%@output StoreInstanceField .
+
 @declare LoadStaticField(string, string, string)  .
-%@output LoadStaticField .
+
 @declare StoreStaticField(string, string, string)  .
-%@output StoreStaticField .
+
 @declare LoadArrayIndex(string, string, string)  .
-%@output LoadArrayIndex .
+
 @declare StoreArrayIndex(string, string, string)  .
-%@output StoreArrayIndex .
+
 @declare AssignCast(string, string, string, string)  .
-%@output AssignCast .
+
 @declare AssignLocal(string, string, string)  .
-%@output AssignLocal .
+
 @declare AssignHeapAllocation(string, string, string)  .
-%@output AssignHeapAllocation .
+
 @declare ReturnVar(string, string)  .
-%@output ReturnVar .
+
 @declare StaticMethodInvocation(string, string, string)  .
-@output StaticMethodInvocation .
+
 
 
 % imports
@@ -174,10 +191,10 @@ isReferenceType(?class):-
 isClassType(?class) :-
   ClassType(?class).
 
-isType(_rrayType),
-isReferenceType(_rrayType),
-isArrayType(_rrayType) :-
-  z_ArrayType(_rrayType).
+isType(?arrayType),
+isReferenceType(?arrayType),
+isArrayType(?arrayType) :-
+  z_ArrayType(?arrayType).
 
 isType(?interface),
 isReferenceType(?interface),
@@ -347,13 +364,16 @@ StaticMethodInvocation(?invocation, ?signature, ?inmethod) :-
   Instruction_Method(?invocation, ?inmethod),
   MethodInvocation_Method(?invocation, ?signature).
 
-HeapAllocation_Type("<<main method array>>", "java.lang.String[]").
+HeapAllocation_Type(?heap, ?type),
+MainMethodArgArray(?heap) :-
+  ?heap = "<<main method array>>",
+  ?type = "java.lang.String[]".
 
-MainMethodArgArray("<<main method array>>").
 
-
-HeapAllocation_Type("<<main method array content>>", "java.lang.String") .
-MainMethodArgArrayContent("<<main method array content>>") .
+HeapAllocation_Type(?heap, ?type),
+MainMethodArgArrayContent(?heap) :-
+  ?heap = "<<main method array content>>",
+  ?type = "java.lang.String".
 
 VirtualMethodInvocation_Descriptor(?invocation, ?descriptor),
 VirtualMethodInvocation_SimpleName(?invocation, ?simplename):-
@@ -361,8 +381,6 @@ VirtualMethodInvocation_SimpleName(?invocation, ?simplename):-
   MethodInvocation_Method(?invocation, ?signature),
   Method_SimpleName(?signature, ?simplename),
   Method_Descriptor(?signature, ?descriptor).
-
-
 
 MethodLookup(?simplename, ?descriptor, ?type, ?method) :-
   MethodImplemented(?simplename, ?descriptor, ?type, ?method).
@@ -375,7 +393,7 @@ MethodLookup(?simplename, ?descriptor, ?type, ?method) :-
 MethodLookup(?simplename, ?descriptor, ?type, ?method) :-
   DirectSuperclass(?type, ?supertype),
   MethodLookup(?simplename, ?descriptor, ?supertype, ?method),
-  ~ MethodImplemented(?simplename, ?descriptor, ?type, _).
+  ~MethodImplemented(?simplename, ?descriptor, ?type, _).
 
 MethodImplemented(?simplename, ?descriptor, ?type, ?method) :-
   Method_SimpleName(?method, ?simplename),
@@ -383,17 +401,18 @@ MethodImplemented(?simplename, ?descriptor, ?type, ?method) :-
   Method_DeclaringType(?method, ?type),
   ~Method_Modifier("abstract", ?method).
 
-DirectSubclass(_, ?c) :-
-  DirectSuperclass(_, ?c).
-Subclass(?c, _) :-
-  DirectSubclass(_, ?c).
+DirectSubclass(?a, ?c) :-
+  DirectSuperclass(?a, ?c).
 
-Subclass(?c, _) :-
-  Subclass(_, _),
-  DirectSubclass(_, ?c).
+Subclass(?c, ?a) :-
+  DirectSubclass(?a, ?c).
 
-Superclass(?c, _) :-
-  Subclass(_, ?c).
+Subclass(?c, ?a) :-
+  Subclass(?a, ?a),
+  DirectSubclass(?a, ?c).
+
+Superclass(?c, ?a) :-
+  Subclass(?a, ?c).
 Superinterface(?k, ?c) :-
   DirectSuperinterface(?c, ?k).
 
@@ -460,7 +479,6 @@ SubtypeOf(?t, ?t) :-
 SameSubtypeOf(?s,?s):-
     SubtypeOf(?s,?t).
 
-
 SameSubtypeOf(?t,?t):-
     SubtypeOf(?s,?t).
 
@@ -492,12 +510,10 @@ MainMethodDeclaration(?method) :-
   Method_Modifier("public", ?method),
   Method_Modifier("static", ?method).
 
-%@output SameMethod .
-
 @declare ClassInitializer(string,string) .
-%@output ClassInitializer .
+
 @declare InitializedClass(string) .
-%@output InitializedClass .
+
 ClassInitializer(?type, ?method) :-
    MethodImplemented("<clinit>", "void()", ?type, ?method).
 
@@ -540,25 +556,13 @@ Reachable(?clinit) :-
    ClassInitializer(?class, ?clinit).
 
 
-@declare Assign(string,string) .
-%@output Assign .
-@declare VarPointsTo(string,string) .
-%@output VarPointsTo .
-@declare InstanceFieldPointsTo(string,string, string) .
-%@output InstanceFieldPointsTo .
-@declare StaticFieldPointsTo(string,string) .
-%@output StaticFieldPointsTo .
-@declare CallGraphEdge(string,string) .
-%@output CallGraphEdge .
-@declare ArrayIndexPointsTo(string,string) .
-%@output ArrayIndexPointsTo .
-@declare Reachable(string) .
-%@output Reachable .
 
-Assign(_ctual, ?formal) :-
+
+
+Assign(?actual, ?formal) :-
   CallGraphEdge(?invocation, ?method),
   FormalParam(?index, ?method, ?formal),
-  ActualParam(?index, ?invocation, _ctual).
+  ActualParam(?index, ?invocation, ?actual).
 
 Assign(?return, ?local) :-
   CallGraphEdge(?invocation, ?method),
@@ -667,6 +671,88 @@ Reachable(?method) :-
   MainMethodDeclaration(?method).
 
 
-%currently doesnt work since multi-file input is not supported
-%however this works for 2 file inputs
-%@output MainClass .
+
+@export Reachable[1] : tsv{resource="Reachable.tsv"}.
+@export VarPointsTo[2] : tsv{resource="VarPointsTo.tsv"}.
+@export CallGraphEdge[5] : tsv{resource="CallGraphEdge.tsv"}.
+@export Assign[2] : tsv{resource="Assign.tsv"}.
+@export MethodLookup[4] : tsv{resource="MethodLookup.tsv"}.
+@export AssignReturnValue[2] : tsv{resource="AssignReturnValue.tsv"}.
+
+@output isType .
+@output isReferenceType .
+@output isArrayType .
+@output isClassType .
+@output isInterfaceType .
+@output ApplicationClass .
+@output Field_DeclaringType .
+@output Method_DeclaringType .
+@output Method_ReturnType .
+@output Method_SimpleName .
+@output Method_ParamTypes .
+@output ThisVar .
+@output Var_DeclaringMethod .
+@output HeapAllocation_Type .
+@output MainMethodArgArray .
+@output MainMethodArgArrayContent .
+@output Instruction_Method .
+@output isVirtualMethodInvocation_Insn .
+@output isStaticMethodInvocation_Insn .
+@output FieldInstruction_Signature .
+@output LoadInstanceField_Base .
+@output LoadInstanceField_To .
+@output StoreInstanceField_From .
+@output StoreInstanceField_Base .
+@output LoadStaticField_To .
+@output StoreStaticField_From .
+@output LoadArrayIndex_Base .
+@output LoadArrayIndex_To .
+@output StoreArrayIndex_From .
+@output StoreArrayIndex_Base .
+@output AssignInstruction_To .
+@output AssignCast_From .
+@output AssignCast_Type .
+@output AssignLocal_From .
+@output AssignHeapAllocation_Heap .
+@output ReturnNonvoid_Var .
+@output MethodInvocation_Method .
+@output VirtualMethodInvocation_Base .
+@output VirtualMethodInvocation_SimpleName .
+@output VirtualMethodInvocation_Descriptor .
+@output SpecialMethodInvocation_Base .
+@output MethodInvocation_Base .
+@output Method_Descriptor .
+%@output MethodLookup .
+@output MethodImplemented .
+@output DirectSubclass .
+@output Subclass .
+@output Superclass .
+@output Superinterface .
+@output SubtypeOf .
+@output SupertypeOf .
+@output SubtypeOfDifferent .
+@output MainMethodDeclaration .
+@output LoadInstanceField .
+@output StoreInstanceField .
+@output LoadStaticField .
+@output StoreStaticField .
+@output LoadArrayIndex .
+@output StoreArrayIndex .
+@output AssignCast .
+@output AssignLocal .
+@output AssignHeapAllocation .
+@output ReturnVar .
+@output StaticMethodInvocation .
+@output SameMethod .
+@output ClassInitializer .
+@output InitializedClass .
+%@output Assign .
+%@output VarPointsTo .
+@output InstanceFieldPointsTo .
+@output StaticFieldPointsTo .
+%@output CallGraphEdge .
+@output ArrayIndexPointsTo .
+@output MainClass .
+%@output Reachable.
+
+
