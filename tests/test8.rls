@@ -1,0 +1,19 @@
+@import merge_strat[integer,integer,integer] : tsv{resource="D.tsv"}.
+
+DirectSuperclass("lowExample","Example",0).
+MethodImplemented("Example","<Example: void <init>()>",0).
+MethodImplemented("Example","<Example: void main(java.lang.String[])>",0).
+MethodImplemented("Example","<Example: int add(int,int)>",0).
+
+MethodLookup(?type, ?method,?side):-
+  MethodImplemented( ?type, ?method,?side).
+
+
+MethodLookup(?type, ?method,?side):-
+  DirectSuperclass(?type, ?supertype,?side_1),
+  MethodLookup(?supertype, ?method,?side_2),
+  ~MethodImplemented(?type, _, ?side_1),
+  ~MethodImplemented(?type, _, ?side_2),
+  ?sum = ?side_1 + ?side_2,
+  merge_strat(2,?sum,?side).
+

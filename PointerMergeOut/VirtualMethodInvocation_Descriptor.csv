@@ -1,0 +1,13 @@
+<Pointer: void test(int)>/Cat.setParent/0,void(Cat),1
+<Pointer: void morePlay(Cat)>/Cat.playWith/0,Animal(Animal),1
+<Pointer: void morePlay(Cat)>/Cat.playWith/0,Animal(Animal),10
+<Pointer: void test(int)>/Animal.play/0,void(),1
+<Pointer: void test(int)>/Animal.play/0,void(),10
+<Pointer: void morePlay(Cat)>/Cat.play/0,void(),1
+<Pointer: void morePlay(Cat)>/Cat.play/0,void(),10
+<Pointer: void test(int)>/Pointer.morePlay/0,void(Cat),1
+<Pointer: void test(int)>/Pointer.morePlay/0,void(Cat),10
+<Pointer: void morePlay(Cat)>/Cat.getParent/0,Cat(),0
+<Animal: Animal playWith(Animal)>/Animal.play/0,void(),0
+<Pointer: void morePlay(Cat)>/Cat.playWith/1,Animal(Animal),0
+<Pointer: void main(java.lang.String[])>/Pointer.test/0,void(int),0

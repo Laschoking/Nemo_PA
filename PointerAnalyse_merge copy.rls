@@ -1,0 +1,829 @@
+% Current State: needs manual adaption of file MainClass (since no substring stuff is possible)
+% Import Method_Descriptor from self-contained.dl from souffle (bc. string concatenation does not work yet)
+
+%@declare Assign(string,string,integer).
+%@declare VarPointsTo(string,string,integer).
+%@declare InstanceFieldPointsTo(string,string, string,integer).
+%@declare StaticFieldPointsTo(string,string,integer).
+%@declare CallGraphEdge(string,string,integer).
+%@declare ArrayIndexPointsTo(string,string,integer).
+%@declare Reachable(string,integer).
+%@declare isType(string,integer).
+%@declare isReferenceType(string,integer).
+%@declare isArrayType(string,integer).
+%@declare isClassType(string,integer).
+%@declare isInterfaceType(string,integer).
+%@declare ApplicationClass(string,integer).
+%@declare Field_DeclaringType(string, string,integer).
+%@declare Method_DeclaringType(string, string,integer).
+%@declare Method_ReturnType(string, string,integer).
+%@declare Method_SimpleName(string, string,integer).
+%@declare Method_ParamTypes(string, string,integer).
+%@declare ThisVar(string, string,integer).
+%@declare Var_DeclaringMethod(string, string,integer).
+%@declare HeapAllocation_Type(string, string,integer).
+%@declare MainMethodArgArrayContent(string).
+%@declare Instruction_Method(string, string,integer).
+%@declare isVirtualMethodInvocation_Insn(string,integer).
+%@declare isStaticMethodInvocation_Insn(string,integer).
+%@declare FieldInstruction_Signature(string, string,integer).
+%@declare LoadInstanceField_Base(string, string,integer).
+%@declare LoadInstanceField_To(string, string,integer).
+%@declare StoreInstanceField_From(string, string,integer).
+%@declare StoreInstanceField_Base(string, string,integer).
+%@declare LoadStaticField_To(string, string,integer).
+%@declare StoreStaticField_From(string, string,integer).
+%@declare LoadArrayIndex_Base(string, string,integer).
+%@declare LoadArrayIndex_To(string,string,integer).
+%@declare StoreArrayIndex_From(string, string,integer).
+%@declare StoreArrayIndex_Base(string, string,integer).
+%@declare AssignInstruction_To(string, string,integer).
+%@declare AssignCast_From(string, string,integer).
+%@declare AssignCast_Type(string, string,integer).
+%@declare AssignLocal_From(string, string,integer).
+%@declare AssignHeapAllocation_Heap(string, string,integer).
+%@declare ReturnNonvoid_Var(string, string,integer).
+%@declare MethodInvocation_Method(string, string,integer).
+%@declare VirtualMethodInvocation_Base(string, string,integer).
+%@declare VirtualMethodInvocation_SimpleName(string, string,integer).
+%@declare VirtualMethodInvocation_Descriptor(string, string,integer).
+%@declare SpecialMethodInvocation_Base(string, string,integer).
+%@declare MethodInvocation_Base(string, string,integer).
+%@declare MethodLookup(string, string, string, string,integer).
+%@declare MethodImplemented(string, string, string, string,integer).
+%@declare DirectSubclass(string, string,integer).
+%@declare Subclass(string, string,integer).
+%@declare Superclass(string,string,integer).
+%@declare Superinterface(string, string,integer).
+%@declare SubtypeOf(string, string,integer).
+%@declare SupertypeOf(string, string,integer).
+%@declare SubtypeOfDifferent(string, string,integer).
+%@declare MainMethodDeclaration(string,integer).
+%@declare ClassInitializer(string,string,integer).
+%@declare InitializedClass(string,integer).
+%@declare LoadInstanceField(string, string, string, string,integer).
+%@declare StoreInstanceField(string, string, string, string,integer).
+%@declare LoadStaticField(string, string, string,integer).
+%@declare StoreStaticField(string, string, string,integer).
+%@declare LoadArrayIndex(string, string, string,integer).
+%@declare StoreArrayIndex(string, string, string,integer).
+%@declare AssignCast(string, string, string, string,integer).
+%@declare AssignLocal(string, string, string,integer).
+%@declare AssignHeapAllocation(string, string, string,integer).
+%@declare ReturnVar(string, string,integer).
+%@declare StaticMethodInvocation(string, string, string,integer).
+
+
+%TODO: Python Skript anpassen s.d. tsv dateien erstellt werden
+ 
+@import Method_Descriptor[string, string,integer] : tsv{resource="Method_Descriptor.csv"}.
+@import DirectSuperclass[string, string,integer] : tsv{resource="DirectSuperclass.facts"}.
+@import DirectSuperinterface[string, string,integer] : tsv{resource="DirectSuperinterface.facts"}.
+@import MainClass[string,integer] : tsv{resource="MainClass.csv"}. %%facts file is not modified, csv file comes from souffle
+@import Method_Modifier[string, string,integer] : tsv{resource="Method-Modifier.facts"}.
+@import FormalParam[integer, string,string,integer] : tsv{resource="FormalParam.facts"}.
+@import Var_Type[string, string,integer] : tsv{resource="Var-Type.facts"}.
+@import ComponentType[string, string,integer] : tsv{resource="ComponentType.facts"}.
+@import AssignReturnValue[string, string,integer] : tsv{resource="AssignReturnValue.facts"}.
+@import ActualParam[integer,string, string,integer] : tsv{resource="ActualParam.facts"}.
+@import ClassType[string,integer] : tsv{resource="ClassType.facts"}.
+@import z_ArrayType[string,integer] : tsv{resource="ArrayType.facts"}.
+@import z_InterfaceType[string,integer] : tsv{resource="InterfaceType.facts"}.
+@import z_Var_DeclaringMethod[string, string,integer] : tsv{resource="Var-DeclaringMethod.facts"}.
+@import z_ApplicationClass[string,integer] : tsv{resource="ApplicationClass.facts"}.
+@import z_ThisVar[string, string,integer] : tsv{resource="ThisVar.facts"}.
+@import z_NormalHeap[string, string,integer] : tsv{resource="NormalHeap.facts"}.
+@import z_StringConstant[string,integer] : tsv{resource="StringConstant.facts"}.
+@import z_AssignHeapAllocation[string, integer, string,string, string,integer,integer] : tsv{resource="AssignHeapAllocation.facts"}.
+@import z_AssignLocal[string, integer, string,string, string,integer] : tsv{resource="AssignLocal.facts"}.
+@import z_AssignCast[string, integer, string,string, string,string,integer] : tsv{resource="AssignCast.facts"}.
+@import z_Field[string, string,string, string,integer] : tsv{resource="Field.facts"}.
+@import z_StaticMethodInvocation[string,integer, string, string,integer] : tsv{resource="StaticMethodInvocation.facts"}.
+@import z_SpecialMethodInvocation[string,integer, string,string, string,integer] : tsv{resource="SpecialMethodInvocation.facts"}.
+@import z_VirtualMethodInvocation[string, integer, string,string, string,integer] : tsv{resource="VirtualMethodInvocation.facts"}.
+@import z_Method[string, string,string, string,string, string,integer,integer] : tsv{resource="Method.facts"}.
+@import z_StoreInstanceField[string, integer, string,string, string,string,integer] : tsv{resource="StoreInstanceField.facts"}.
+@import z_LoadInstanceField[string, integer, string, string, string, string,integer] : tsv{resource="LoadInstanceField.facts"}.
+@import z_StoreStaticField[string, integer, string, string, string,integer] : tsv{resource="StoreStaticField.facts"}.
+@import z_LoadStaticField[string, integer, string, string, string,integer] : tsv{resource="LoadStaticField.facts"}.
+@import z_StoreArrayIndex[string, integer, string, string, string,integer] : tsv{resource="StoreArrayIndex.facts"}.
+@import z_LoadArrayIndex[string, integer, string, string, string,integer] : tsv{resource="LoadArrayIndex.facts"}.
+@import z_Return[string, integer, string, string,integer] : tsv{resource="Return.facts"}.
+
+% assume that no relations with more than 9 relations exist
+@import merge_strat[integer,integer,integer] : tsv{resource="merge_strat.tsv"}.
+
+
+
+
+
+% Fat schema
+
+HeapAllocation_Type(?heap, ?type,0):-
+  ?heap = "<<main method array>>",
+  ?type = "java.lang.String[]".
+
+
+HeapAllocation_Type(?heap, ?type,0),
+MainMethodArgArrayContent(?heap):-
+  ?heap = "<<main method array content>>",
+  ?type = "java.lang.String".
+
+
+% imports
+isType(?class,?side):-
+  ClassType(?class,?side).
+
+isReferenceType(?class,?side):-
+  ClassType(?class,?side).
+
+isClassType(?class,?side):-
+  ClassType(?class,?side).
+
+isType(?arrayType,?side),
+isReferenceType(?arrayType,?side),
+isArrayType(?arrayType,?side):-
+  z_ArrayType(?arrayType,?side).
+
+isType(?interface,?side),
+isReferenceType(?interface,?side),
+isInterfaceType(?interface,?side):-
+  z_InterfaceType(?interface,?side).
+
+Var_DeclaringMethod(?var, ?method,?side):-
+  z_Var_DeclaringMethod(?var, ?method,?side).
+
+isType(?type,?side),
+isReferenceType(?type,?side),
+ApplicationClass(?type,?side):-
+  z_ApplicationClass(?type,?side).
+
+ThisVar(?method, ?var,?side):-
+  z_ThisVar(?method, ?var,?side).
+
+isType(?type,?side),
+HeapAllocation_Type(?id, ?type,?side):-
+  z_NormalHeap(?id, ?type,?side).
+
+HeapAllocation_Type(?id, "java.lang.String",?side):-
+  z_StringConstant(?id,?side).
+
+Instruction_Method(?instruction, ?method,?side),
+AssignInstruction_To(?instruction, ?to,?side),
+AssignHeapAllocation_Heap(?instruction, ?heap,?side):-
+  z_AssignHeapAllocation(?instruction, _, ?heap, ?to, ?method, _,?side).
+
+Instruction_Method(?instruction, ?method,?side),
+AssignLocal_From(?instruction, ?from,?side),
+AssignInstruction_To(?instruction, ?to,?side):-
+  z_AssignLocal(?instruction, _, ?from, ?to, ?method,?side).
+
+Instruction_Method(?instruction, ?method,?side),
+AssignCast_Type(?instruction, ?type,?side),
+AssignCast_From(?instruction, ?from,?side),
+AssignInstruction_To(?instruction, ?to,?side):-
+  z_AssignCast(?instruction, _, ?from, ?to, ?type, ?method,?side).
+
+Field_DeclaringType(?signature, ?declaringType,?side):-
+  z_Field(?signature, ?declaringType, _, _,?side).
+
+MethodInvocation_Base(?invocation, ?base,?side):-
+  VirtualMethodInvocation_Base(?invocation, ?base,?side).
+
+MethodInvocation_Base(?invocation, ?base,?side):-
+  SpecialMethodInvocation_Base(?invocation, ?base,?side).
+
+Instruction_Method(?instruction, ?method,?side),
+isStaticMethodInvocation_Insn(?instruction,?side),
+MethodInvocation_Method(?instruction, ?signature,?side):-
+  z_StaticMethodInvocation(?instruction, _, ?signature, ?method,?side).
+
+Instruction_Method(?instruction, ?method,?side),
+SpecialMethodInvocation_Base(?instruction, ?base,?side),
+MethodInvocation_Method(?instruction, ?signature,?side):-
+  z_SpecialMethodInvocation(?instruction, _, ?signature, ?base, ?method,?side).
+
+Instruction_Method(?instruction, ?method,?side),
+isVirtualMethodInvocation_Insn(?instruction,?side),
+VirtualMethodInvocation_Base(?instruction, ?base,?side),
+MethodInvocation_Method(?instruction, ?signature,?side):-
+  z_VirtualMethodInvocation(?instruction, _, ?signature, ?base, ?method,?side).
+
+Method_SimpleName(?method, ?simplename,?side),
+Method_ParamTypes(?method, ?params,?side),
+Method_DeclaringType(?method, ?declaringType,?side),
+Method_ReturnType(?method, ?returnType,?side):-
+  z_Method(?method, ?simplename, ?params, ?declaringType, ?returnType, _, _,?side).
+  
+Instruction_Method(?instruction, ?method,?side),
+FieldInstruction_Signature(?instruction, ?signature,?side),
+StoreInstanceField_Base(?instruction, ?base,?side),
+StoreInstanceField_From(?instruction, ?from,?side):-
+  z_StoreInstanceField(?instruction, _, ?from, ?base, ?signature, ?method,?side).
+
+Instruction_Method(?instruction, ?method,?side),
+FieldInstruction_Signature(?instruction, ?signature,?side),
+LoadInstanceField_Base(?instruction, ?base,?side),
+LoadInstanceField_To(?instruction, ?to,?side):-
+  z_LoadInstanceField(?instruction, _, ?to, ?base, ?signature, ?method,?side).
+
+Instruction_Method(?instruction, ?method,?side),
+FieldInstruction_Signature(?instruction, ?signature,?side),
+StoreStaticField_From(?instruction, ?from,?side):-
+  z_StoreStaticField(?instruction, _, ?from, ?signature, ?method,?side).
+
+Instruction_Method(?instruction, ?method,?side),
+FieldInstruction_Signature(?instruction, ?signature,?side),
+LoadStaticField_To(?instruction, ?to,?side):-
+  z_LoadStaticField(?instruction, _, ?to, ?signature, ?method,?side).
+
+Instruction_Method(?instruction, ?method,?side),
+StoreArrayIndex_Base(?instruction, ?base,?side),
+StoreArrayIndex_From(?instruction, ?from,?side):-
+  z_StoreArrayIndex(?instruction, _, ?from, ?base, ?method,?side).
+Instruction_Method(?instruction, ?method,?side),
+LoadArrayIndex_Base(?instruction, ?base,?side),
+LoadArrayIndex_To(?instruction, ?to,?side):-
+  z_LoadArrayIndex(?instruction, _, ?to, ?base, ?method,?side).
+
+Instruction_Method(?instruction, ?method,?side),
+ReturnNonvoid_Var(?instruction, ?var,?side):-
+  z_Return(?instruction, _, ?var, ?method,?side).
+
+% fat schema population
+LoadInstanceField(?base, ?sig, ?to, ?inmethod,?side):-
+  Instruction_Method(?insn, ?inmethod,?side_1),
+  LoadInstanceField_Base(?insn, ?base,?side_2),
+  FieldInstruction_Signature(?insn, ?sig,?side_3),
+  LoadInstanceField_To(?insn, ?to,?side_4),
+  ?sum = ?side_1 + ?side_2 + ?side_3 + ?side_4,
+  merge_strat(4,?sum,?side).
+
+StoreInstanceField(?from, ?base, ?sig, ?inmethod,?side):-
+  Instruction_Method(?insn, ?inmethod,?side_1),
+  StoreInstanceField_From(?insn, ?from,?side_2),
+  StoreInstanceField_Base(?insn, ?base,?side_3),
+  FieldInstruction_Signature(?insn, ?sig,?side_4),
+  ?sum = ?side_1 + ?side_2 + ?side_3 + ?side_4,
+  merge_strat(4,?sum,?side).
+
+LoadStaticField(?sig, ?to, ?inmethod,?side):-
+  Instruction_Method(?insn, ?inmethod,?side_1),
+  FieldInstruction_Signature(?insn, ?sig,?side_2),
+  LoadStaticField_To(?insn, ?to,?side_3),
+  ?sum = ?side_1 + ?side_2 + ?side_3,
+  merge_strat(3,?sum,?side).
+
+StoreStaticField(?from, ?sig, ?inmethod,?side):-
+  Instruction_Method(?insn, ?inmethod,?side_1),
+  StoreStaticField_From(?insn, ?from,?side_2),
+  FieldInstruction_Signature(?insn, ?sig,?side_3),
+  ?sum = ?side_1 + ?side_2 + ?side_3,
+  merge_strat(3,?sum,?side).
+
+LoadArrayIndex(?base, ?to, ?inmethod,?side):-
+  Instruction_Method(?insn, ?inmethod,?side_1),
+  LoadArrayIndex_Base(?insn, ?base,?side_2),
+  LoadArrayIndex_To(?insn, ?to,?side_3),
+  ?sum = ?side_1 + ?side_2 + ?side_3,
+  merge_strat(3,?sum,?side).
+
+StoreArrayIndex(?from, ?base, ?inmethod,?side):-
+  Instruction_Method(?insn, ?inmethod,?side_1),
+  StoreArrayIndex_From(?insn, ?from,?side_2),
+  StoreArrayIndex_Base(?insn, ?base,?side_3),
+  ?sum = ?side_1 + ?side_2 + ?side_3,
+  merge_strat(3,?sum,?side).
+
+AssignCast(?type, ?from, ?to, ?inmethod,?side):-
+  Instruction_Method(?insn, ?inmethod,?side_1),
+  AssignCast_From(?insn, ?from,?side_2),
+  AssignInstruction_To(?insn, ?to,?side_3),
+  AssignCast_Type(?insn, ?type,?side_4),
+  ?sum = ?side_1 + ?side_2 + ?side_3 + ?side_4,
+  merge_strat(4,?sum,?side).
+
+AssignLocal(?from, ?to, ?inmethod,?side):-
+  AssignInstruction_To(?insn, ?to,?side_1),
+  Instruction_Method(?insn, ?inmethod,?side_2),
+  AssignLocal_From(?insn, ?from,?side_3),
+  ?sum = ?side_1 + ?side_2 + ?side_3,
+  merge_strat(3,?sum,?side).
+
+AssignHeapAllocation(?heap, ?to, ?inmethod,?side):-
+  Instruction_Method(?insn, ?inmethod,?side_1),
+  AssignHeapAllocation_Heap(?insn, ?heap,?side_2),
+  AssignInstruction_To(?insn, ?to,?side_3),
+  ?sum = ?side_1 + ?side_2 + ?side_3,
+  merge_strat(3,?sum,?side).
+
+ReturnVar(?var, ?method,?side):-
+  Instruction_Method(?insn, ?method,?side_1),
+  ReturnNonvoid_Var(?insn, ?var,?side_2),
+  ?sum = ?side_1 + ?side_2,
+  merge_strat(2,?sum,?side).
+
+StaticMethodInvocation(?invocation, ?signature, ?inmethod,?side):-
+  isStaticMethodInvocation_Insn(?invocation,?side_1),
+  Instruction_Method(?invocation, ?inmethod,?side_2),
+  MethodInvocation_Method(?invocation, ?signature,?side_3),
+  ?sum = ?side_1 + ?side_2 + ?side_3,
+  merge_strat(3,?sum,?side).
+
+
+
+VirtualMethodInvocation_Descriptor(?invocation, ?descriptor,?side),
+VirtualMethodInvocation_SimpleName(?invocation, ?simplename,?side):-
+  isVirtualMethodInvocation_Insn(?invocation,?side_1),
+  MethodInvocation_Method(?invocation, ?signature,?side_2),
+  Method_SimpleName(?signature, ?simplename,?side_3),
+  Method_Descriptor(?signature, ?descriptor,?side_4),
+  ?sum = ?side_1 + ?side_2 + ?side_3 + ?side_4,
+  merge_strat(4,?sum,?side).
+
+
+
+MethodLookup(?simplename, ?descriptor, ?type, ?method,?side):-
+  MethodImplemented(?simplename, ?descriptor, ?type, ?method,?side).
+
+% TODO: observe
+MethodLookup(?simplename, ?descriptor, ?type, ?method,?side):-
+  DirectSuperinterface(?type, ?supertype,?side_1),
+  MethodLookup(?simplename, ?descriptor, ?supertype, ?method,?side_2),
+  %~ MethodImplemented(?simplename, ?descriptor, ?type, _,?side_1),
+  %~ MethodImplemented(?simplename, ?descriptor, ?type, _,?side_1),
+  ?sum = ?side_1 + ?side_2,
+  merge_strat(2,?sum,?side).
+
+
+MethodLookup(?simplename, ?descriptor, ?type, ?method,?side):-
+  DirectSuperclass(?type, ?supertype,?side_1),
+  MethodLookup(?simplename, ?descriptor, ?supertype, ?method,?side_2),
+  %~MethodImplemented(?simplename, ?descriptor, ?type, _, ?side_1),
+  %~MethodImplemented(?simplename, ?descriptor, ?type, _, ?side_2),
+  ?sum = ?side_1 + ?side_2,
+  merge_strat(2,?sum,?side).
+
+MethodImplemented(?simplename, ?descriptor, ?type, ?method,?side):-
+  Method_SimpleName(?method, ?simplename,?side_1),
+  Method_Descriptor(?method, ?descriptor,?side_2),
+  Method_DeclaringType(?method, ?type,?side_3),
+  %~Method_Modifier("abstract", ?method,?side_1),
+  %~Method_Modifier("abstract", ?method,?side_2),
+  %~Method_Modifier("abstract", ?method,?side_3),
+  ?sum = ?side_1 + ?side_2 + ?side_3,
+  merge_strat(3,?sum,?side).
+
+DirectSubclass(?a, ?c,?side):-
+  DirectSuperclass(?a, ?c,?side).
+
+Subclass(?c, ?a,?side):-
+  DirectSubclass(?a, ?c,?side).
+
+Subclass(?c, ?a,?side):-
+  Subclass(?a, ?a,?side_1),
+  DirectSubclass(?a, ?c,?side_2),
+  ?sum = ?side_1 + ?side_2,
+  merge_strat(2,?sum,?side).
+
+Superclass(?c, ?a,?side):-
+  Subclass(?a, ?c,?side).
+Superinterface(?k, ?c,?side):-
+  DirectSuperinterface(?c, ?k,?side).
+
+Superinterface(?k, ?c,?side):-
+  DirectSuperinterface(?c, ?j,?side_1),
+  Superinterface(?k, ?j,?side_2),
+  ?sum = ?side_1 + ?side_2,
+  merge_strat(2,?sum,?side).
+
+Superinterface(?k, ?c,?side):-
+  DirectSuperclass(?c, ?super,?side_1),
+  Superinterface(?k, ?super,?side_2),
+  ?sum = ?side_1 + ?side_2,
+  merge_strat(2,?sum,?side).
+
+SupertypeOf(?s, ?t,?side):-
+  SubtypeOf(?t, ?s,?side).
+
+SubtypeOf(?s, ?s,?side):-
+  isClassType(?s,?side).
+  
+SubtypeOf(?s, ?t,?side):-
+  Subclass(?t, ?s,?side).
+
+SubtypeOf(?s, ?t,?side):-
+  isClassType(?s,?side),
+  Superinterface(?t, ?s,?side).
+
+SubtypeOf(?s, ?t,?side):-
+  isInterfaceType(?s,?side),
+  isType(?t,?side),
+  ?t = "java.lang.Object".
+
+SubtypeOf(?s, ?s,?side):-
+  isInterfaceType(?s,?side).
+
+SubtypeOf(?s, ?t,?side):-
+  isInterfaceType(?s,?side_1),
+  Superinterface(?t, ?s,?side_2),
+  ?sum = ?side_1 + ?side_2,
+  merge_strat(2,?sum,?side).
+
+
+SubtypeOf(?s, ?t,?side):-
+  isArrayType(?s,?side_1),
+  isType(?t,?side_2),
+  ?t = "java.lang.Object",
+  ?sum = ?side_1 + ?side_2,
+  merge_strat(2,?sum,?side).
+
+
+SubtypeOf(?s, ?t,?side):-
+  ComponentType(?s, ?sc,?side_1),
+  ComponentType(?t, ?tc,?side_2),
+  isReferenceType(?sc,?side_3),
+  isReferenceType(?tc,?side_4),
+  SubtypeOf(?sc, ?tc,?side_5),
+  ?sum = ?side_1 + ?side_2 +  ?side_3 +  ?side_4 +  ?side_5,
+  merge_strat(5,?sum,?side).
+
+
+SubtypeOf(?s, ?t,?side):-
+  isArrayType(?s,?side_1),
+  isInterfaceType(?t,?side_2),
+  isType(?t,?side_3),
+  ?t = "java.lang.Cloneable",
+  ?sum = ?side_1 + ?side_2 + ?side_3,
+  merge_strat(3,?sum,?side).
+
+
+SubtypeOf(?s, ?t,?side):-
+  isArrayType(?s,?side_1),
+  isInterfaceType(?t,?side_2),
+  isType(?t,?side_3),
+  ?t = "java.io.Serializable",
+  ?sum = ?side_1 + ?side_2 + ?side_3,
+  merge_strat(3,?sum,?side).
+
+
+SubtypeOf(?t, ?t,?side):-
+  isType(?t,?side).
+  
+SameSubtypeOf(?s,?s,?side):-
+  SubtypeOf(?s,?t,?side).
+
+SameSubtypeOf(?t,?t,?side):-
+  SubtypeOf(?s,?t,?side).
+
+SubtypeOfDifferent(?s, ?t,?side):-
+  ~SameSubtypeOf(?s,?t,?side),
+  SubtypeOf(?s,?t,?side).
+
+
+SameMethod(?method,?side):-
+  MainClass(?type,?side_1),
+  Method_DeclaringType(?method, ?type,?side_2),
+  ?method = "<java.util.prefs.Base64: void main(java.lang.String[])>",
+  ?sum = ?side_1 + ?side_2,
+  merge_strat(2,?sum,?side).
+
+
+SameMethod(?method,?side):-
+  MainClass(?type,?side_1),
+  Method_DeclaringType(?method, ?type,?side_2),
+  ?method = "<sun.java2d.loops.GraphicsPrimitiveMgr: void main(java.lang.String[])>",
+  ?sum = ?side_1 + ?side_2,
+  merge_strat(2,?sum,?side).
+
+
+SameMethod(?method,?side):-
+  MainClass(?type,?side_1),
+  Method_DeclaringType(?method, ?type,?side_2),
+  ?method = "<sun.security.provider.PolicyParser: void main(java.lang.String[])>",
+  ?sum = ?side_1 + ?side_2,
+  merge_strat(2,?sum,?side).
+
+
+MainMethodDeclaration(?method,?side):-
+  MainClass(?type,?side_1),
+  Method_DeclaringType(?method, ?type,?side_2),
+  Method_SimpleName(?method, "main",?side_3),
+  Method_Descriptor(?method, "void(java.lang.String[])",?side_4),
+  Method_Modifier("public", ?method,?side_5),
+  Method_Modifier("static", ?method,?side_6),
+  %~ SameMethod(?method,?side_1),
+  %~ SameMethod(?method,?side_2),
+  %~ SameMethod(?method,?side_3),
+  %~ SameMethod(?method,?side_4),
+  %~ SameMethod(?method,?side_5),  
+  %~ SameMethod(?method,?side_6),
+  ?sum = ?side_1 + ?side_2  + ?side_3 + ?side_4 + ?side_5 + ?side_6,
+  merge_strat(6,?sum,?side).
+
+
+
+
+ClassInitializer(?type, ?method,?side):-
+   MethodImplemented("<clinit>", "void()", ?type, ?method,?side).
+
+InitializedClass(?superclass,?side):-
+   InitializedClass(?class,?side_1),
+   DirectSuperclass(?class, ?superclass,?side_2),
+  ?sum = ?side_1 + ?side_2,
+  merge_strat(2,?sum,?side).
+
+
+
+InitializedClass(?superinterface,?side):-
+   InitializedClass(?classOrInterface,?side_1),
+   DirectSuperinterface(?classOrInterface, ?superinterface,?side_2),
+  ?sum = ?side_1 + ?side_2,
+  merge_strat(2,?sum,?side).
+
+
+InitializedClass(?class,?side):-
+   MainMethodDeclaration(?method,?side_1),
+   Method_DeclaringType(?method, ?class,?side_2),
+  ?sum = ?side_1 + ?side_2,
+  merge_strat(2,?sum,?side).
+
+
+InitializedClass(?class,?side):-
+   Reachable(?inmethod,?side_1),
+   AssignHeapAllocation(?heap, _, ?inmethod,?side_2),
+   HeapAllocation_Type(?heap, ?class,?side_3),
+  ?sum = ?side_1 + ?side_2 + ?side_3,
+  merge_strat(3,?sum,?side).
+
+
+InitializedClass(?class,?side):-
+   Reachable(?inmethod,?side),
+   Instruction_Method(?invocation, ?inmethod,?side_1),
+   isStaticMethodInvocation_Insn(?invocation,?side_2),
+   MethodInvocation_Method(?invocation, ?signature,?side_3),
+   Method_DeclaringType(?signature, ?class,?side_4),
+  ?sum = ?side_1 + ?side_2 + ?side_3 + ?side_4,
+  merge_strat(4,?sum,?side).
+
+
+InitializedClass(?classOrInterface,?side):-
+   Reachable(?inmethod,?side_1),
+   StoreStaticField(_, ?signature, ?inmethod,?side_2),
+   Field_DeclaringType(?signature, ?classOrInterface,?side_3),
+  ?sum = ?side_1 + ?side_2 + ?side_3,
+  merge_strat(3,?sum,?side).
+
+
+InitializedClass(?classOrInterface,?side):-
+   Reachable(?inmethod,?side_1),
+   LoadStaticField(?signature, _, ?inmethod,?side_2),
+   Field_DeclaringType(?signature, ?classOrInterface, ?side_3),
+  ?sum = ?side_1 + ?side_2 + ?side_3,
+  merge_strat(3,?sum,?side).
+
+
+Reachable(?clinit,?side):-
+   InitializedClass(?class,?side_1),
+   ClassInitializer(?class, ?clinit,?side_2),
+  ?sum = ?side_1 + ?side_2,
+  merge_strat(2,?sum,?side).
+
+
+Assign(?actual, ?formal,?side):-
+  CallGraphEdge(?invocation, ?method,?side_1),
+  FormalParam(?index, ?method, ?formal,?side_2),
+  ActualParam(?index, ?invocation, ?actual,?side_3),
+  ?sum = ?side_1 + ?side_2 + ?side_3,
+  merge_strat(3,?sum,?side).
+
+
+Assign(?return, ?local,?side):-
+  CallGraphEdge(?invocation, ?method,?side_1),
+  ReturnVar(?return, ?method,?side_2),
+  AssignReturnValue(?invocation, ?local,?side_3),
+  ?sum = ?side_1 + ?side_2 + ?side_3,
+  merge_strat(3,?sum,?side).
+
+
+VarPointsTo(?heap, ?var,?side):-
+  AssignHeapAllocation(?heap, ?var, ?inMethod,?side_1),
+  Reachable(?inMethod,?side_2),
+  ?sum = ?side_1 + ?side_2,
+  merge_strat(2,?sum,?side).
+
+
+VarPointsTo(?heap, ?to,?side):-
+  Assign(?from, ?to,?side_1),
+  VarPointsTo(?heap, ?from,?side_2),
+  ?sum = ?side_1 + ?side_2,
+  merge_strat(2,?sum,?side).
+
+
+VarPointsTo(?heap, ?to,?side):-
+  Reachable(?inmethod,?side_1),
+  AssignLocal(?from, ?to, ?inmethod,?side_2),
+  VarPointsTo(?heap, ?from,?side_3),
+  ?sum = ?side_1 + ?side_2 + ?side_3,
+  merge_strat(3,?sum,?side).
+
+ 
+VarPointsTo(?heap, ?to,?side):-
+  Reachable(?method,?side_1),
+  AssignCast(?type, ?from, ?to, ?method,?side_2),
+  SupertypeOf(?type, ?heaptype,?side_3),
+  HeapAllocation_Type(?heap, ?heaptype,?side_4),
+  VarPointsTo(?heap, ?from,?side_5),
+  ?sum = ?side_1 + ?side_2 + ?side_3 + ?side_4 + ?side_5,
+  merge_strat(5,?sum,?side).
+
+ 
+ArrayIndexPointsTo(?baseheap, ?heap,?side):-
+  Reachable(?inmethod,?side_1),
+  StoreArrayIndex(?from, ?base, ?inmethod,?side_2),
+  VarPointsTo(?baseheap, ?base,?side_3),
+  VarPointsTo(?heap, ?from,?side_4),
+  HeapAllocation_Type(?heap, ?heaptype,?side_5),
+  HeapAllocation_Type(?baseheap, ?baseheaptype,?side_6),
+  ComponentType(?baseheaptype, ?componenttype,?side_7),
+  SupertypeOf(?componenttype, ?heaptype,?side_8),
+  ?sum = ?side_1 + ?side_2 + ?side_3 + ?side_4 + ?side_5 + ?side_6 + ?side_7 + ?side_8,
+  merge_strat(7,?sum,?side).
+
+
+VarPointsTo(?heap, ?to,?side):-
+  Reachable(?inmethod,?side_1),
+  LoadArrayIndex(?base, ?to, ?inmethod,?side_2),
+  VarPointsTo(?baseheap, ?base,?side_3),
+  ArrayIndexPointsTo(?baseheap, ?heap,?side_4),
+  Var_Type(?to, ?type,?side_5),
+  HeapAllocation_Type(?baseheap, ?baseheaptype,?side_6),
+  ComponentType(?baseheaptype, ?basecomponenttype,?side_7),
+  SupertypeOf(?type, ?basecomponenttype,?side_8),
+  ?sum = ?side_1 + ?side_2 + ?side_3 + ?side_4 + ?side_5 + ?side_6 + ?side_7 + ?side_8,
+  merge_strat(8,?sum,?side).
+
+VarPointsTo(?heap, ?to,?side):-
+  Reachable(?inmethod,?side_1),
+  LoadInstanceField(?base, ?signature, ?to, ?inmethod,?side_2),
+  VarPointsTo(?baseheap, ?base,?side_3),
+  InstanceFieldPointsTo(?heap, ?signature, ?baseheap,?side_4),
+  ?sum = ?side_1 + ?side_2 + ?side_3 + ?side_4 ,
+  merge_strat(4,?sum,?side).
+ 
+InstanceFieldPointsTo(?heap, ?fld, ?baseheap,?side):-
+  Reachable(?inmethod,?side_1),
+  StoreInstanceField(?from, ?base, ?fld, ?inmethod,?side_2),
+  VarPointsTo(?heap, ?from,?side_3),
+  VarPointsTo(?baseheap, ?base,?side_4),
+  ?sum = ?side_1 + ?side_2 + ?side_3 + ?side_4,
+  merge_strat(4,?sum,?side).
+ 
+VarPointsTo(?heap, ?to,?side):-
+  Reachable(?inmethod,?side_1),
+  LoadStaticField(?fld, ?to, ?inmethod,?side_2),
+  StaticFieldPointsTo(?heap, ?fld,?side_3),
+  ?sum = ?side_1 + ?side_2 + ?side_3,
+  merge_strat(3,?sum,?side).
+  
+StaticFieldPointsTo(?heap, ?fld,?side):-
+  Reachable(?inmethod,?side_1),
+  StoreStaticField(?from, ?fld, ?inmethod,?side_2),
+  VarPointsTo(?heap, ?from,?side_3),
+  ?sum = ?side_1 + ?side_2 + ?side_3,
+  merge_strat(3,?sum,?side).
+ 
+
+VarPointsTo(?heap, ?this,?side):-
+  Reachable(?inMethod,?side_1),
+  Instruction_Method(?invocation, ?inMethod,?side_2),
+  VirtualMethodInvocation_Base(?invocation, ?base,?side_3),
+  VarPointsTo(?heap, ?base,?side_4),
+  HeapAllocation_Type(?heap, ?heaptype,?side_5),
+  VirtualMethodInvocation_SimpleName(?invocation, ?simplename,?side_6),
+  VirtualMethodInvocation_Descriptor(?invocation, ?descriptor,?side_7),
+  MethodLookup(?simplename, ?descriptor, ?heaptype, ?toMethod,?side_8),
+  ThisVar(?toMethod, ?this,?side_9),
+  ?sum = ?side_1 + ?side_2 + ?side_3 + ?side_4 + ?side_5 + ?side_6 + ?side_7 + ?side_8 + ?side_9,
+  merge_strat(9,?sum,?side).
+ 
+Reachable(?toMethod,?side),
+CallGraphEdge(?invocation, ?toMethod,?side):-
+  Reachable(?inMethod,?side_1),
+  Instruction_Method(?invocation, ?inMethod,?side_2),
+  VirtualMethodInvocation_Base(?invocation, ?base,?side_3),
+  VarPointsTo(?heap, ?base,?side_4),
+  HeapAllocation_Type(?heap, ?heaptype,?side_5),
+  VirtualMethodInvocation_SimpleName(?invocation, ?simplename,?side_6),
+  VirtualMethodInvocation_Descriptor(?invocation, ?descriptor,?side_7),
+  MethodLookup(?simplename, ?descriptor, ?heaptype, ?toMethod,?side_8),
+  ?sum = ?side_1 + ?side_2 + ?side_3 + ?side_4 + ?side_5 + ?side_6 + ?side_7 + ?side_8,
+  merge_strat(8,?sum,?side).
+ 
+Reachable(?tomethod,?side),
+CallGraphEdge(?invocation, ?tomethod,?side):-
+  Reachable(?inmethod,?side_1),
+  StaticMethodInvocation(?invocation, ?tomethod, ?inmethod,?side_2),
+  ?sum = ?side_1 + ?side_2,
+  merge_strat(2,?sum,?side).
+
+Reachable(?tomethod,?side),
+CallGraphEdge(?invocation, ?tomethod,?side),
+VarPointsTo(?heap, ?this,?side):-
+  Reachable(?inmethod,?side_1),
+  Instruction_Method(?invocation, ?inmethod,?side_2),
+  SpecialMethodInvocation_Base(?invocation, ?base,?side_3),
+  VarPointsTo(?heap, ?base,?side_4),
+  MethodInvocation_Method(?invocation, ?tomethod,?side_5),
+  ThisVar(?tomethod, ?this,?side_6),
+  ?sum = ?side_1 + ?side_2 + ?side_3 + ?side_4 + ?side_5 + ?side_6 ,
+  merge_strat(6,?sum,?side).
+ 
+Reachable(?method,?side):-
+  MainMethodDeclaration(?method,?side).
+
+
+
+%@export Reachable[2] : tsv{resource="Reachable.tsv"}.
+%@export VarPointsTo[3] : tsv{resource="VarPointsTo.tsv"}.
+%@export CallGraphEdge[6] : tsv{resource="CallGraphEdge.tsv"}.
+%@export Assign[3] : tsv{resource="Assign.tsv"}.
+%@export MethodLookup[5] : tsv{resource="MethodLookup.tsv"}.
+%@export AssignReturnValue[3] : tsv{resource="AssignReturnValue.tsv"}.
+
+%@output isType .
+%@output isReferenceType .
+%@output isArrayType .
+%@output isClassType .
+%@output isInterfaceType .
+%@output ApplicationClass .
+%@output Field_DeclaringType .
+%@output Method_DeclaringType .
+%@output Method_ReturnType .
+%@output Method_SimpleName .
+%@output Method_ParamTypes .
+%@output ThisVar .
+%@output Var_DeclaringMethod .
+%@output HeapAllocation_Type .
+%@output MainMethodArgArrayContent .
+%@output Instruction_Method .
+%@output isVirtualMethodInvocation_Insn .
+%@output isStaticMethodInvocation_Insn .
+%@output FieldInstruction_Signature .
+%@output LoadInstanceField_Base .
+%@output LoadInstanceField_To .
+%@output StoreInstanceField_From .
+%@output StoreInstanceField_Base .
+%@output LoadStaticField_To .
+%@output StoreStaticField_From .
+%@output LoadArrayIndex_Base .
+%@output LoadArrayIndex_To .
+%@output StoreArrayIndex_From .
+%@output StoreArrayIndex_Base .
+%@output AssignInstruction_To .
+%@output AssignCast_From .
+%@output AssignCast_Type .
+%@output AssignLocal_From .
+%@output AssignHeapAllocation_Heap .
+%@output ReturnNonvoid_Var .
+%@output MethodInvocation_Method .
+%@output VirtualMethodInvocation_Base .
+%@output VirtualMethodInvocation_SimpleName .
+%@output VirtualMethodInvocation_Descriptor .
+%@output SpecialMethodInvocation_Base .
+%@output MethodInvocation_Base .
+%@output Method_Descriptor .
+%%@output MethodLookup .
+%@output MethodImplemented .
+%@output DirectSubclass .
+%@output Subclass .
+%@output Superclass .
+%@output Superinterface .
+%@output SubtypeOf .
+%@output SupertypeOf .
+%@output SubtypeOfDifferent .
+%@output MainMethodDeclaration .
+%@output LoadInstanceField .
+%@output StoreInstanceField .
+%@output LoadStaticField .
+%@output StoreStaticField .
+%@output LoadArrayIndex .
+%@output StoreArrayIndex .
+%@output AssignCast .
+%@output AssignLocal .
+%@output AssignHeapAllocation .
+%@output ReturnVar .
+%@output StaticMethodInvocation .
+%@output SameMethod .
+%@output ClassInitializer .
+%@output InitializedClass .
+%%@output Assign .
+%%@output VarPointsTo .
+%@output InstanceFieldPointsTo .
+%@output StaticFieldPointsTo .
+%%@output CallGraphEdge .
+%@output ArrayIndexPointsTo .
+%@output MainClass .
+%%@output Reachable.
+
+

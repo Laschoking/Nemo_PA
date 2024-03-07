@@ -1,0 +1,13 @@
+<Pointer: void test(int)>/Cat.<init>/2,<Pointer: void test(int)>/$r4,1
+<Pointer: void test(int)>/Cat.<init>/0,<Pointer: void test(int)>/$r5,10
+<Pointer: void test(int)>/Cat.<init>/0,<Pointer: void test(int)>/$r7,1
+<Pointer: void <init>()>/java.lang.Object.<init>/0,<Pointer: void <init>()>/r0#_0,0
+<Pointer: void main(java.lang.String[])>/Pointer.<init>/0,<Pointer: void main(java.lang.String[])>/$r0,0
+<Animal: void <init>()>/java.lang.Object.<init>/0,<Animal: void <init>()>/r0#_0,0
+<Dog: void <init>()>/Animal.<init>/0,<Dog: void <init>()>/r0#_0,0
+<Cat: void <init>()>/Animal.<init>/0,<Cat: void <init>()>/r0#_0,0
+<Pointer: void main(java.lang.String[])>/java.io.BufferedReader.<init>/0,<Pointer: void main(java.lang.String[])>/$r2,0
+<Pointer: void test(int)>/Dog.<init>/0,<Pointer: void test(int)>/$r0,0
+<Pointer: void test(int)>/Cat.<init>/1,<Pointer: void test(int)>/$r2,0
+<Pointer: void main(java.lang.String[])>/java.lang.StringBuilder.<init>/0,<Pointer: void main(java.lang.String[])>/$r8,0
+<Pointer: void main(java.lang.String[])>/java.io.InputStreamReader.<init>/0,<Pointer: void main(java.lang.String[])>/$r3,0

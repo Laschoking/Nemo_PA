@@ -1,0 +1,43 @@
+@import merge_strat[integer,integer,integer] : tsv{resource="D.tsv"}.
+
+%MethodLookup("<init>","void()","Example","<Example: void <init>()>",0).
+%MethodLookup("main","void(java.lang.String[])","Example","<Example: void main(java.lang.String[])>",0).
+%MethodLookup("add","int(int,int)","Example","<Example: int add(int,int)>",0).
+
+DirectSuperclass("Example","java.lang.Object",0).
+%MethodImplemented("<init>","void()","Example","<Example: void <init>()>",0).
+%MethodImplemented("main","void(java.lang.String[])","Example","<Example: void main(java.lang.String[])>",0).
+%MethodImplemented("add","int(int,int)","Example","<Example: int add(int,int)>",0).
+
+
+
+
+MethodLookup(?simplename, ?descriptor, ?type, ?method,?side):-
+  MethodImplemented(?simplename, ?descriptor, ?type, ?method,?side).
+
+
+MethodLookup(?simplename, ?descriptor, ?type, ?method,?side):-
+  DirectSuperinterface(?type, ?supertype,?side_1),
+  MethodLookup(?simplename, ?descriptor, ?supertype, ?method,?side_2),
+  ~ MethodImplemented(?simplename, ?descriptor, ?type, _,?side_1),
+  ~ MethodImplemented(?simplename, ?descriptor, ?type, _,?side_2),
+  ?sum = ?side_1 + ?side_2,
+  merge_strat(2,?sum,?side).
+
+MethodLookup(?simplename, ?descriptor, ?type, ?method,?side):-
+  DirectSuperclass(?type, ?supertype,?side_1),
+  MethodLookup(?simplename, ?descriptor, ?supertype, ?method,?side_2),
+  ~MethodImplemented(?simplename, ?descriptor, ?type, _, ?side_1),
+  ~MethodImplemented(?simplename, ?descriptor, ?type, _, ?side_2),
+  ?sum = ?side_1 + ?side_2,
+  merge_strat(2,?sum,?side).
+
+
+
+MethodImplemented(?simplename, ?descriptor, ?type, ?method,?side):-
+  Method_SimpleName(?method, ?simplename,?side_1),
+  Method_Descriptor(?method, ?descriptor,?side_2),
+  Method_DeclaringType(?method, ?type,?side_3),
+  ~Method_Modifier("abstract", ?method,?side_1),
+  ?sum = ?side_1 + ?side_2 + ?side_3,
+  merge_strat(3,?sum,?side).

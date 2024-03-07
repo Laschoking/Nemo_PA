@@ -1,0 +1,13 @@
+<Pointer: void test(int)>/$r11	<Pointer: void morePlay(Cat)>/@parameter0	1
+<Pointer: void morePlay(Cat)>/r2#_40	<Animal: Animal playWith(Animal)>/@parameter0	1
+<Pointer: void test(int)>/$r9	<Cat: void setParent(Cat)>/@parameter0	1
+<Pointer: void morePlay(Cat)>/r2#_38	<Animal: Animal playWith(Animal)>/@parameter0	10
+<Pointer: void test(int)>/$r7	<Pointer: void morePlay(Cat)>/@parameter0	10
+<Pointer: void main(java.lang.String[])>/$i0	<Pointer: void test(int)>/@parameter0	0
+<Animal: Animal playWith(Animal)>/r0#_0	<Pointer: void morePlay(Cat)>/$r3	1
+<Animal: Animal playWith(Animal)>/r0#_0	<Pointer: void morePlay(Cat)>/$r5	1
+<Animal: Animal playWith(Animal)>/r0#_0	<Pointer: void morePlay(Cat)>/$r5	10
+<Pointer: void morePlay(Cat)>/r0#_0	<Animal: Animal playWith(Animal)>/@parameter0	1
+<Cat: Cat getParent()>/$r1	<Pointer: void morePlay(Cat)>/$r1	1
+<Cat: Cat getParent()>/$r1	<Pointer: void morePlay(Cat)>/$r1	10
+<Pointer: void main(java.lang.String[])>/r7#_12	<Pointer: void sanitize(java.lang.Object)>/@parameter0	0

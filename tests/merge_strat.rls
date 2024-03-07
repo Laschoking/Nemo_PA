@@ -1,0 +1,12 @@
+A(1).
+A(10).
+B(?a + 1):-
+    A(?a),
+    ?a < 9.
+merge_strat(?n, ?a * ?m,?a):-
+    A(?a),
+    B(?n),
+    B(?m),
+    ?n <= ?m.
+merge_strat(?a,0,0):-
+    A(?a).

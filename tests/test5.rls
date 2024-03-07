@@ -1,0 +1,24 @@
+
+A(1).
+A(10).
+C(1).
+C(2).
+C(3).
+C(4).
+C(5).
+C(6).
+C(7).
+C(8).
+C(9).
+
+D(?n,?a * ?m,?a):-
+    A(?a),
+    C(?m),
+    C(?n),
+    ?m <= ?n.
+
+D(?n,0,0):-
+    C(?n).
+
+@export D[3] : tsv{resource="merge_strat.tsv"}.
+@output D.
