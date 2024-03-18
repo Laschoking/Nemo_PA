@@ -199,7 +199,7 @@ HeapAllocation_Type(?id, "java.lang.String",?side):-
   z_StringConstant(?id,?side).
 
 Instruction_Method1(?instruction, ?method,?side),
-AssignInstruction_To(?instruction, ?to,?side),
+AssignInstruction_To1(?instruction, ?to,?side),
 AssignHeapAllocation_Heap1(?instruction, ?heap,?side):-
   z_AssignHeapAllocation(?instruction, _, ?heap, ?to, ?method, _,?side).
 
@@ -216,8 +216,19 @@ AssignHeapAllocation_Heap(?instruction, ?heap,?side_1):-
 
 Instruction_Method1(?instruction, ?method,?side),
 AssignLocal_From1(?instruction, ?from,?side),
-AssignInstruction_To(?instruction, ?to,?side):-
+AssignInstruction_To1(?instruction, ?to,?side):-
   z_AssignLocal(?instruction, _, ?from, ?to, ?method,?side).
+
+
+AssignInstruction_To2(?instruction, ?to,0),
+AssignInstruction_To(?instruction, ?to,0):-
+  AssignInstruction_To1(?instruction, ?to,?side_1),
+  AssignInstruction_To1(?instruction, ?to,?side_2),
+  ?side_1 != ?side_2.
+
+AssignInstruction_To(?instruction, ?to,?side_1):-
+  AssignInstruction_To1(?instruction, ?to,?side_1),
+  ~AssignInstruction_To2(?instruction, ?to,_).
 
 AssignLocal_From(?instruction, ?from,0),
 AssignLocal_From2(?instruction, ?from,0):-
@@ -250,15 +261,37 @@ MethodInvocation_Method2(?instruction, ?signature,?side):-
   z_StaticMethodInvocation(?instruction, _, ?signature, ?method,?side).
 
 Instruction_Method1(?instruction, ?method,?side),
-SpecialMethodInvocation_Base(?instruction, ?base,?side),
+SpecialMethodInvocation_Base1(?instruction, ?base,?side),
 MethodInvocation_Method2(?instruction, ?signature,?side):-
   z_SpecialMethodInvocation(?instruction, _, ?signature, ?base, ?method,?side).
 
+SpecialMethodInvocation_Base(?instruction, ?base,0),
+SpecialMethodInvocation_Base2(?instruction, ?base,0):-
+  SpecialMethodInvocation_Base1(?instruction, ?base,?side_1),
+  SpecialMethodInvocation_Base1(?instruction, ?base,?side_2),
+  ?side_1 != ?side_2.
+
+SpecialMethodInvocation_Base(?instruction, ?base,?side_1):-
+  SpecialMethodInvocation_Base1(?instruction, ?base,?side_1),
+  ~SpecialMethodInvocation_Base2(?instruction, ?base,_).
+
+
 Instruction_Method1(?instruction, ?method,?side),
 isVirtualMethodInvocation_Insn1(?instruction,?side),
-VirtualMethodInvocation_Base(?instruction, ?base,?side),
+VirtualMethodInvocation_Base1(?instruction, ?base,?side),
 MethodInvocation_Method2(?instruction, ?signature,?side):-
   z_VirtualMethodInvocation(?instruction, _, ?signature, ?base, ?method,?side).
+
+
+VirtualMethodInvocation_Base(?instruction,?base,0),
+VirtualMethodInvocation_Base2(?instruction,?base,0):-
+  VirtualMethodInvocation_Base1(?instruction,?base,?side_1),
+  VirtualMethodInvocation_Base1(?instruction,?base,?side_2),
+  ?side_1 != ?side_2.
+
+VirtualMethodInvocation_Base(?instruction,?base,?side_1):-
+  ~VirtualMethodInvocation_Base2(?instruction,?base,_),
+  VirtualMethodInvocation_Base1(?instruction,?base,?side_1).
 
 isVirtualMethodInvocation_Insn(?instruction,0),
 isVirtualMethodInvocation_Insn2(?instruction,0):-
@@ -318,9 +351,27 @@ StoreArrayIndex_From(?instruction, ?from,?side):-
   z_StoreArrayIndex(?instruction, _, ?from, ?base, ?method,?side).
 
 Instruction_Method1(?instruction, ?method,?side),
-LoadArrayIndex_Base(?instruction, ?base,?side),
-LoadArrayIndex_To(?instruction, ?to,?side):-
+LoadArrayIndex_Base1(?instruction, ?base,?side),
+LoadArrayIndex_To1(?instruction, ?to,?side):-
   z_LoadArrayIndex(?instruction, _, ?to, ?base, ?method,?side).
+
+LoadArrayIndex_Base(?instruction, ?base,0),
+LoadArrayIndex_Base2(?instruction, ?base,0):-
+  LoadArrayIndex_Base1(?instruction, ?base,?side_1),
+  LoadArrayIndex_Base1(?instruction, ?base,?side_2),
+  ?side_1 != ?side_2.
+
+
+LoadArrayIndex_To2(?instruction, ?to,0),
+LoadArrayIndex_To(?instruction, ?to,0):-
+  LoadArrayIndex_To1(?instruction, ?to,?side_1),
+  LoadArrayIndex_To1(?instruction, ?to,?side_2),
+  ?side_1 != ?side_2.
+
+LoadArrayIndex_To(?instruction, ?to,?side_1):-
+  LoadArrayIndex_To1(?instruction, ?to,?side_1),
+  ~LoadArrayIndex_To2(?instruction, ?to,_).
+
 
 Instruction_Method1(?instruction, ?method,?side),
 ReturnNonvoid_Var(?instruction, ?var,?side):-

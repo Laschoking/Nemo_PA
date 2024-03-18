@@ -1,7 +1,7 @@
 % Current State: we manually import 2 files (MainClass, Method_Descriptor) because on nemo main string concatenation is not yet working
 % to use this analysis it is necessary to first run the souffle analysis and then specify the two following file paths to the souffle results:
-@source Method_Descriptor[string, string] : load-tsv("/path-to-souffle-results/Method_Descriptor.tsv") .
-@source MainClass[string] : load-tsv("/path-to-souffle-results/MainClass.tsv") . %%facts file is not modified, csv file comes from souffle
+@source Method_Descriptor[string, string] : load-tsv("/home/kotname/Documents/Diplom/Code/doop/master/DiffAnalysis/Method_Descriptor.tsv") .
+@source MainClass[string] : load-tsv("/home/kotname/Documents/Diplom/Code/doop/master/DiffAnalysis/MainClass.tsv") . %%facts file is not modified, csv file comes from souffle
 
 
 

@@ -1,0 +1,282 @@
+% own relations:
+@declare ConstFolding(string, string, integer,string,integer).
+@declare IntConstant(string, integer,string,integer).
+
+
+
+%loaded files from doop:
+
+% AssignNumConstant:        contains all variables that hold a constant value (i.e. a = 1) -> this is the base for this analysis
+@source AssignNumConstant[string, integer, integer, string, string,integer] : load-tsv("AssignNumConstant.facts").
+
+
+% AssignLocal:              holds assignments of type a = b. However we use the filtered version ("AssignLocalNoPhi.facts"), maybe its needs to be done on command line
+%                           which only holds static assignments (assignments that include the string "phi-assign" are dynamically and have been removed)
+@source AssignLocal[string, integer, string, string, string,integer] : load-tsv("AssignLocal.facts").
+
+
+% OperatorAt:               links an instruction-id of a unary or binary expression to its operator
+%                           most common operators: (~, +, -, *, /, >=, <=, ==, <<, !=, >, len, <, %, ^, cmp, &, cmpl, cmpg, >>>, >>, |)
+@source OperatorAt[string,string,integer] : load-tsv("OperatorAt.facts").
+
+
+% AssignUnop:               holds the instruction-id and variable that is getting assigned by a unary expression
+@source AssignUnop[string, integer, string, string,integer] : load-tsv("AssignUnop.facts").
+
+
+% AssignBinop:              holds the instruction-id and the variable that is getting assigned by a binary expression
+@source AssignBinop[string, integer, string, string,integer] : load-tsv("AssignBinop.facts").
+
+
+% AssignOperFrom:           links an instruction-id of a unary or binary expression, to the VARIABLE(S) that are used    
+%                           (i.e. a = b + c, will have two entries in AssignOperFrom)
+@source AssignOperFrom[string, integer, string,integer] : load-tsv("AssignOperFrom.facts").
+
+
+% AssignOperFromConstant:   links an instruction-id of a unary or binary expression to the CONSTANT(S) used 
+%                           (i.e. a = b + 2, will have one entries in AssignOperFromConstant)
+@source AssignOperFromConstant[string, integer, integer,integer] : load-tsv("AssignOperFromConstant.facts").
+
+
+
+% Implementation:
+% IntConstant contains all constants (given & computed)
+% it is initialized with all constants that are supplied by doop in AssignNumConstant (i.e. a = 2;)
+% ConstFolding will contain all variables and values where constant folding & propagation was successfull
+% the doop relations AssignUnop & AssignBinop ONLY contain the instruction-id and the assigned variable 
+% -> we need to manually check, if the expression consists of constants (a =  1 + 2;) variables (a = b + c;) or both (a = b + 2;)
+%   -> 2 cases for unary expressions:   (- const), (- var)                           
+%   -> 3 cases each for binary expressions (+,*): (var + var), (const + const), (const + var)-> order of var & const is irrelevant
+%   -> 4 cases each for binary expressions (-, /): (var - var), (const - const), (const - var), (var - const) -> order of var & const is relevant 
+
+
+
+
+A(1).A(10).C(1).C(2).C(3).C(4).C(5).C(6).C(7).C(8).C(9).
+
+merge_strat(?n, ?a * ?m,?a):-
+    A(?a),
+    C(?n),
+    C(?m),
+    ?m <= ?n.
+
+merge_strat(?a,0,0):-
+    C(?a).
+
+@output merge_strat.
+
+% Initialize IntConstant with all constants from AssignNumConstant
+IntConstant(?var, ?val,?meth,?side):-
+    AssignNumConstant(?ins, ?ln, ?val, ?var, ?meth,?side).
+
+
+% Assignment without Operator (i.e.  a  = b)
+IntConstant(?var_to, ?val, ?meth,?side),
+ConstFolding(?ins,?var_to, ?val,  ?meth,?side):-
+    AssignLocal(?ins, ?ln, ?var_from, ?var_to, ?meth,?side_1),
+    IntConstant(?var_from, ?val, ?meth,?side_2),
+    merge_strat(2,?side_1 + ?side_2,?side).
+
+
+
+
+% Unary-Negation: "-" is translated to "~" in OperatorAt
+
+IntConstant(?var, 0 - ?val1 , ?meth,?side),
+ConstFolding(?ins,?var, 0 - ?val1 ,  ?meth,?side):-
+    AssignUnop(?ins,_, ?var, ?meth,?side_1),
+    OperatorAt(?ins, ?op,?side_2),
+    ?op = "~" ,
+    AssignOperFrom(?ins, ?pos1, ?var1,?side_3),
+    IntConstant(?var1, ?val1, ?meth,?side_4),
+    merge_strat(4,?side_1 + ?side_2 + ?side_3 +?side_4,?side).
+
+
+IntConstant(?var, 0 - ?val1 , ?meth,?side),
+ConstFolding(?ins,?var, 0 - ?val1 ,  ?meth,?side):-
+    AssignUnop(?ins,_, ?var, ?meth,?side_1),
+    OperatorAt(?ins, ?op,?side_2),
+    ?op = "~" ,
+    AssignOperFromConstant(?ins, ?pos1, ?val1,?side_3),
+    merge_strat(3,?side_1 + ?side_2 + ?side_3,?side).
+
+
+
+% Addition
+
+IntConstant(?var, ?val1 + ?val2, ?meth,?side),
+ConstFolding(?ins,?var, ?val1 + ?val2,  ?meth,?side):-
+    AssignBinop(?ins,_, ?var, ?meth,?side_1),
+    OperatorAt(?ins, ?op,?side_2),
+    ?op = "+" ,
+    AssignOperFromConstant(?ins, ?pos1, ?val1,?side_3),
+    AssignOperFrom(?ins, ?pos2, ?var2,?side_4),
+    IntConstant(?var2, ?val2,?meth,?side_5),
+    merge_strat(5,?side_1 + ?side_2 + ?side_3 + ?side_4 + ?side_5,?side).
+
+IntConstant(?var, ?val1 + ?val2, ?meth,?side),
+ConstFolding(?ins,?var, ?val1 + ?val2, ?meth,?side):-
+    AssignBinop(?ins,_, ?var, ?meth,?side_1),
+    OperatorAt(?ins, ?op,?side_2),
+    ?op = "+" ,
+    AssignOperFromConstant(?ins, ?pos1, ?val1,?side_3),
+    AssignOperFromConstant(?ins, ?pos2, ?val2,?side_4),
+    ?pos1 < ?pos2,
+    merge_strat(4,?side_1 + ?side_2 + ?side_3 + ?side_4,?side).
+
+IntConstant(?var, ?val1 + ?val2, ?meth,?side),
+ConstFolding(?ins,?var, ?val1 + ?val2,  ?meth,?side):-
+    AssignBinop(?ins,_, ?var, ?meth,?side_1),
+    OperatorAt(?ins, ?op,?side_2),
+    ?op = "+" ,
+    AssignOperFrom(?ins, ?pos1, ?var1,?side_3),
+    AssignOperFrom(?ins, ?pos2, ?var2,?side_4),
+    ?pos1 < ?pos2 ,
+    IntConstant(?var1, ?val1, ?meth,?side_5),
+    IntConstant(?var2, ?val2,?meth,?side_6),
+    merge_strat(6,?side_1 + ?side_2 + ?side_3 + ?side_4 + ?side_5 + ?side_6,?side).
+
+
+
+% Subtraction
+
+IntConstant(?var, ?val1 - ?val2, ?meth,?side),
+ConstFolding(?ins,?var, ?val1 - ?val2,  ?meth,?side):-
+    AssignBinop(?ins,_, ?var, ?meth,?side_1),
+    OperatorAt(?ins, ?op,?side_2),
+    ?op = "-" ,
+    AssignOperFromConstant(?ins, ?pos1, ?val1,?side_3),
+    AssignOperFrom(?ins, ?pos2, ?var2,?side_4),
+    ?pos1 < ?pos2, 
+    IntConstant(?var2, ?val2,?meth,?side_5),
+    merge_strat(5,?side_1 + ?side_2 + ?side_3 + ?side_4 + ?side_5,?side).
+
+
+IntConstant(?var, ?val1 - ?val2, ?meth,?side),
+ConstFolding(?ins,?var, ?val1 - ?val2,  ?meth,?side):-
+    AssignBinop(?ins,_, ?var, ?meth,?side_1),
+    OperatorAt(?ins, ?op,?side_2),
+    ?op = "-" ,
+    AssignOperFrom(?ins, ?pos1, ?var1,?side_3),
+    IntConstant(?var1, ?val1, ?meth,?side_4),
+    AssignOperFromConstant(?ins, ?pos2, ?val2,?side_5),
+    ?pos1 < ?pos2,
+    merge_strat(5,?side_1 + ?side_2 + ?side_3 + ?side_4 + ?side_5,?side).
+
+
+IntConstant(?var, ?val1 - ?val2, ?meth,?side),
+ConstFolding(?ins,?var, ?val1 - ?val2,  ?meth,?side):-
+    AssignBinop(?ins,_, ?var, ?meth,?side_1),
+    OperatorAt(?ins, ?op,?side_2),
+    ?op = "-" ,
+    AssignOperFromConstant(?ins, ?pos1, ?val1,?side_3),
+    AssignOperFromConstant(?ins, ?pos2, ?val2,?side_4),
+    ?pos1 < ?pos2,
+    merge_strat(4,?side_1 + ?side_2 + ?side_3 + ?side_4,?side).
+
+
+IntConstant( ?var, ?val1 - ?val2, ?meth,?side),
+ConstFolding(?ins,?var, ?val1 - ?val2,  ?meth,?side):-
+    AssignBinop(?ins,_, ?var, ?meth,?side_1),
+    OperatorAt(?ins, ?op,?side_2),
+    ?op = "-" ,
+    AssignOperFrom(?ins, ?pos1, ?var1,?side_3),
+    AssignOperFrom(?ins, ?pos2, ?var2,?side_4),
+    ?pos1 < ?pos2 ,
+    IntConstant(?var1, ?val1, ?meth,?side_5),
+    IntConstant(?var2, ?val2,?meth,?side_6),
+    merge_strat(6,?side_1 + ?side_2 + ?side_3 + ?side_4 + ?side_5 + ?side_6,?side).
+
+
+
+% Multiplication
+
+IntConstant(?var, ?val1 * ?val2, ?meth,?side),
+ConstFolding(?ins,?var, ?val1 * ?val2,  ?meth,?side):-
+    AssignBinop(?ins,_, ?var, ?meth,?side_1),
+    OperatorAt(?ins, ?op,?side_2),
+    ?op = "*" ,
+    AssignOperFromConstant(?ins, ?pos1, ?val1,?side_3),
+    AssignOperFrom(?ins, ?pos2, ?var2,?side_4),
+    IntConstant(?var2, ?val2,?meth,?side_5),
+    merge_strat(5,?side_1 + ?side_2 + ?side_3 + ?side_4 + ?side_5,?side).
+
+
+IntConstant( ?var, ?val1 * ?val2, ?meth,?side),
+ConstFolding(?ins,?var, ?val1 * ?val2,  ?meth,?side):-
+    AssignBinop(?ins,_, ?var, ?meth,?side_1),
+    OperatorAt(?ins, ?op,?side_2),
+    ?op = "*" ,
+    AssignOperFromConstant(?ins, ?pos1, ?val1,?side_3),
+    AssignOperFromConstant(?ins, ?pos2, ?val2,?side_4),
+    ?pos1 < ?pos2,
+    merge_strat(4,?side_1 + ?side_2 + ?side_3 + ?side_4,?side).
+
+
+IntConstant(?var, ?val1 * ?val2, ?meth,?side),
+ConstFolding(?ins,?var, ?val1 * ?val2,  ?meth,?side):-
+    AssignBinop(?ins,_, ?var, ?meth,?side_1),
+    OperatorAt(?ins, ?op,?side_2),
+    ?op = "*" ,
+    AssignOperFrom(?ins, ?pos1, ?var1,?side_3),
+    AssignOperFrom(?ins, ?pos2, ?var2,?side_4),
+    ?pos1 < ?pos2 ,
+    IntConstant(?var1, ?val1, ?meth,?side_5),
+    IntConstant(?var2, ?val2,?meth,?side_6),
+    merge_strat(6,?side_1 + ?side_2 + ?side_3 + ?side_4 + ?side_5 + ?side_6,?side).
+
+
+% Division
+
+IntConstant(?var, ?val1 / ?val2, ?meth,?side),
+ConstFolding(?ins,?var, ?val1 / ?val2,  ?meth,?side):-
+    AssignBinop(?ins,_, ?var, ?meth,?side_1),
+    OperatorAt(?ins, ?op,?side_2),
+    ?op = "/" ,
+    AssignOperFromConstant(?ins, ?pos1, ?val1,?side_3),
+    AssignOperFrom(?ins, ?pos2, ?var2,?side_4),
+    ?pos1 < ?pos2, 
+    IntConstant(?var2, ?val2,?meth,?side_5),
+    merge_strat(5,?side_1 + ?side_2 + ?side_3 + ?side_4 + ?side_5,?side).
+
+
+IntConstant(?var, ?val1 / ?val2, ?meth,?side),
+ConstFolding(?ins,?var, ?val1 / ?val2,  ?meth,?side):-
+    AssignBinop(?ins,_, ?var, ?meth,?side_1),
+    OperatorAt(?ins, ?op,?side_2),
+    ?op = "/" ,
+    AssignOperFrom(?ins, ?pos1, ?var1,?side_3),
+    IntConstant(?var1, ?val1, ?meth,?side_4),
+    AssignOperFromConstant(?ins, ?pos2, ?val2,?side_5),
+    ?pos1 < ?pos2,
+    merge_strat(5,?side_1 + ?side_2 + ?side_3 + ?side_4 + ?side_5,?side).
+
+
+IntConstant(?var, ?val1 / ?val2, ?meth,?side),
+ConstFolding(?ins,?var, ?val1 / ?val2,  ?meth,?side):-
+    AssignBinop(?ins,_, ?var, ?meth,?side_1),
+    OperatorAt(?ins, ?op,?side_2),
+    ?op = "/" ,
+    AssignOperFromConstant(?ins, ?pos1, ?val1,?side_3),
+    AssignOperFromConstant(?ins, ?pos2, ?val2,?side_4),
+    ?pos1 < ?pos2,
+    merge_strat(4,?side_1 + ?side_2 + ?side_3 + ?side_4,?side).
+
+
+IntConstant(?var, ?val1 / ?val2, ?meth,?side),
+ConstFolding(?ins,?var, ?val1 / ?val2,  ?meth,?side):-
+    AssignBinop(?ins,_, ?var, ?meth,?side_1),
+    OperatorAt(?ins, ?op,?side_2),
+    ?op = "/" ,
+    AssignOperFrom(?ins, ?pos1, ?var1,?side_3),
+    AssignOperFrom(?ins, ?pos2, ?var2,?side_4),
+    ?pos1 < ?pos2 ,
+    IntConstant(?var1, ?val1, ?meth,?side_5),
+    IntConstant(?var2, ?val2,?meth,?side_6),
+    merge_strat(6,?side_1 + ?side_2 + ?side_3 + ?side_4 + ?side_5 + ?side_6,?side).
+
+
+
+@output ConstFolding .
+@output IntConstant .
+ 

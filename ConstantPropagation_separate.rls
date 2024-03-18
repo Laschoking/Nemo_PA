@@ -1,3 +1,15 @@
+% this simple implementation does NOT consider the control flow graph
+% i.e. if (){
+%           x=1;} 
+%       else{
+%           x=2;} 
+%       y=x; 
+% will lead to inconsistencies in the calculation
+% thus it is insufficient for real world examples
+
+% NOTE: AssignLocal MUST NOT contain phi-assignments, otherwise the chase is not successfull
+% run something like 'grep -v "phi-assign" AssignLocal.facts > AssignLocal.facts'
+
 % own relations:
 @declare ConstFolding(string, string, integer,string).
 @declare IntegerConstant(string, integer,string).
@@ -17,8 +29,8 @@
 @source AssignNumConstant[string, integer, integer, string, string] : load-tsv("AssignNumConstant.facts").
 
 
-% AssignLocal:              holds assignments of type a = b. However we use the filtered version ("AssignLocalNoPhi.facts"), 
-%                           which only holds static assignments (assignments that include the string "phi-assign" are dynamically and have been removed)
+% AssignLocal:              holds assignments of type a = b. 
+% which only holds static assignments (assignments that include the string "phi-assign" are dynamically and have been removed)
 @source AssignLocal[string, integer, string, string, string] : load-tsv("AssignLocal.facts").
 
 
