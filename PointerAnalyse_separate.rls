@@ -1,9 +1,8 @@
 @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 true("true"^^xsd:boolean).
 
-% Current State: we manually import 2 files (MainClass, Method_Descriptor) because on nemo main string concatenation is not yet working
-% to use this analysis it is necessary to first run the souffle analysis and then specify the two following file paths to the souffle results:
-@import Method_Descriptor :- tsv{resource="/home/kotname/Documents/Diplom/Code/doop/master/DiffAnalysis/Method_Descriptor.tsv",format=(string, string)}.
+% Update of analysis: no more import of alternated MainClass or Method_Descriptor, since CONCAT & CONTAINS work now :)
+
 @import MainClass :- tsv{resource="MainClass.facts",format=(string)}. %facts file is not modified, csv file comes from souffle
 
 @import ClassModifier :- tsv{resource="ClassModifier.facts",format=(string, string)}.
@@ -40,12 +39,17 @@ true("true"^^xsd:boolean).
 @import z_Return :- tsv{resource="Return.facts",format=(string, int, string, string)}.
 
 
+
+
+Method_Descriptor(?method, ?descriptor) :-
+  Method_ReturnType(?method, ?returnType),
+  Method_ParamTypes(?method, ?params),
+  ?descriptor = CONCAT(?returnType, CONCAT( "(", CONCAT(?params, ")"))).
+
 MainClass(?b):-
   ClassModifier(_,?b),
   MainClass(?a),
   true(CONTAINS(?a,?b)).
-
-
 
 % imports
 isType(?class):-
@@ -216,7 +220,8 @@ AssignLocal(?from, ?to, ?inmethod):-
   Instruction_Method(?insn, ?inmethod),
   AssignLocal_From(?insn, ?from).
 
-AssignHeapAllocation(?heap, ?to, ?inmethod):-
+AssignHeapAllocation(?heap,?to,?inmethod),
+AssignHeapAllocation_no_var(?heap, ?inmethod):-
   Instruction_Method(?insn, ?inmethod),
   AssignHeapAllocation_Heap(?insn, ?heap),
   AssignInstruction_To(?insn, ?to).
@@ -371,7 +376,7 @@ InitializedClass(?class):-
 
 InitializedClass(?class):-
    Reachable(?inmethod),
-   AssignHeapAllocation(?heap, _, ?inmethod),
+   AssignHeapAllocation_no_var(?heap, ?inmethod),
    HeapAllocation_Type(?heap, ?class).
 
 InitializedClass(?class):-
@@ -506,82 +511,87 @@ VarPointsTo(?heap, ?this):-
 Reachable(?method):-
   MainMethodDeclaration(?method).
 
-@export Reachable :- tsv{resource="Reachable.tsv"}.
-@export VarPointsTo :- tsv{resource="VarPointsTo.tsv"}.
-@export CallGraphEdge :- tsv{resource="CallGraphEdge.tsv"}.
-@export Assign :- tsv{resource="Assign.tsv"}.
-@export MethodLookup :- tsv{resource="MethodLookup.tsv"}.
-@export AssignReturnValue :- tsv{resource="AssignReturnValue.tsv"}.
-
-@export isType :- tsv {resource="isType.tsv"}.
-@export isReferenceType :- tsv{resource="isReferenceType.tsv"}.
-@export isArrayType :- tsv{resource="isArrayType.tsv"}.
-@export isClassType :- tsv{resource="isClassType.tsv"}.
-@export isInterfaceType :- tsv{resource="isInterfaceType.tsv"}.
-@export ApplicationClass :- tsv{resource="ApplicationClass.tsv"}.
-@export Field_DeclaringType :- tsv{resource="Field_DeclaringType.tsv"}.
-@export Method_DeclaringType :- tsv{resource="Method_DeclaringType.tsv"}.
-@export Method_ReturnType :- tsv{resource="Method_ReturnType.tsv"}.
-@export Method_SimpleName :- tsv{resource="Method_SimpleName.tsv"}.
-@export Method_ParamTypes :- tsv{resource="Method_ParamTypes.tsv"}.
-@export ThisVar :- tsv{resource="ThisVar.tsv"}.
-@export Var_DeclaringMethod :- tsv{resource="Var_DeclaringMethod.tsv"}.
-@export HeapAllocation_Type :- tsv{resource="HeapAllocation_Type.tsv"}.
-@export Instruction_Method :- tsv{resource="Instruction_Method.tsv"}.
-@export isVirtualMethodInvocation_Insn :- tsv{resource="isVirtualMethodInvocation_Insn.tsv"}.
-@export isStaticMethodInvocation_Insn :- tsv{resource="isStaticMethodInvocation_Insn.tsv"}.
-@export FieldInstruction_Signature :- tsv{resource="FieldInstruction_Signature.tsv"}.
-@export LoadInstanceField_Base :- tsv{resource="LoadInstanceField_Base.tsv"}.
-@export LoadInstanceField_To :- tsv{resource="LoadInstanceField_To.tsv"}.
-@export StoreInstanceField_From :- tsv{resource="StoreInstanceField_From.tsv"}.
-@export StoreInstanceField_Base :- tsv{resource="StoreInstanceField_Base.tsv"}.
-@export LoadStaticField_To :- tsv{resource="LoadStaticField_To.tsv"}.
-@export StoreStaticField_From :- tsv{resource="StoreStaticField_From.tsv"}.
-@export LoadArrayIndex_Base :- tsv{resource="LoadArrayIndex_Base.tsv"}.
-@export LoadArrayIndex_To :- tsv{resource="LoadArrayIndex_To.tsv"}.
-@export StoreArrayIndex_From :- tsv{resource="StoreArrayIndex_From.tsv"}.
-@export StoreArrayIndex_Base :- tsv{resource="StoreArrayIndex_Base.tsv"}.
-@export AssignInstruction_To :- tsv{resource="AssignInstruction_To.tsv"}.
-@export AssignCast_From :- tsv{resource="AssignCast_From.tsv"}.
-@export AssignCast_Type :- tsv{resource="AssignCast_Type.tsv"}.
-@export AssignLocal_From :- tsv{resource="AssignLocal_From.tsv"}.
-@export AssignHeapAllocation_Heap :- tsv{resource="AssignHeapAllocation_Heap.tsv"}.
-@export ReturnNonvoid_Var :- tsv{resource="ReturnNonvoid_Var.tsv"}.
-@export MethodInvocation_Method :- tsv{resource="MethodInvocation_Method.tsv"}.
-@export VirtualMethodInvocation_Base :- tsv{resource="VirtualMethodInvocation_Base.tsv"}.
-@export VirtualMethodInvocation_SimpleName :- tsv{resource="VirtualMethodInvocation_SimpleName.tsv"}.
-@export VirtualMethodInvocation_Descriptor :- tsv{resource="VirtualMethodInvocation_Descriptor.tsv"}.
-@export SpecialMethodInvocation_Base :- tsv{resource="SpecialMethodInvocation_Base.tsv"}.
-@export MethodInvocation_Base :- tsv{resource="MethodInvocation_Base.tsv"}.
-@export Method_Descriptor :- tsv{resource="Method_Descriptor.tsv"}.
-@export MethodImplemented :- tsv{resource="MethodImplemented.tsv"}.
-
-@export DirectSubclass :- tsv{resource="DirectSubclass.tsv"}.
-@export Subclass :- tsv{resource="Subclass.tsv"}.
-@export DirectSuperclass :- tsv{resource="DirectSuperclass.tsv"}.
-@export Superclass :- tsv{resource="Superclass.tsv"}.
-
-@export Superinterface :- tsv{resource="Superinterface.tsv"}.
-@export SubtypeOf :- tsv{resource="SubtypeOf.tsv"}.
-@export SupertypeOf :- tsv{resource="SupertypeOf.tsv"}.
-@export SubtypeOfDifferent :- tsv{resource="SubtypeOfDifferent.tsv"}.
-@export MainMethodDeclaration :- tsv{resource="MainMethodDeclaration.tsv"}.
-@export LoadInstanceField :- tsv{resource="LoadInstanceField.tsv"}.
-@export StoreInstanceField :- tsv{resource="StoreInstanceField.tsv"}.
-@export LoadStaticField :- tsv{resource="LoadStaticField.tsv"}.
-@export StoreStaticField :- tsv{resource="StoreStaticField.tsv"}.
-@export LoadArrayIndex :- tsv{resource="LoadArrayIndex.tsv"}.
-@export StoreArrayIndex :- tsv{resource="StoreArrayIndex.tsv"}.
-@export AssignCast :- tsv{resource="AssignCast.tsv"}.
-@export AssignLocal :- tsv{resource="AssignLocal.tsv"}.
-@export AssignHeapAllocation :- tsv{resource="AssignHeapAllocation.tsv"}.
-@export ReturnVar :- tsv{resource="ReturnVar.tsv"}.
-@export StaticMethodInvocation :- tsv{resource="StaticMethodInvocation.tsv"}.
-@export SameMethod :- tsv{resource="SameMethod.tsv"}.
-@export ClassInitializer :- tsv{resource="ClassInitializer.tsv"}.
-@export InitializedClass :- tsv{resource="InitializedClass.tsv"}.
+@export Reachable :- tsv{resource="Reachable.tsv",format=(string)}.
+@export VarPointsTo :- tsv{resource="VarPointsTo.tsv",format=(string,string)}.
+@export CallGraphEdge :- tsv{resource="CallGraphEdge.tsv",format=(string,string)}.
+@export Assign :- tsv{resource="Assign.tsv",format=(string,string)}.
+@export MethodLookup :- tsv{resource="MethodLookup.tsv",format=(string,string,string,string)}.
+@export AssignReturnValue :- tsv{resource="AssignReturnValue.tsv",format=(string,string)}.
 @export MainClass :- tsv{resource="MainClass.tsv",format=(string)}.
 
 
-@export MethodLookup :- tsv{resource="MethodLookup.tsv"}.
-@export InstanceFieldPointsTo :- tsv{resource="InstanceFieldPointsTo.tsv"}.
+@export isType :- tsv{resource="isType.tsv",format=(string)}.
+@export isReferenceType :- tsv{resource="isReferenceType.tsv",format=(string)}.
+@export isArrayType :- tsv{resource="isArrayType.tsv",format=(string)}.
+@export isClassType :- tsv{resource="isClassType.tsv",format=(string)}.
+@export isInterfaceType :- tsv{resource="isInterfaceType.tsv",format=(string)}.
+@export ApplicationClass :- tsv{resource="ApplicationClass.tsv",format=(string)}.
+@export Field_DeclaringType :- tsv{resource="Field_DeclaringType.tsv",format=(string,string)}.
+@export Method_DeclaringType :- tsv{resource="Method_DeclaringType.tsv",format=(string,string)}.
+@export Method_ReturnType :- tsv{resource="Method_ReturnType.tsv",format=(string,string)}.
+@export Method_SimpleName :- tsv{resource="Method_SimpleName.tsv",format=(string,string)}.
+@export Method_ParamTypes :- tsv{resource="Method_ParamTypes.tsv",format=(string,string)}.
+@export ThisVar :- tsv{resource="ThisVar.tsv",format=(string,string)}.
+@export Var_DeclaringMethod :- tsv{resource="Var_DeclaringMethod.tsv",format=(string,string)}.
+@export HeapAllocation_Type :- tsv{resource="HeapAllocation_Type.tsv",format=(string,string)}.
+@export Instruction_Method :- tsv{resource="Instruction_Method.tsv",format=(string,string)}.
+@export isVirtualMethodInvocation_Insn :- tsv{resource="isVirtualMethodInvocation_Insn.tsv",format=(string)}.
+@export isStaticMethodInvocation_Insn :- tsv{resource="isStaticMethodInvocation_Insn.tsv",format=(string)}.
+@export FieldInstruction_Signature :- tsv{resource="FieldInstruction_Signature.tsv",format=(string,string)}.
+@export LoadInstanceField_Base :- tsv{resource="LoadInstanceField_Base.tsv",format=(string,string)}.
+@export LoadInstanceField_To :- tsv{resource="LoadInstanceField_To.tsv",format=(string,string)}.
+@export StoreInstanceField_From :- tsv{resource="StoreInstanceField_From.tsv",format=(string,string)}.
+@export StoreInstanceField_Base :- tsv{resource="StoreInstanceField_Base.tsv",format=(string,string)}.
+@export LoadStaticField_To :- tsv{resource="LoadStaticField_To.tsv",format=(string,string)}.
+@export StoreStaticField_From :- tsv{resource="StoreStaticField_From.tsv",format=(string,string)}.
+@export LoadArrayIndex_Base :- tsv{resource="LoadArrayIndex_Base.tsv",format=(string,string)}.
+@export LoadArrayIndex_To :- tsv{resource="LoadArrayIndex_To.tsv",format=(string,string)}.
+@export StoreArrayIndex_From :- tsv{resource="StoreArrayIndex_From.tsv",format=(string,string)}.
+@export StoreArrayIndex_Base :- tsv{resource="StoreArrayIndex_Base.tsv",format=(string,string)}.
+@export AssignInstruction_To :- tsv{resource="AssignInstruction_To.tsv",format=(string,string)}.
+@export AssignCast_From :- tsv{resource="AssignCast_From.tsv",format=(string,string)}.
+@export AssignCast_Type :- tsv{resource="AssignCast_Type.tsv",format=(string,string)}.
+@export AssignLocal_From :- tsv{resource="AssignLocal_From.tsv",format=(string,string)}.
+@export AssignHeapAllocation_Heap :- tsv{resource="AssignHeapAllocation_Heap.tsv",format=(string,string)}.
+@export ReturnNonvoid_Var :- tsv{resource="ReturnNonvoid_Var.tsv",format=(string,string)}.
+@export MethodInvocation_Method :- tsv{resource="MethodInvocation_Method.tsv",format=(string,string)}.
+@export VirtualMethodInvocation_Base :- tsv{resource="VirtualMethodInvocation_Base.tsv",format=(string,string)}.
+@export VirtualMethodInvocation_SimpleName :- tsv{resource="VirtualMethodInvocation_SimpleName.tsv",format=(string,string)}.
+@export VirtualMethodInvocation_Descriptor :- tsv{resource="VirtualMethodInvocation_Descriptor.tsv",format=(string,string)}.
+@export SpecialMethodInvocation_Base :- tsv{resource="SpecialMethodInvocation_Base.tsv",format=(string,string)}.
+@export MethodInvocation_Base :- tsv{resource="MethodInvocation_Base.tsv",format=(string,string)}.
+@export Method_Descriptor :- tsv{resource="Method_Descriptor.tsv",format=(string,string)}.
+@export MethodImplemented :- tsv{resource="MethodImplemented.tsv",format=(string,string,string,string)}.
+
+@export DirectSubclass :- tsv{resource="DirectSubclass.tsv",format=(string,string)}.
+@export Subclass :- tsv{resource="Subclass.tsv",format=(string,string)}.
+@export Superclass :- tsv{resource="Superclass.tsv",format=(string,string)}.
+@export DirectSuperclass :- tsv{resource="DirectSuperclass.tsv",format=(string,string)}.
+
+@export Superinterface :- tsv{resource="Superinterface.tsv",format=(string,string)}.
+@export SubtypeOf :- tsv{resource="SubtypeOf.tsv",format=(string,string)}.
+@export SupertypeOf :- tsv{resource="SupertypeOf.tsv",format=(string,string)}.
+@export SubtypeOfDifferent :- tsv{resource="SubtypeOfDifferent.tsv",format=(string,string)}.
+@export MainMethodDeclaration :- tsv{resource="MainMethodDeclaration.tsv",format=(string)}.
+@export LoadInstanceField :- tsv{resource="LoadInstanceField.tsv",format=(string,string,string,string)}.
+@export StoreInstanceField :- tsv{resource="StoreInstanceField.tsv",format=(string,string,string,string)}.
+@export LoadStaticField :- tsv{resource="LoadStaticField.tsv",format=(string,string,string)}.
+@export StoreStaticField :- tsv{resource="StoreStaticField.tsv",format=(string,string,string)}.
+@export LoadArrayIndex :- tsv{resource="LoadArrayIndex.tsv",format=(string,string,string)}.
+@export StoreArrayIndex :- tsv{resource="StoreArrayIndex.tsv",format=(string,string,string)}.
+@export AssignCast :- tsv{resource="AssignCast.tsv",format=(string,string,string,string)}.
+@export AssignLocal :- tsv{resource="AssignLocal.tsv",format=(string,string,string)}.
+@export AssignHeapAllocation :- tsv{resource="AssignHeapAllocation.tsv",format=(string,string,string)}.
+@export ReturnVar :- tsv{resource="ReturnVar.tsv",format=(string,string)}.
+@export AssignHeapAllocation_no_var :- tsv{resource="AssignHeapAllocation_no_var.tsv",format=(string,string)}.
+@export StaticMethodInvocation :- tsv{resource="StaticMethodInvocation.tsv",format=(string,string,string)}.
+@export SameMethod :- tsv{resource="SameMethod.tsv",format=(string)}.
+@export ClassInitializer :- tsv{resource="ClassInitializer.tsv",format=(string,string)}.
+@export InitializedClass :- tsv{resource="InitializedClass.tsv",format=(string)}.
+
+
+@export InstanceFieldPointsTo :- tsv{resource="InstanceFieldPointsTo.tsv",format=(string,string,string)}.
+@export StaticFieldPointsTo :- tsv{resource="StaticFieldPointsTo.tsv",format=(string,string)}.
+
+@export ArrayIndexPointsTo :- tsv{resource="ArrayIndexPointsTo.tsv",format=(string,string)}.
+

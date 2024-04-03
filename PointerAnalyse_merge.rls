@@ -1,10 +1,13 @@
-% Current State: needs manual adaption of file MainClass (since no substring stuff is possible)
-% Import Method_Descriptor from self-contained.dl from souffle (bc. string concatenation does not work yet)
- 
-@import Method_Descriptor :- tsv{resource="/home/kotname/Documents/Diplom/Code/doop/master/DiffAnalysis/Method_Descriptor.tsv",format=(string, string)}.
+% Update of analysis: no more import of alternated MainClass or Method_Descriptor, since CONCAT & CONTAINS work now :)
+
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+true("true"^^xsd:boolean).
+
+@import ClassModifier :- tsv{resource="ClassModifier.facts",format=(string, string,int)}.
+@import MainClass :- tsv{resource="MainClass.facts",format=(string,int)}. 
+
 @import DirectSuperclass :- tsv{resource="DirectSuperclass.facts",format=(string, string,int)}.
 @import DirectSuperinterface :- tsv{resource="DirectSuperinterface.facts",format=(string, string,int)}.
-@import MainClass :- tsv{resource="/home/kotname/Documents/Diplom/Code/doop/master/DiffAnalysis/MainClass.tsv",format=(string)}. 
 @import Method_Modifier :- tsv{resource="Method-Modifier.facts",format=(string, string,int)}.
 @import FormalParam :- tsv{resource="FormalParam.facts",format=(int, string,string,int)}.
 @import Var_Type :- tsv{resource="Var-Type.facts",format=(string, string,int)}.
@@ -37,16 +40,24 @@
 
 % assume that no relations with more than 9 relations exist
 
+Method_Descriptor(?method, ?descriptor) :-
+  Method_ReturnType(?method, ?returnType,?side_1),
+  Method_ParamTypes(?method, ?params,?side_2),
+  ?descriptor = CONCAT(?returnType, CONCAT( "(", CONCAT(?params, ")"))),
+  merge_strat(2, ?side_1 + ?side_2,?side).
 
+
+MainClass(?b,?side):-
+  ClassModifier(_,?b,?side),
+  MainClass(?a,_),
+  true(CONTAINS(?a,?b)).
 
 A(1).A(10).C(1).C(2).C(3).C(4).C(5).C(6).C(7).C(8).C(9).
 
 merge_strat(?n, ?a * ?m,?a):-
-    A(?a),C(?n),C(?m),?m <= ?n.
+   A(?a),C(?n),C(?m),?m <= ?n.
 merge_strat(?a,0,0):-
-    C(?a).
-
-
+   C(?a).
 
 % Fat schema
 
@@ -54,7 +65,6 @@ HeapAllocation_Type("<<main method array>>", "java.lang.String[]",0).
 
 
 HeapAllocation_Type("<<main method array content>>", "java.lang.String",0).
-MainMethodArgArrayContent("<<main method array content>>").
 
 
 % imports
@@ -361,12 +371,24 @@ AssignLocal(?from, ?to, ?inmethod,?side):-
   ?sum = ?side_1 + ?side_2 + ?side_3,
   merge_strat(3,?sum,?side).
 
-AssignHeapAllocation(?heap, ?to, ?inmethod,?side):-
+AssignHeapAllocation(?heap, ?to, ?inmethod,?side),
+AssignHeapAllocation_no_var1(?heap, ?inmethod,?side):-
   Instruction_Method(?insn, ?inmethod,?side_1),
   AssignHeapAllocation_Heap(?insn, ?heap,?side_2),
-  AssignInstruction_To(?insn, ?to,?side_3),
+  AssignInstruction_To(?insn, ?to ,?side_3),
   ?sum = ?side_1 + ?side_2 + ?side_3,
   merge_strat(3,?sum,?side).
+
+AssignHeapAllocation_no_var(?heap, ?inmethod,0),
+AssignHeapAllocation_no_var2(?heap, ?inmethod,0):-
+  AssignHeapAllocation_no_var1(?heap, ?inmethod,?side_1),
+  AssignHeapAllocation_no_var1(?heap, ?inmethod,?side_2),
+  ?side_1 != ?side_2.
+
+AssignHeapAllocation_no_var(?heap, ?inmethod,?side_1):-
+  AssignHeapAllocation_no_var1(?heap, ?inmethod,?side_1),
+  ~AssignHeapAllocation_no_var2(?heap, ?inmethod,_).
+
 
 ReturnVar(?var, ?method,?side):-
   Instruction_Method(?insn, ?method,?side_1),
@@ -529,15 +551,10 @@ SubtypeOf(?s, ?t,?side):-
 SubtypeOf(?t, ?t,?side):-
   isType(?t,?side).
   
-SameSubtypeOf(?s,?s,?side):-
-  SubtypeOf(?s,?t,?side).
-
-SameSubtypeOf(?t,?t,?side):-
-  SubtypeOf(?s,?t,?side).
 
 SubtypeOfDifferent(?s, ?t,?side):-
-  ~SameSubtypeOf(?s,?t,?side),
-  SubtypeOf(?s,?t,?side).
+  SubtypeOf(?s,?t,?side),
+  ?s != ?t.
 
 
 SameMethod("<java.util.prefs.Base64: void main(java.lang.String[])>",0).
@@ -546,7 +563,7 @@ SameMethod("<sun.security.provider.PolicyParser: void main(java.lang.String[])>"
 
 
 MainMethodDeclaration(?method,?side):-
-  MainClass(?type),
+  MainClass(?type,?side),
   Method_DeclaringType(?method, ?type,?side_1),
   Method_SimpleName(?method, "main",?side_2),
   Method_Descriptor(?method, "void(java.lang.String[])"),
@@ -557,136 +574,126 @@ MainMethodDeclaration(?method,?side):-
   merge_strat(4,?sum,?side).
 
 
-
-
 ClassInitializer(?type, ?method,?side):-
-   MethodImplemented("<clinit>", "void()", ?type, ?method,?side).
+  MethodImplemented("<clinit>", "void()", ?type, ?method,?side).
 
-InitializedClass(?superclass,?side):-
-   InitializedClass(?class,?side_1),
-   DirectSuperclass(?class, ?superclass,?side_2),
+
+InitializedClass1(?superclass,?side):-
+  InitializedClass1(?class,?side_1),
+  DirectSuperclass(?class, ?superclass,?side_2),
   ?sum = ?side_1 + ?side_2,
   merge_strat(2,?sum,?side).
 
-
-
-InitializedClass(?superinterface,?side):-
-   InitializedClass(?classOrInterface,?side_1),
-   DirectSuperinterface(?classOrInterface, ?superinterface,?side_2),
-  ?sum = ?side_1 + ?side_2,
-  merge_strat(2,?sum,?side).
-
-
-InitializedClass(?class,?side):-
-   MainMethodDeclaration(?method,?side_1),
-   Method_DeclaringType(?method, ?class,?side_2),
+InitializedClass1(?superinterface,?side):-
+  InitializedClass1(?classOrInterface,?side_1),
+  DirectSuperinterface(?classOrInterface, ?superinterface,?side_2),
   ?sum = ?side_1 + ?side_2,
   merge_strat(2,?sum,?side).
 
 
 InitializedClass1(?class,?side):-
-   Reachable(?inmethod,?side_1),
-   AssignHeapAllocation(?heap, _, ?inmethod,?side_2),
-   HeapAllocation_Type(?heap, ?class,?side_3),
+  MainMethodDeclaration(?method,?side_1),
+  Method_DeclaringType(?method, ?class,?side_2),
+  ?sum = ?side_1 + ?side_2,
+  merge_strat(2,?sum,?side).
+
+
+InitializedClass1(?class,?side):-
+  Reachable1(?inmethod,?side_1),
+  AssignHeapAllocation_no_var(?heap, ?inmethod,?side_2),
+  HeapAllocation_Type(?heap, ?class,?side_3),
   ?sum = ?side_1 + ?side_2 + ?side_3,
   merge_strat(3,?sum,?side).
 
-InitializedClass(?class,0),
-InitializedClass2(?class,0):-
-  InitializedClass1(?class,?side_1),
-  InitializedClass1(?class,?side_2),
-  ?side_1 != ?side_2.
 
-InitializedClass(?class,?side_1):-
-  InitializedClass1(?class,?side_1),
-  ~InitializedClass2(?class,_).
-
-InitializedClass(?class,?side):-
-   Reachable(?inmethod,?side),
-   Instruction_Method(?invocation, ?inmethod,?side_1),
-   isStaticMethodInvocation_Insn(?invocation,?side_2),
-   MethodInvocation_Method(?invocation, ?signature,?side_3),
-   Method_DeclaringType(?signature, ?class,?side_4),
+InitializedClass1(?class,?side):-
+  Reachable1(?inmethod,?side),
+  Instruction_Method(?invocation, ?inmethod,?side_1),
+  isStaticMethodInvocation_Insn(?invocation,?side_2),
+  MethodInvocation_Method(?invocation, ?signature,?side_3),
+  Method_DeclaringType(?signature, ?class,?side_4),
   ?sum = ?side_1 + ?side_2 + ?side_3 + ?side_4,
   merge_strat(4,?sum,?side).
 
 
-%InitializedClass(?classOrInterface,?side):-
-%   Reachable(?inmethod,?side_1),
-%   StoreStaticField(_, ?signature, ?inmethod,?side_2),
-%   Field_DeclaringType(?signature, ?classOrInterface,?side_3),
-%  ?sum = ?side_1 + ?side_2 + ?side_3,
-%  merge_strat(3,?sum,?side).
-%
-%
-%InitializedClass(?classOrInterface,?side):-
-%   Reachable(?inmethod,?side_1),
-%   LoadStaticField(?signature, _, ?inmethod,?side_2),
-%   Field_DeclaringType(?signature, ?classOrInterface, ?side_3),
-%  ?sum = ?side_1 + ?side_2 + ?side_3,
-%  merge_strat(3,?sum,?side).
+InitializedClass1(?classOrInterface,?side):-
+ Reachable1(?inmethod,?side_1),
+ StoreStaticField(_, ?signature, ?inmethod,?side_2),
+ Field_DeclaringType(?signature, ?classOrInterface,?side_3),
+  ?sum = ?side_1 + ?side_2 + ?side_3,
+  merge_strat(3,?sum,?side).
 
 
-%Reachable(?clinit,?side):-
-%   InitializedClass(?class,?side_1),
-%   ClassInitializer(?class, ?clinit,?side_2),
-%  ?sum = ?side_1 + ?side_2,
-%  merge_strat(2,?sum,?side).
+InitializedClass1(?classOrInterface,?side):-
+ Reachable1(?inmethod,?side_1),
+ LoadStaticField(?signature, _, ?inmethod,?side_2),
+ Field_DeclaringType(?signature, ?classOrInterface, ?side_3),
+  ?sum = ?side_1 + ?side_2 + ?side_3,
+  merge_strat(3,?sum,?side).
 
 
-Assign(?actual, ?formal,?side):-
-  CallGraphEdge(?invocation, ?method,?side_1),
+Reachable1(?clinit,?side):-
+ InitializedClass1(?class,?side_1),
+ ClassInitializer(?class, ?clinit,?side_2),
+  ?sum = ?side_1 + ?side_2,
+  merge_strat(2,?sum,?side).
+
+
+Assign1(?actual, ?formal,?side):-
+  CallGraphEdge1(?invocation, ?method,?side_1),
   FormalParam(?index, ?method, ?formal,?side_2),
   ActualParam(?index, ?invocation, ?actual,?side_3),
   ?sum = ?side_1 + ?side_2 + ?side_3,
   merge_strat(3,?sum,?side).
 
 
-Assign(?return, ?local,?side):-
-  CallGraphEdge(?invocation, ?method,?side_1),
+Assign1(?return, ?local,?side):-
+  CallGraphEdge1(?invocation, ?method,?side_1),
   ReturnVar(?return, ?method,?side_2),
   AssignReturnValue(?invocation, ?local,?side_3),
   ?sum = ?side_1 + ?side_2 + ?side_3,
   merge_strat(3,?sum,?side).
 
 
-VarPointsTo(?heap, ?var,?side):-
+
+
+VarPointsTo1(?heap, ?var,?side):-
   AssignHeapAllocation(?heap, ?var, ?inMethod,?side_1),
-  Reachable(?inMethod,?side_2),
+  Reachable1(?inMethod,?side_2),
   ?sum = ?side_1 + ?side_2,
   merge_strat(2,?sum,?side).
 
 
-VarPointsTo(?heap, ?to,?side):-
-  Assign(?from, ?to,?side_1),
-  VarPointsTo(?heap, ?from,?side_2),
+VarPointsTo1(?heap, ?to,?side):-
+  Assign1(?from, ?to,?side_1),
+  VarPointsTo1(?heap, ?from,?side_2),
   ?sum = ?side_1 + ?side_2,
   merge_strat(2,?sum,?side).
 
 
-VarPointsTo(?heap, ?to,?side):-
-  Reachable(?inmethod,?side_1),
+VarPointsTo1(?heap, ?to,?side):-
+  Reachable1(?inmethod,?side_1),
   AssignLocal(?from, ?to, ?inmethod,?side_2),
-  VarPointsTo(?heap, ?from,?side_3),
+  VarPointsTo1(?heap, ?from,?side_3),
   ?sum = ?side_1 + ?side_2 + ?side_3,
   merge_strat(3,?sum,?side).
 
  
-VarPointsTo(?heap, ?to,?side):-
-  Reachable(?method,?side_1),
+VarPointsTo1(?heap, ?to,?side):-
+  Reachable1(?method,?side_1),
   AssignCast(?type, ?from, ?to, ?method,?side_2),
   SupertypeOf(?type, ?heaptype,?side_3),
   HeapAllocation_Type(?heap, ?heaptype,?side_4),
-  VarPointsTo(?heap, ?from,?side_5),
+  VarPointsTo1(?heap, ?from,?side_5),
   ?sum = ?side_1 + ?side_2 + ?side_3 + ?side_4 + ?side_5,
   merge_strat(5,?sum,?side).
 
  
-ArrayIndexPointsTo(?baseheap, ?heap,?side):-
-  Reachable(?inmethod,?side_1),
+ArrayIndexPointsTo1(?baseheap, ?heap,?side):-
+  Reachable1(?inmethod,?side_1),
   StoreArrayIndex(?from, ?base, ?inmethod,?side_2),
-  VarPointsTo(?baseheap, ?base,?side_3),
-  VarPointsTo(?heap, ?from,?side_4),
+  VarPointsTo1(?baseheap, ?base,?side_3),
+  VarPointsTo1(?heap, ?from,?side_4),
   HeapAllocation_Type(?heap, ?heaptype,?side_5),
   HeapAllocation_Type(?baseheap, ?baseheaptype,?side_6),
   ComponentType(?baseheaptype, ?componenttype,?side_7),
@@ -695,11 +702,11 @@ ArrayIndexPointsTo(?baseheap, ?heap,?side):-
   merge_strat(7,?sum,?side).
 
 
-VarPointsTo(?heap, ?to,?side):-
-  Reachable(?inmethod,?side_1),
+VarPointsTo1(?heap, ?to,?side):-
+  Reachable1(?inmethod,?side_1),
   LoadArrayIndex(?base, ?to, ?inmethod,?side_2),
-  VarPointsTo(?baseheap, ?base,?side_3),
-  ArrayIndexPointsTo(?baseheap, ?heap,?side_4),
+  VarPointsTo1(?baseheap, ?base,?side_3),
+  ArrayIndexPointsTo1(?baseheap, ?heap,?side_4),
   Var_Type(?to, ?type,?side_5),
   HeapAllocation_Type(?baseheap, ?baseheaptype,?side_6),
   ComponentType(?baseheaptype, ?basecomponenttype,?side_7),
@@ -707,42 +714,42 @@ VarPointsTo(?heap, ?to,?side):-
   ?sum = ?side_1 + ?side_2 + ?side_3 + ?side_4 + ?side_5 + ?side_6 + ?side_7 + ?side_8,
   merge_strat(8,?sum,?side).
 
-VarPointsTo(?heap, ?to,?side):-
-  Reachable(?inmethod,?side_1),
+VarPointsTo1(?heap, ?to,?side):-
+  Reachable1(?inmethod,?side_1),
   LoadInstanceField(?base, ?signature, ?to, ?inmethod,?side_2),
-  VarPointsTo(?baseheap, ?base,?side_3),
-  InstanceFieldPointsTo(?heap, ?signature, ?baseheap,?side_4),
+  VarPointsTo1(?baseheap, ?base,?side_3),
+  InstanceFieldPointsTo1(?heap, ?signature, ?baseheap,?side_4),
   ?sum = ?side_1 + ?side_2 + ?side_3 + ?side_4 ,
   merge_strat(4,?sum,?side).
  
-InstanceFieldPointsTo(?heap, ?fld, ?baseheap,?side):-
-  Reachable(?inmethod,?side_1),
+InstanceFieldPointsTo1(?heap, ?fld, ?baseheap,?side):-
+  Reachable1(?inmethod,?side_1),
   StoreInstanceField(?from, ?base, ?fld, ?inmethod,?side_2),
-  VarPointsTo(?heap, ?from,?side_3),
-  VarPointsTo(?baseheap, ?base,?side_4),
+  VarPointsTo1(?heap, ?from,?side_3),
+  VarPointsTo1(?baseheap, ?base,?side_4),
   ?sum = ?side_1 + ?side_2 + ?side_3 + ?side_4,
   merge_strat(4,?sum,?side).
  
-VarPointsTo(?heap, ?to,?side):-
-  Reachable(?inmethod,?side_1),
+VarPointsTo1(?heap, ?to,?side):-
+  Reachable1(?inmethod,?side_1),
   LoadStaticField(?fld, ?to, ?inmethod,?side_2),
-  StaticFieldPointsTo(?heap, ?fld,?side_3),
+  StaticFieldPointsTo1(?heap, ?fld,?side_3),
   ?sum = ?side_1 + ?side_2 + ?side_3,
   merge_strat(3,?sum,?side).
   
-StaticFieldPointsTo(?heap, ?fld,?side):-
-  Reachable(?inmethod,?side_1),
+StaticFieldPointsTo1(?heap, ?fld,?side):-
+  Reachable1(?inmethod,?side_1),
   StoreStaticField(?from, ?fld, ?inmethod,?side_2),
-  VarPointsTo(?heap, ?from,?side_3),
+  VarPointsTo1(?heap, ?from,?side_3),
   ?sum = ?side_1 + ?side_2 + ?side_3,
   merge_strat(3,?sum,?side).
- 
 
-VarPointsTo(?heap, ?this,?side):-
-  Reachable(?inMethod,?side_1),
+
+VarPointsTo1(?heap, ?this,?side):-
+  Reachable1(?inMethod,?side_1),
   Instruction_Method(?invocation, ?inMethod,?side_2),
   VirtualMethodInvocation_Base(?invocation, ?base,?side_3),
-  VarPointsTo(?heap, ?base,?side_4),
+  VarPointsTo1(?heap, ?base,?side_4),
   HeapAllocation_Type(?heap, ?heaptype,?side_5),
   VirtualMethodInvocation_SimpleName(?invocation, ?simplename,?side_6),
   VirtualMethodInvocation_Descriptor(?invocation, ?descriptor,?side_7),
@@ -751,12 +758,16 @@ VarPointsTo(?heap, ?this,?side):-
   ?sum = ?side_1 + ?side_2 + ?side_3 + ?side_4 + ?side_5 + ?side_6 + ?side_7 + ?side_8 + ?side_9,
   merge_strat(9,?sum,?side).
  
-Reachable(?toMethod,?side),
-CallGraphEdge(?invocation, ?toMethod,?side):-
-  Reachable(?inMethod,?side_1),
+% Problem:  VirtualMethodInvocation introduces sides 1 and 10 through new variables
+% the ?base-variable is compared in the rule but never added
+% so we need to fold bc. both side have different ?base values but the are not included in the result
+
+Reachable1(?toMethod,?side),
+CallGraphEdge1(?invocation, ?toMethod,?side):-
+  Reachable1(?inMethod,?side_1),
   Instruction_Method(?invocation, ?inMethod,?side_2),
   VirtualMethodInvocation_Base(?invocation, ?base,?side_3),
-  VarPointsTo(?heap, ?base,?side_4),
+  VarPointsTo1(?heap, ?base,?side_4),
   HeapAllocation_Type(?heap, ?heaptype,?side_5),
   VirtualMethodInvocation_SimpleName(?invocation, ?simplename,?side_6),
   VirtualMethodInvocation_Descriptor(?invocation, ?descriptor,?side_7),
@@ -764,110 +775,201 @@ CallGraphEdge(?invocation, ?toMethod,?side):-
   ?sum = ?side_1 + ?side_2 + ?side_3 + ?side_4 + ?side_5 + ?side_6 + ?side_7 + ?side_8,
   merge_strat(8,?sum,?side).
  
-Reachable(?tomethod,?side),
-CallGraphEdge(?invocation, ?tomethod,?side):-
-  Reachable(?inmethod,?side_1),
+
+Reachable1(?tomethod,?side),
+CallGraphEdge1(?invocation, ?tomethod,?side):-
+  Reachable1(?inmethod,?side_1),
   StaticMethodInvocation(?invocation, ?tomethod, ?inmethod,?side_2),
   ?sum = ?side_1 + ?side_2,
   merge_strat(2,?sum,?side).
 
-Reachable(?tomethod,?side),
-CallGraphEdge(?invocation, ?tomethod,?side),
-VarPointsTo(?heap, ?this,?side):-
-  Reachable(?inmethod,?side_1),
+Reachable1(?tomethod,?side),
+CallGraphEdge1(?invocation, ?tomethod,?side),
+VarPointsTo1(?heap, ?this,?side):-
+  Reachable1(?inmethod,?side_1),
   Instruction_Method(?invocation, ?inmethod,?side_2),
   SpecialMethodInvocation_Base(?invocation, ?base,?side_3),
-  VarPointsTo(?heap, ?base,?side_4),
+  VarPointsTo1(?heap, ?base,?side_4),
   MethodInvocation_Method(?invocation, ?tomethod,?side_5),
   ThisVar(?tomethod, ?this,?side_6),
   ?sum = ?side_1 + ?side_2 + ?side_3 + ?side_4 + ?side_5 + ?side_6 ,
   merge_strat(6,?sum,?side).
  
-Reachable(?method,?side):-
+Reachable1(?method,?side):-
   MainMethodDeclaration(?method,?side).
 
-@export Reachable :- tsv{resource="Reachable.tsv"}.
-@export VarPointsTo :- tsv{resource="VarPointsTo.tsv"}.
-@export CallGraphEdge :- tsv{resource="CallGraphEdge.tsv"}.
-@export Assign :- tsv{resource="Assign.tsv"}.
-@export MethodLookup :- tsv{resource="MethodLookup.tsv"}.
-@export AssignReturnValue :- tsv{resource="AssignReturnValue.tsv"}.
 
-@export isType :- tsv{resource="isType.tsv"}.
-@export isReferenceType :- tsv{resource="isReferenceType.tsv"}.
-@export isArrayType :- tsv{resource="isArrayType.tsv"}.
-@export isClassType :- tsv{resource="isClassType.tsv"}.
-@export isInterfaceType :- tsv{resource="isInterfaceType.tsv"}.
-@export ApplicationClass :- tsv{resource="ApplicationClass.tsv"}.
-@export Field_DeclaringType :- tsv{resource="Field_DeclaringType.tsv"}.
-@export Method_DeclaringType :- tsv{resource="Method_DeclaringType.tsv"}.
-@export Method_ReturnType :- tsv{resource="Method_ReturnType.tsv"}.
-@export Method_SimpleName :- tsv{resource="Method_SimpleName.tsv"}.
-@export Method_ParamTypes :- tsv{resource="Method_ParamTypes.tsv"}.
-@export ThisVar :- tsv{resource="ThisVar.tsv"}.
-@export Var_DeclaringMethod :- tsv{resource="Var_DeclaringMethod.tsv"}.
-@export HeapAllocation_Type :- tsv{resource="HeapAllocation_Type.tsv"}.
-@export MainMethodArgArrayContent :- tsv{resource="MainMethodArgArrayContent.tsv"}.
-@export Instruction_Method :- tsv{resource="Instruction_Method.tsv"}.
-@export isVirtualMethodInvocation_Insn :- tsv{resource="isVirtualMethodInvocation_Insn.tsv"}.
-@export isStaticMethodInvocation_Insn :- tsv{resource="isStaticMethodInvocation_Insn.tsv"}.
-@export FieldInstruction_Signature :- tsv{resource="FieldInstruction_Signature.tsv"}.
-@export LoadInstanceField_Base :- tsv{resource="LoadInstanceField_Base.tsv"}.
-@export LoadInstanceField_To :- tsv{resource="LoadInstanceField_To.tsv"}.
-@export StoreInstanceField_From :- tsv{resource="StoreInstanceField_From.tsv"}.
-@export StoreInstanceField_Base :- tsv{resource="StoreInstanceField_Base.tsv"}.
-@export LoadStaticField_To :- tsv{resource="LoadStaticField_To.tsv"}.
-@export StoreStaticField_From :- tsv{resource="StoreStaticField_From.tsv"}.
-@export LoadArrayIndex_Base :- tsv{resource="LoadArrayIndex_Base.tsv"}.
-@export LoadArrayIndex_To :- tsv{resource="LoadArrayIndex_To.tsv"}.
-@export StoreArrayIndex_From :- tsv{resource="StoreArrayIndex_From.tsv"}.
-@export StoreArrayIndex_Base :- tsv{resource="StoreArrayIndex_Base.tsv"}.
-@export AssignInstruction_To :- tsv{resource="AssignInstruction_To.tsv"}.
-@export AssignCast_From :- tsv{resource="AssignCast_From.tsv"}.
-@export AssignCast_Type :- tsv{resource="AssignCast_Type.tsv"}.
-@export AssignLocal_From :- tsv{resource="AssignLocal_From.tsv"}.
-@export AssignHeapAllocation_Heap :- tsv{resource="AssignHeapAllocation_Heap.tsv"}.
-@export ReturnNonvoid_Var :- tsv{resource="ReturnNonvoid_Var.tsv"}.
-@export MethodInvocation_Method :- tsv{resource="MethodInvocation_Method.tsv"}.
-@export VirtualMethodInvocation_Base :- tsv{resource="VirtualMethodInvocation_Base.tsv"}.
-@export VirtualMethodInvocation_SimpleName :- tsv{resource="VirtualMethodInvocation_SimpleName.tsv"}.
-@export VirtualMethodInvocation_Descriptor :- tsv{resource="VirtualMethodInvocation_Descriptor.tsv"}.
-@export SpecialMethodInvocation_Base :- tsv{resource="SpecialMethodInvocation_Base.tsv"}.
-@export MethodInvocation_Base :- tsv{resource="MethodInvocation_Base.tsv"}.
-@export Method_Descriptor :- tsv{resource="Method_Descriptor.tsv"}.
-@export MethodImplemented :- tsv{resource="MethodImplemented.tsv"}.
-
-@export DirectSubclass :- tsv{resource="DirectSubclass.tsv"}.
-@export Subclass :- tsv{resource="Subclass.tsv"}.
-@export Superclass :- tsv{resource="Superclass.tsv"}.
-@export DirectSuperclass :- tsv{resource="DirectSuperclass.tsv"}.
-
-@export Superinterface :- tsv{resource="Superinterface.tsv"}.
-@export SameSubtypeOf :- tsv{resource="SubtypeOf.tsv"}.
-@export SubtypeOf :- tsv{resource="SubtypeOf.tsv"}.
-@export SupertypeOf :- tsv{resource="SupertypeOf.tsv"}.
-@export SubtypeOfDifferent :- tsv{resource="SubtypeOfDifferent.tsv"}.
-@export MainMethodDeclaration :- tsv{resource="MainMethodDeclaration.tsv"}.
-@export LoadInstanceField :- tsv{resource="LoadInstanceField.tsv"}.
-@export StoreInstanceField :- tsv{resource="StoreInstanceField.tsv"}.
-@export LoadStaticField :- tsv{resource="LoadStaticField.tsv"}.
-@export StoreStaticField :- tsv{resource="StoreStaticField.tsv"}.
-@export LoadArrayIndex :- tsv{resource="LoadArrayIndex.tsv"}.
-@export StoreArrayIndex :- tsv{resource="StoreArrayIndex.tsv"}.
-@export AssignCast :- tsv{resource="AssignCast.tsv"}.
-@export AssignLocal :- tsv{resource="AssignLocal.tsv"}.
-@export AssignHeapAllocation :- tsv{resource="AssignHeapAllocation.tsv"}.
-@export ReturnVar :- tsv{resource="ReturnVar.tsv"}.
-@export StaticMethodInvocation :- tsv{resource="StaticMethodInvocation.tsv"}.
-@export SameMethod :- tsv{resource="SameMethod.tsv"}.
-@export ClassInitializer :- tsv{resource="ClassInitializer.tsv"}.
-@export InitializedClass :- tsv{resource="InitializedClass.tsv"}.
+% more folding yeah :'(
 
 
-@export InstanceFieldPointsTo :- tsv{resource="InstanceFieldPointsTo.tsv"}.
-@export StaticFieldPointsTo :- tsv{resource="StaticFieldPointsTo.tsv"}.
+CallGraphEdge(?invocation, ?toMethod,0),
+CallGraphEdge2(?invocation, ?toMethod,0):-
+  CallGraphEdge1(?invocation, ?toMethod,?side_1),
+  CallGraphEdge1(?invocation, ?toMethod,?side_2),
+  ?side_1 != ?side_2.
 
-@export ArrayIndexPointsTo :- tsv{resource="ArrayIndexPointsTo.tsv"}.
-@export MainClass :- tsv{resource="MainClass.tsv"}.
+CallGraphEdge(?invocation, ?toMethod,?side_1):-
+  CallGraphEdge1(?invocation, ?toMethod,?side_1),
+  ~CallGraphEdge2(?invocation, ?toMethod,_).
+  
+VarPointsTo(?heap, ?this,0),
+VarPointsTo2(?heap, ?this,0):-
+  VarPointsTo1(?heap, ?this,?side_1),
+  VarPointsTo1(?heap, ?this,?side_2),
+  ?side_1 != ?side_2.
 
-@export merge_strat :- tsv{resource="merge_strat.tsv"}.
+VarPointsTo(?heap, ?this,?side_1):-
+  VarPointsTo1(?heap, ?this,?side_1),
+  ~VarPointsTo2(?heap, ?this,_).
+
+
+StaticFieldPointsTo(?heap, ?fld,0),
+StaticFieldPointsTo2(?heap, ?fld,0):-
+  StaticFieldPointsTo1(?heap, ?fld,?side_1),
+  StaticFieldPointsTo1(?heap, ?fld,?side_2),
+  ?side_1 != ?side_2.
+
+StaticFieldPointsTo(?heap, ?fld,?side_1):-
+  StaticFieldPointsTo1(?heap, ?fld,?side_1),
+  ~StaticFieldPointsTo2(?heap, ?fld,_).
+
+Reachable(?method,0),
+Reachable2(?method,0):-
+  Reachable1(?method,?side_1),
+  Reachable1(?method,?side_2),
+  ?side_1 != ?side_2.
+
+Reachable(?method,?side_1):-
+  Reachable1(?method,?side_1),
+  ~Reachable2(?method,_).
+
+ArrayIndexPointsTo(?baseheap,?heap,0),
+ArrayIndexPointsTo2(?baseheap,?heap,0):-
+  ArrayIndexPointsTo1(?baseheap,?heap,?side_1),
+  ArrayIndexPointsTo1(?baseheap,?heap,?side_2),
+  ?side_1 != ?side_2.
+
+ArrayIndexPointsTo(?baseheap,?heap,?side_1):-
+  ArrayIndexPointsTo1(?baseheap,?heap,?side_1),
+  ~ArrayIndexPointsTo2(?baseheap,?heap,_).
+
+InstanceFieldPointsTo(?heap,?fld,?baseheap,0),
+InstanceFieldPointsTo2(?heap,?fld,?baseheap,0):-
+  InstanceFieldPointsTo1(?heap,?fld,?baseheap,?side_1),
+  InstanceFieldPointsTo1(?heap,?fld,?baseheap,?side_2),
+  ?side_1 != ?side_2.
+
+InstanceFieldPointsTo(?heap,?fld,?baseheap,?side_1):-
+  InstanceFieldPointsTo1(?heap,?fld,?baseheap,?side_1),
+  ~InstanceFieldPointsTo2(?heap,?fld,?baseheap,_).
+
+InitializedClass(?class,0),
+InitializedClass2(?class,0):-
+    InitializedClass1(?class,?side_1),
+    InitializedClass1(?class,?side_2),
+    ?side_1 != ?side_2.
+
+InitializedClass(?class,0):-
+    InitializedClass1(?class,?side_1),
+    ~InitializedClass2(?class,_).
+
+Assign(?actual, ?formal,0),
+Assign2(?actual, ?formal,0):-
+    Assign1(?actual, ?formal,?side_1),
+    Assign1(?actual, ?formal,?side_2),
+    ?side_1 != ?side_2.
+
+Assign(?actual, ?formal,?side_1):-
+    Assign1(?actual, ?formal,?side_1),
+    ~Assign2(?actual, ?formal,_).
+
+
+@export Reachable :- tsv{resource="Reachable.tsv",format=(string,int)}.
+@export VarPointsTo :- tsv{resource="VarPointsTo.tsv",format=(string,string,int)}.
+@export CallGraphEdge :- tsv{resource="CallGraphEdge.tsv",format=(string,string,int)}.
+@export Assign :- tsv{resource="Assign.tsv",format=(string,string,int)}.
+@export MethodLookup :- tsv{resource="MethodLookup.tsv",format=(string,string,string,string,int)}.
+@export AssignReturnValue :- tsv{resource="AssignReturnValue.tsv",format=(string,string,int)}.
+
+
+@export isType :- tsv{resource="isType.tsv",format=(string,int)}.
+@export isReferenceType :- tsv{resource="isReferenceType.tsv",format=(string,int)}.
+@export isArrayType :- tsv{resource="isArrayType.tsv",format=(string,int)}.
+@export isClassType :- tsv{resource="isClassType.tsv",format=(string,int)}.
+@export isInterfaceType :- tsv{resource="isInterfaceType.tsv",format=(string,int)}.
+@export ApplicationClass :- tsv{resource="ApplicationClass.tsv",format=(string,int)}.
+@export Field_DeclaringType :- tsv{resource="Field_DeclaringType.tsv",format=(string,string,int)}.
+@export Method_DeclaringType :- tsv{resource="Method_DeclaringType.tsv",format=(string,string,int)}.
+@export Method_ReturnType :- tsv{resource="Method_ReturnType.tsv",format=(string,string,int)}.
+@export Method_SimpleName :- tsv{resource="Method_SimpleName.tsv",format=(string,string,int)}.
+@export Method_ParamTypes :- tsv{resource="Method_ParamTypes.tsv",format=(string,string,int)}.
+@export ThisVar :- tsv{resource="ThisVar.tsv",format=(string,string,int)}.
+@export Var_DeclaringMethod :- tsv{resource="Var_DeclaringMethod.tsv",format=(string,string,int)}.
+@export HeapAllocation_Type :- tsv{resource="HeapAllocation_Type.tsv",format=(string,string,int)}.
+@export Instruction_Method :- tsv{resource="Instruction_Method.tsv",format=(string,string,int)}.
+@export isVirtualMethodInvocation_Insn :- tsv{resource="isVirtualMethodInvocation_Insn.tsv",format=(string,int)}.
+@export isStaticMethodInvocation_Insn :- tsv{resource="isStaticMethodInvocation_Insn.tsv",format=(string,int)}.
+@export FieldInstruction_Signature :- tsv{resource="FieldInstruction_Signature.tsv",format=(string,string,int)}.
+@export LoadInstanceField_Base :- tsv{resource="LoadInstanceField_Base.tsv",format=(string,string,int)}.
+@export LoadInstanceField_To :- tsv{resource="LoadInstanceField_To.tsv",format=(string,string,int)}.
+@export StoreInstanceField_From :- tsv{resource="StoreInstanceField_From.tsv",format=(string,string,int)}.
+@export StoreInstanceField_Base :- tsv{resource="StoreInstanceField_Base.tsv",format=(string,string,int)}.
+@export LoadStaticField_To :- tsv{resource="LoadStaticField_To.tsv",format=(string,string,int)}.
+@export StoreStaticField_From :- tsv{resource="StoreStaticField_From.tsv",format=(string,string,int)}.
+@export LoadArrayIndex_Base :- tsv{resource="LoadArrayIndex_Base.tsv",format=(string,string,int)}.
+@export LoadArrayIndex_To :- tsv{resource="LoadArrayIndex_To.tsv",format=(string,string,int)}.
+@export StoreArrayIndex_From :- tsv{resource="StoreArrayIndex_From.tsv",format=(string,string,int)}.
+@export StoreArrayIndex_Base :- tsv{resource="StoreArrayIndex_Base.tsv",format=(string,string,int)}.
+@export AssignInstruction_To :- tsv{resource="AssignInstruction_To.tsv",format=(string,string,int)}.
+@export AssignCast_From :- tsv{resource="AssignCast_From.tsv",format=(string,string,int)}.
+@export AssignCast_Type :- tsv{resource="AssignCast_Type.tsv",format=(string,string,int)}.
+@export AssignLocal_From :- tsv{resource="AssignLocal_From.tsv",format=(string,string,int)}.
+@export AssignHeapAllocation_Heap :- tsv{resource="AssignHeapAllocation_Heap.tsv",format=(string,string,int)}.
+@export ReturnNonvoid_Var :- tsv{resource="ReturnNonvoid_Var.tsv",format=(string,string,int)}.
+@export MethodInvocation_Method :- tsv{resource="MethodInvocation_Method.tsv",format=(string,string,int)}.
+@export VirtualMethodInvocation_Base :- tsv{resource="VirtualMethodInvocation_Base.tsv",format=(string,string,int)}.
+@export VirtualMethodInvocation_SimpleName :- tsv{resource="VirtualMethodInvocation_SimpleName.tsv",format=(string,string,int)}.
+@export VirtualMethodInvocation_Descriptor :- tsv{resource="VirtualMethodInvocation_Descriptor.tsv",format=(string,string,int)}.
+@export SpecialMethodInvocation_Base :- tsv{resource="SpecialMethodInvocation_Base.tsv",format=(string,string,int)}.
+@export MethodInvocation_Base :- tsv{resource="MethodInvocation_Base.tsv",format=(string,string,int)}.
+@export Method_Descriptor :- tsv{resource="Method_Descriptor.tsv",format=(string,string)}.
+@export MethodImplemented :- tsv{resource="MethodImplemented.tsv",format=(string,string,string,string,int)}.
+
+@export DirectSubclass :- tsv{resource="DirectSubclass.tsv",format=(string,string,int)}.
+@export Subclass :- tsv{resource="Subclass.tsv",format=(string,string,int)}.
+@export Superclass :- tsv{resource="Superclass.tsv",format=(string,string,int)}.
+@export DirectSuperclass :- tsv{resource="DirectSuperclass.tsv",format=(string,string,int)}.
+
+@export Superinterface :- tsv{resource="Superinterface.tsv",format=(string,string,int)}.
+@export SubtypeOf :- tsv{resource="SubtypeOf.tsv",format=(string,string,int)}.
+@export SupertypeOf :- tsv{resource="SupertypeOf.tsv",format=(string,string,int)}.
+@export SubtypeOfDifferent :- tsv{resource="SubtypeOfDifferent.tsv",format=(string,string,int)}.
+@export MainMethodDeclaration :- tsv{resource="MainMethodDeclaration.tsv",format=(string,int)}.
+@export LoadInstanceField :- tsv{resource="LoadInstanceField.tsv",format=(string,string,string,string,int)}.
+@export StoreInstanceField :- tsv{resource="StoreInstanceField.tsv",format=(string,string,string,string,int)}.
+@export LoadStaticField :- tsv{resource="LoadStaticField.tsv",format=(string,string,string,int)}.
+@export StoreStaticField :- tsv{resource="StoreStaticField.tsv",format=(string,string,string,int)}.
+@export LoadArrayIndex :- tsv{resource="LoadArrayIndex.tsv",format=(string,string,string,int)}.
+@export StoreArrayIndex :- tsv{resource="StoreArrayIndex.tsv",format=(string,string,string,int)}.
+@export AssignCast :- tsv{resource="AssignCast.tsv",format=(string,string,string,string,int)}.
+@export AssignLocal :- tsv{resource="AssignLocal.tsv",format=(string,string,string,int)}.
+@export AssignHeapAllocation :- tsv{resource="AssignHeapAllocation.tsv",format=(string,string,string,int)}.
+@export ReturnVar :- tsv{resource="ReturnVar.tsv",format=(string,string,int)}.
+@export AssignHeapAllocation_no_var :- tsv{resource="AssignHeapAllocation_no_var.tsv",format=(string,string,int)}.
+
+@export StaticMethodInvocation :- tsv{resource="StaticMethodInvocation.tsv",format=(string,string,string,int)}.
+@export SameMethod :- tsv{resource="SameMethod.tsv",format=(string,int)}.
+@export ClassInitializer :- tsv{resource="ClassInitializer.tsv",format=(string,string,int)}.
+@export InitializedClass :- tsv{resource="InitializedClass.tsv",format=(string,int)}.
+
+
+@export InstanceFieldPointsTo :- tsv{resource="InstanceFieldPointsTo.tsv",format=(string,string,string,int)}.
+@export StaticFieldPointsTo :- tsv{resource="StaticFieldPointsTo.tsv",format=(string,string,int)}.
+
+
+@export ArrayIndexPointsTo :- tsv{resource="ArrayIndexPointsTo.tsv",format=(string,string,int)}.
+@export MainClass :- tsv{resource="MainClass.tsv",format=(string,int)}.
+
+@export merge_strat :- tsv{resource="merge_strat.tsv",format=(int,int,int)}.
+
+% Vergleichsversion, wo folding nur am Ende funktioniert
