@@ -40,7 +40,7 @@ true("true"^^xsd:boolean).
 
 % assume that no relations with more than 9 relations exist
 
-Method_Descriptor(?method, ?descriptor) :-
+Method_Descriptor(?method, ?descriptor,?side):-
   Method_ReturnType(?method, ?returnType,?side_1),
   Method_ParamTypes(?method, ?params,?side_2),
   ?descriptor = CONCAT(?returnType, CONCAT( "(", CONCAT(?params, ")"))),
@@ -66,9 +66,8 @@ HeapAllocation_Type("<<main method array>>", "java.lang.String[]",0).
 
 HeapAllocation_Type("<<main method array content>>", "java.lang.String",0).
 
-
 % imports
-isType(?class,?side):-
+isType(?class,?side):-    
   ClassType(?class,?side).
 
 isReferenceType(?class,?side):-
@@ -408,7 +407,7 @@ VirtualMethodInvocation_Descriptor(?invocation, ?descriptor,?side):-
   isVirtualMethodInvocation_Insn(?invocation,?side_1),
   MethodInvocation_Method(?invocation, ?signature,?side_2),
   Method_SimpleName(?signature, ?simplename,?side_3),
-  Method_Descriptor(?signature, ?descriptor),
+  Method_Descriptor(?signature, ?descriptor,_),
   ?sum = ?side_1 + ?side_2 + ?side_3,
   merge_strat(3,?sum,?side).
 
@@ -419,7 +418,7 @@ VirtualMethodInvocation_SimpleName(?invocation, ?simplename,?side):-
   isVirtualMethodInvocation_Insn(?invocation,?side_1),
   MethodInvocation_Method(?invocation, ?signature,?side_2),
   Method_SimpleName(?signature, ?simplename,?side_3),
-  Method_Descriptor(?signature, ?descriptor),
+  Method_Descriptor(?signature, ?descriptor,_),
   ?sum = ?side_1 + ?side_2 + ?side_3,
   merge_strat(3,?sum,?side).
 
@@ -448,7 +447,7 @@ MethodLookup(?simplename, ?descriptor, ?type, ?method,?side):-
 
 MethodImplemented(?simplename, ?descriptor, ?type, ?method,?side):-
   Method_SimpleName(?method, ?simplename,?side_1),
-  Method_Descriptor(?method, ?descriptor),
+  Method_Descriptor(?method, ?descriptor,_),
   Method_DeclaringType(?method, ?type,?side_2),
   ~Method_Modifier("abstract", ?method,?side_1),
   %~Method_Modifier("abstract", ?method,?side_3),
@@ -566,7 +565,7 @@ MainMethodDeclaration(?method,?side):-
   MainClass(?type,?side),
   Method_DeclaringType(?method, ?type,?side_1),
   Method_SimpleName(?method, "main",?side_2),
-  Method_Descriptor(?method, "void(java.lang.String[])"),
+  Method_Descriptor(?method, "void(java.lang.String[])",_),
   Method_Modifier("public", ?method,?side_3),
   Method_Modifier("static", ?method,?side_4),
   ~ SameMethod(?method,_),
@@ -932,7 +931,7 @@ Assign(?actual, ?formal,?side_1):-
 @export VirtualMethodInvocation_Descriptor :- tsv{resource="VirtualMethodInvocation_Descriptor.tsv",format=(string,string,int)}.
 @export SpecialMethodInvocation_Base :- tsv{resource="SpecialMethodInvocation_Base.tsv",format=(string,string,int)}.
 @export MethodInvocation_Base :- tsv{resource="MethodInvocation_Base.tsv",format=(string,string,int)}.
-@export Method_Descriptor :- tsv{resource="Method_Descriptor.tsv",format=(string,string)}.
+@export Method_Descriptor :- tsv{resource="Method_Descriptor.tsv",format=(string,string,int)}.
 @export MethodImplemented :- tsv{resource="MethodImplemented.tsv",format=(string,string,string,string,int)}.
 
 @export DirectSubclass :- tsv{resource="DirectSubclass.tsv",format=(string,string,int)}.
