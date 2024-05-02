@@ -1,0 +1,15 @@
+AssignUnop("<Example: void main(java.lang.String[])>/assign/3",3,"<Example: void main(java.lang.String[])>/c#_12","<Example: void main(java.lang.String[])>").
+OperatorAt("<Example: void main(java.lang.String[])>/assign/3","~").
+AssignOperFrom("<Example: void main(java.lang.String[])>/assign/3",1,"<Example: void main(java.lang.String[])>/a#_7").
+IntegerConstant("<Example: void main(java.lang.String[])>/a#_7",1,"<Example: void main(java.lang.String[])>").
+
+
+IntegerConstant(?var, 0 - ?val1, ?meth),
+ConstFolding(?ins,?var, 0 - ?val1,?meth) :-
+    AssignUnop(?ins,_, ?var, ?meth),
+    OperatorAt(?ins,"~"),
+    AssignOperFrom(?ins, _, ?var1),
+    IntegerConstant(?var1, ?val1, ?meth).
+
+@export ConstFolding :- tsv{resource="ConstFolding.tsv",format=(string,string,int,string)}.
+@export IntegerConstant :- tsv{resource="IntegerConstant.tsv",format=(string,int,string)}.

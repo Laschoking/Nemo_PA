@@ -1,0 +1,9 @@
+IndirectConnectionBB(10,47,74).
+IndirectConnectionBB(10,51,74).
+% Forward indirect connection to POSSIBLE BB-Successors
+IndirectConnectionBB(?side,?BB2, ?BB3):-
+    IndirectConnectionBB(?side,?BB1,?BB2),
+    IndirectConnectionBB(?side,?BB1,?BB3),
+    ?BB2 < ?BB3.
+
+@export IndirectConnectionBB :- tsv{resource="IndirectConnectionBB.tsv",format=(int,int,int)}.

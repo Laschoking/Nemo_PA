@@ -1,0 +1,13 @@
+@import z_AssignLocal :- tsv{resource="AssignLocal.tsv",format=(string, int, string,string, string,int)}.
+A("new_var_5","new_var_6","<Pointer: void test(int)>/r3#_32","new_var_7","<Pointer: void test(int)>",1).
+
+B(?instruction, ?from,?side):-
+  A(?instruction, _, ?from, ?to, ?method,?side).
+
+
+AssignLocal_From(?instruction, ?from,?side):-
+  z_AssignLocal(?instruction, _, ?from, ?to, ?method,?side).
+
+
+@export AssignLocal_From :- tsv{resource="AssignLocal_From.tsv",format=(string,string,int)}.
+@export B :- tsv{resource="B.tsv",format=(string,string,int)}.

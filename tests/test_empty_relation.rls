@@ -1,0 +1,15 @@
+A("a",1).
+
+B1(?a,0),
+B(?a,0):-
+    A(?a,?side_1),
+    A(?a,?side_2),
+    ?side_1 != ?side_2.
+
+
+B(?a,?side_1):-
+    A(?a,?side_1),
+    ~B1(?a,_).
+
+@export B :- tsv{resource="B.tsv",format=(string,int)}.
+@export B1 :- tsv{resource="B1.tsv",format=(string,int)}.

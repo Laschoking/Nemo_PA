@@ -1,0 +1,7 @@
+A(1).
+C(3).
+A(?b):-
+    A(?a),
+    ?b = ?a + 1,
+    ~C(?b).
+@export A :- tsv{resource="A.tsv"}.

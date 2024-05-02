@@ -1,0 +1,8 @@
+A(1).
+B(#min(?a)):-
+    A(?a).
+@export B :- tsv{resource="B.tsv",format=(int)}.
+
+% issue aufmachen
+
+

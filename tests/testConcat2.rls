@@ -1,0 +1,8 @@
+B("ab").
+C("a").
+A(?a):-
+  ?a = CONCAT(?b,?c),
+  B(?b),
+  C(?c).
+@export A :- tsv{resource="A.tsv",format=(string)}.
+  

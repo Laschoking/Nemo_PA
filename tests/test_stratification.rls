@@ -1,0 +1,23 @@
+A("test",1).
+A("test",2).
+A("test1",2).
+
+B(?a,0):-
+    A(?a,?side_1),
+    A(?a,?side_2),
+    ?side_1 != ?side_2.
+
+B(?a,?side_1):-
+    A(?a,?side_1),
+    ~B(?a,_).
+
+
+B(?a,0),
+B1(?a,0):-
+    A(?a,?side_1),
+    A(?a,?side_2),
+    ?side_1 != ?side_2.
+
+B(?a,?side_1):-
+    A(?a,?side_1),
+    ~B1(?a,_).

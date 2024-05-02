@@ -1,0 +1,23 @@
+
+
+
+
+A(1,10).
+A(2,10).
+A(3,9).
+
+% implicit Group By:
+B(?a,#max(?b)):-
+    A(?a,?b).
+
+% avoid implicit Group By:
+C(#max(?b)):-
+    A(_,?b).
+
+D(?a,?max):-
+    A(?a,?max),
+    C(?max).
+
+@export B :- tsv{resource="B.tsv",format=(int,int)}.
+@export C :- tsv{resource="C.tsv",format=(int)}.
+@export D :- tsv{resource="D.tsv",format=(int,int)}.

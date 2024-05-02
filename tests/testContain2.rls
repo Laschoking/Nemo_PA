@@ -1,0 +1,13 @@
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+true("true"^^xsd:boolean).
+ClassModifier("public","Pointer").
+MainClass1("/home/kotname/Documents/Diplom/Code/doop/master/DiffAnalysis/Java/Pointer1/Pointer").
+
+MainClass2(?b):-
+  ClassModifier(_,?b),
+  MainClass1(?a),
+  true(CONTAINS(?a,?b)).
+
+@export MainClass1 :- tsv{resource="MainClass1.tsv",format=(string)}.
+@export MainClass2 :- tsv{resource="MainClass2.tsv",format=(string)}.
+  

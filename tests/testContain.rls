@@ -1,0 +1,8 @@
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+true("true"^^xsd:boolean).
+B("a").
+A(?a):-
+  true(CONTAINS("ab",?a)),
+  B(?a).
+@export A :- tsv{resource="A.tsv",format=(string)}.
+  

@@ -1,0 +1,7 @@
+MaxAST(#max(?nr)):-
+    SplitAST(?side,?nr).
+
+% circumvention of bug https://github.com/knowsys/nemo/issues/448
+
+
+@export Succ :- tsv{resource="succ.tsv",format=(int,int)}.

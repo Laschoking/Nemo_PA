@@ -9,11 +9,11 @@ true("true"^^xsd:boolean).
 @import DirectSuperclass :- tsv{resource="DirectSuperclass.tsv",format=(string, string,int)}.
 @import DirectSuperinterface :- tsv{resource="DirectSuperinterface.tsv",format=(string, string,int)}.
 @import Method_Modifier :- tsv{resource="Method-Modifier.tsv",format=(string, string,int)}.
-@import FormalParam :- tsv{resource="FormalParam.tsv",format=(int, string,string,int)}.
+@import FormalParam :- tsv{resource="FormalParam.tsv",format=(string, string,string,int)}.
 @import Var_Type :- tsv{resource="Var-Type.tsv",format=(string, string,int)}.
 @import ComponentType :- tsv{resource="ComponentType.tsv",format=(string, string,int)}.
 @import AssignReturnValue :- tsv{resource="AssignReturnValue.tsv",format=(string, string,int)}.
-@import ActualParam :- tsv{resource="ActualParam.tsv",format=(int,string, string,int)}.
+@import ActualParam :- tsv{resource="ActualParam.tsv",format=(string,string, string,int)}.
 @import ClassType :- tsv{resource="ClassType.tsv",format=(string,int)}.
 @import z_ArrayType :- tsv{resource="ArrayType.tsv",format=(string,int)}.
 @import z_InterfaceType :- tsv{resource="InterfaceType.tsv",format=(string,int)}.
@@ -22,25 +22,25 @@ true("true"^^xsd:boolean).
 @import z_ThisVar :- tsv{resource="ThisVar.tsv",format=(string, string,int)}.
 @import z_NormalHeap :- tsv{resource="NormalHeap.tsv",format=(string, string,int)}.
 @import z_StringConstant :- tsv{resource="StringConstant.tsv",format=(string,int)}.
-@import z_AssignHeapAllocation :- tsv{resource="AssignHeapAllocation.tsv",format=(string, int, string,string, string,int,int)}.
-@import z_AssignLocal :- tsv{resource="AssignLocal.tsv",format=(string, int, string,string, string,int)}.
-@import z_AssignCast :- tsv{resource="AssignCast.tsv",format=(string, int, string,string, string,string,int)}.
+@import z_AssignHeapAllocation :- tsv{resource="AssignHeapAllocation.tsv",format=(string, string, string,string, string,string,int)}.
+@import z_AssignLocal :- tsv{resource="AssignLocal.tsv",format=(string, string, string,string, string,int)}.
+@import z_AssignCast :- tsv{resource="AssignCast.tsv",format=(string, string, string,string, string,string,int)}.
 @import z_Field :- tsv{resource="Field.tsv",format=(string, string,string, string,int)}.
-@import z_StaticMethodInvocation :- tsv{resource="StaticMethodInvocation.tsv",format=(string,int, string, string,int)}.
-@import z_SpecialMethodInvocation :- tsv{resource="SpecialMethodInvocation.tsv",format=(string,int, string,string, string,int)}.
-@import z_VirtualMethodInvocation :- tsv{resource="VirtualMethodInvocation.tsv",format=(string, int, string,string, string,int)}.
-@import z_Method :- tsv{resource="Method.tsv",format=(string, string,string, string,string, string,int,int)}.
-@import z_StoreInstanceField :- tsv{resource="StoreInstanceField.tsv",format=(string, int, string,string, string,string,int)}.
-@import z_LoadInstanceField :- tsv{resource="LoadInstanceField.tsv",format=(string, int, string, string, string, string,int)}.
-@import z_StoreStaticField :- tsv{resource="StoreStaticField.tsv",format=(string, int, string, string, string,int)}.
-@import z_LoadStaticField :- tsv{resource="LoadStaticField.tsv",format=(string, int, string, string, string,int)}.
-@import z_StoreArrayIndex :- tsv{resource="StoreArrayIndex.tsv",format=(string, int, string, string, string,int)}.
-@import z_LoadArrayIndex :- tsv{resource="LoadArrayIndex.tsv",format=(string, int, string, string, string,int)}.
-@import z_Return :- tsv{resource="Return.tsv",format=(string, int, string, string,int)}.
+@import z_StaticMethodInvocation :- tsv{resource="StaticMethodInvocation.tsv",format=(string,string, string, string,int)}.
+@import z_SpecialMethodInvocation :- tsv{resource="SpecialMethodInvocation.tsv",format=(string,string, string,string, string,int)}.
+@import z_VirtualMethodInvocation :- tsv{resource="VirtualMethodInvocation.tsv",format=(string, string, string,string, string,int)}.
+@import z_Method :- tsv{resource="Method.tsv",format=(string, string,string, string,string, string,string,int)}.
+@import z_StoreInstanceField :- tsv{resource="StoreInstanceField.tsv",format=(string, string, string,string, string,string,int)}.
+@import z_LoadInstanceField :- tsv{resource="LoadInstanceField.tsv",format=(string, string, string, string, string, string,int)}.
+@import z_StoreStaticField :- tsv{resource="StoreStaticField.tsv",format=(string, string, string, string, string,int)}.
+@import z_LoadStaticField :- tsv{resource="LoadStaticField.tsv",format=(string, string, string, string, string,int)}.
+@import z_StoreArrayIndex :- tsv{resource="StoreArrayIndex.tsv",format=(string, string, string, string, string,int)}.
+@import z_LoadArrayIndex :- tsv{resource="LoadArrayIndex.tsv",format=(string, string, string, string, string,int)}.
+@import z_Return :- tsv{resource="Return.tsv",format=(string, string, string, string,int)}.
 
 % assume that no relations with more than 9 relations exist
 
-Method_Descriptor(?method, ?descriptor,?side):-
+Method_Descriptor(?method, ?descriptor,0) :-
   Method_ReturnType(?method, ?returnType,?side_1),
   Method_ParamTypes(?method, ?params,?side_2),
   ?descriptor = CONCAT(?returnType, CONCAT( "(", CONCAT(?params, ")"))),
@@ -97,67 +97,24 @@ ApplicationClass(?type,?side):-
 ThisVar(?method, ?var,?side):-
   z_ThisVar(?method, ?var,?side).
 
-isType1(?type,?side),
+isType(?type,?side),
 HeapAllocation_Type(?id, ?type,?side):-
   z_NormalHeap(?id, ?type,?side).
-
-isType2(?type,0),
-isType(?type,0):-
-  isType1(?type,?side_1),
-  isType1(?type,?side_2),
-  ?side_1 != ?side_2.
-
-isType(?type,0):-
-  isType1(?type,?side_1),
-  ~isType2(?type,_).
-
 
 HeapAllocation_Type(?id, "java.lang.String",?side):-
   z_StringConstant(?id,?side).
 
-Instruction_Method1(?instruction, ?method,?side),
-AssignInstruction_To1(?instruction, ?to,?side),
-AssignHeapAllocation_Heap1(?instruction, ?heap,?side):-
+Instruction_Method(?instruction, ?method,?side),
+AssignInstruction_To(?instruction, ?to,?side),
+AssignHeapAllocation_Heap(?instruction, ?heap,?side):-
   z_AssignHeapAllocation(?instruction, _, ?heap, ?to, ?method, _,?side).
 
-AssignHeapAllocation_Heap(?instruction, ?heap,0),
-AssignHeapAllocation_Heap2(?instruction, ?heap,0):-
-  AssignHeapAllocation_Heap1(?instruction, ?heap,?side_1),
-  AssignHeapAllocation_Heap1(?instruction, ?heap,?side_2),
-  ?side_1 != ?side_2.
-
-AssignHeapAllocation_Heap(?instruction, ?heap,?side_1):-
-  AssignHeapAllocation_Heap1(?instruction, ?heap,?side_1),
-  ~AssignHeapAllocation_Heap2(?instruction, ?heap,_).
-
-
-Instruction_Method1(?instruction, ?method,?side),
-AssignLocal_From1(?instruction, ?from,?side),
-AssignInstruction_To1(?instruction, ?to,?side):-
+Instruction_Method(?instruction, ?method,?side),
+AssignLocal_From(?instruction, ?from,?side),
+AssignInstruction_To(?instruction, ?to,?side):-
   z_AssignLocal(?instruction, _, ?from, ?to, ?method,?side).
 
-
-AssignInstruction_To2(?instruction, ?to,0),
-AssignInstruction_To(?instruction, ?to,0):-
-  AssignInstruction_To1(?instruction, ?to,?side_1),
-  AssignInstruction_To1(?instruction, ?to,?side_2),
-  ?side_1 != ?side_2.
-
-AssignInstruction_To(?instruction, ?to,?side_1):-
-  AssignInstruction_To1(?instruction, ?to,?side_1),
-  ~AssignInstruction_To2(?instruction, ?to,_).
-
-AssignLocal_From(?instruction, ?from,0),
-AssignLocal_From2(?instruction, ?from,0):-
-  AssignLocal_From1(?instruction, ?from,?side_1),
-  AssignLocal_From1(?instruction, ?from,?side_2),
-  ?side_1 != ?side_2.
-
-AssignLocal_From(?instruction, ?from,?side_1):-
-  AssignLocal_From1(?instruction, ?from,?side_1),
-  ~AssignLocal_From2(?instruction, ?from,_).
-
-Instruction_Method1(?instruction, ?method,?side),
+Instruction_Method(?instruction, ?method,?side),
 AssignCast_Type(?instruction, ?type,?side),
 AssignCast_From(?instruction, ?from,?side),
 AssignInstruction_To(?instruction, ?to,?side):-
@@ -172,66 +129,23 @@ MethodInvocation_Base(?invocation, ?base,?side):-
 MethodInvocation_Base(?invocation, ?base,?side):-
   SpecialMethodInvocation_Base(?invocation, ?base,?side).
 
-Instruction_Method1(?instruction, ?method,?side),
+Instruction_Method(?instruction, ?method,?side),
 isStaticMethodInvocation_Insn(?instruction,?side),
-MethodInvocation_Method2(?instruction, ?signature,?side):-
+MethodInvocation_Method(?instruction, ?signature,?side):-
   z_StaticMethodInvocation(?instruction, _, ?signature, ?method,?side).
 
-Instruction_Method1(?instruction, ?method,?side),
-SpecialMethodInvocation_Base1(?instruction, ?base,?side),
-MethodInvocation_Method2(?instruction, ?signature,?side):-
+Instruction_Method(?instruction, ?method,?side),
+SpecialMethodInvocation_Base(?instruction, ?base,?side),
+MethodInvocation_Method(?instruction, ?signature,?side):-
   z_SpecialMethodInvocation(?instruction, _, ?signature, ?base, ?method,?side).
 
-SpecialMethodInvocation_Base(?instruction, ?base,0),
-SpecialMethodInvocation_Base2(?instruction, ?base,0):-
-  SpecialMethodInvocation_Base1(?instruction, ?base,?side_1),
-  SpecialMethodInvocation_Base1(?instruction, ?base,?side_2),
-  ?side_1 != ?side_2.
 
-SpecialMethodInvocation_Base(?instruction, ?base,?side_1):-
-  SpecialMethodInvocation_Base1(?instruction, ?base,?side_1),
-  ~SpecialMethodInvocation_Base2(?instruction, ?base,_).
-
-
-Instruction_Method1(?instruction, ?method,?side),
-isVirtualMethodInvocation_Insn1(?instruction,?side),
-VirtualMethodInvocation_Base1(?instruction, ?base,?side),
-MethodInvocation_Method2(?instruction, ?signature,?side):-
+Instruction_Method(?instruction, ?method,?side),
+isVirtualMethodInvocation_Insn(?instruction,?side),
+VirtualMethodInvocation_Base(?instruction, ?base,?side),
+MethodInvocation_Method(?instruction, ?signature,?side):-
   z_VirtualMethodInvocation(?instruction, _, ?signature, ?base, ?method,?side).
 
-
-VirtualMethodInvocation_Base(?instruction,?base,0),
-VirtualMethodInvocation_Base2(?instruction,?base,0):-
-  VirtualMethodInvocation_Base1(?instruction,?base,?side_1),
-  VirtualMethodInvocation_Base1(?instruction,?base,?side_2),
-  ?side_1 != ?side_2.
-
-VirtualMethodInvocation_Base(?instruction,?base,?side_1):-
-  ~VirtualMethodInvocation_Base2(?instruction,?base,_),
-  VirtualMethodInvocation_Base1(?instruction,?base,?side_1).
-
-isVirtualMethodInvocation_Insn(?instruction,0),
-isVirtualMethodInvocation_Insn2(?instruction,0):-
-  isVirtualMethodInvocation_Insn1(?instruction,?side_1),
-  isVirtualMethodInvocation_Insn1(?instruction,?side_2),
-  ?side_1 != ?side_2.
-
-isVirtualMethodInvocation_Insn(?instruction,?side_1):-
-  ~isVirtualMethodInvocation_Insn2(?instruction,_),
-  isVirtualMethodInvocation_Insn1(?instruction,?side_1).
-
-
-
-MethodInvocation_Method(?instruction, ?signature,0),
-MethodInvocation_Method1(?instruction, ?signature,0):-
-  MethodInvocation_Method2(?instruction, ?signature,?side_1),
-  MethodInvocation_Method2(?instruction, ?signature,?side_2),
-  ?side_1 != ?side_2.
-
-
-MethodInvocation_Method(?instruction, ?signature,?side_1):-
-  ~MethodInvocation_Method1(?instruction, ?signature,_),
-  MethodInvocation_Method2(?instruction, ?signature,?side_1).
 
 
 Method_SimpleName(?method, ?simplename,?side),
@@ -240,74 +154,43 @@ Method_DeclaringType(?method, ?declaringType,?side),
 Method_ReturnType(?method, ?returnType,?side):-
   z_Method(?method, ?simplename, ?params, ?declaringType, ?returnType, _, _,?side).
   
-Instruction_Method1(?instruction, ?method,?side),
+Instruction_Method(?instruction, ?method,?side),
 FieldInstruction_Signature(?instruction, ?signature,?side),
 StoreInstanceField_Base(?instruction, ?base,?side),
 StoreInstanceField_From(?instruction, ?from,?side):-
   z_StoreInstanceField(?instruction, _, ?from, ?base, ?signature, ?method,?side).
 
-Instruction_Method1(?instruction, ?method,?side),
+Instruction_Method(?instruction, ?method,?side),
 FieldInstruction_Signature(?instruction, ?signature,?side),
 LoadInstanceField_Base(?instruction, ?base,?side),
 LoadInstanceField_To(?instruction, ?to,?side):-
   z_LoadInstanceField(?instruction, _, ?to, ?base, ?signature, ?method,?side).
 
-Instruction_Method1(?instruction, ?method,?side),
+Instruction_Method(?instruction, ?method,?side),
 FieldInstruction_Signature(?instruction, ?signature,?side),
 StoreStaticField_From(?instruction, ?from,?side):-
   z_StoreStaticField(?instruction, _, ?from, ?signature, ?method,?side).
 
-Instruction_Method1(?instruction, ?method,?side),
+Instruction_Method(?instruction, ?method,?side),
 FieldInstruction_Signature(?instruction, ?signature,?side),
 LoadStaticField_To(?instruction, ?to,?side):-
   z_LoadStaticField(?instruction, _, ?to, ?signature, ?method,?side).
 
-Instruction_Method1(?instruction, ?method,?side),
+Instruction_Method(?instruction, ?method,?side),
 StoreArrayIndex_Base(?instruction, ?base,?side),
 StoreArrayIndex_From(?instruction, ?from,?side):-
   z_StoreArrayIndex(?instruction, _, ?from, ?base, ?method,?side).
 
-Instruction_Method1(?instruction, ?method,?side),
-LoadArrayIndex_Base1(?instruction, ?base,?side),
-LoadArrayIndex_To1(?instruction, ?to,?side):-
+Instruction_Method(?instruction, ?method,?side),
+LoadArrayIndex_Base(?instruction, ?base,?side),
+LoadArrayIndex_To(?instruction, ?to,?side):-
   z_LoadArrayIndex(?instruction, _, ?to, ?base, ?method,?side).
 
-LoadArrayIndex_Base(?instruction, ?base,0),
-LoadArrayIndex_Base2(?instruction, ?base,0):-
-  LoadArrayIndex_Base1(?instruction, ?base,?side_1),
-  LoadArrayIndex_Base1(?instruction, ?base,?side_2),
-  ?side_1 != ?side_2.
-
-LoadArrayIndex_Base(?instruction, ?base,?side_1):-
-  LoadArrayIndex_Base1(?instruction, ?base,?side_1),
-  ~LoadArrayIndex_Base2(?instruction, ?base,_).
-
-LoadArrayIndex_To2(?instruction, ?to,0),
-LoadArrayIndex_To(?instruction, ?to,0):-
-  LoadArrayIndex_To1(?instruction, ?to,?side_1),
-  LoadArrayIndex_To1(?instruction, ?to,?side_2),
-  ?side_1 != ?side_2.
-
-LoadArrayIndex_To(?instruction, ?to,?side_1):-
-  LoadArrayIndex_To1(?instruction, ?to,?side_1),
-  ~LoadArrayIndex_To2(?instruction, ?to,_).
 
 
-Instruction_Method1(?instruction, ?method,?side),
+Instruction_Method(?instruction, ?method,?side),
 ReturnNonvoid_Var(?instruction, ?var,?side):-
   z_Return(?instruction, _, ?var, ?method,?side).
-
-Instruction_Method(?instruction, ?method,0),
-Instruction_Method2(?instruction, ?method,0):-
-  Instruction_Method1(?instruction, ?method,?side_1),
-  Instruction_Method1(?instruction, ?method,?side_2),
-  ?side_1 != ?side_2.
-
-Instruction_Method(?instruction, ?method,?side_1):-
-  ~Instruction_Method2(?instruction, ?method,_),
-  Instruction_Method1(?instruction, ?method,?side_1).
-
-
 
 
 % fat schema population
@@ -366,27 +249,16 @@ AssignCast(?type, ?from, ?to, ?inmethod,?side):-
 AssignLocal(?from, ?to, ?inmethod,?side):-
   AssignInstruction_To(?insn, ?to,?side_1),
   Instruction_Method(?insn, ?inmethod,?side_2),
-  AssignLocal_From(?insn, ?from,?side_3),
+  AssignLocal_From(?insn,?from,?side_3),
   ?sum = ?side_1 + ?side_2 + ?side_3,
   merge_strat(3,?sum,?side).
 
-AssignHeapAllocation(?heap, ?to, ?inmethod,?side),
-AssignHeapAllocation_no_var1(?heap, ?inmethod,?side):-
+AssignHeapAllocation(?heap, ?to, ?inmethod,?side):-
   Instruction_Method(?insn, ?inmethod,?side_1),
   AssignHeapAllocation_Heap(?insn, ?heap,?side_2),
   AssignInstruction_To(?insn, ?to ,?side_3),
   ?sum = ?side_1 + ?side_2 + ?side_3,
   merge_strat(3,?sum,?side).
-
-AssignHeapAllocation_no_var(?heap, ?inmethod,0),
-AssignHeapAllocation_no_var2(?heap, ?inmethod,0):-
-  AssignHeapAllocation_no_var1(?heap, ?inmethod,?side_1),
-  AssignHeapAllocation_no_var1(?heap, ?inmethod,?side_2),
-  ?side_1 != ?side_2.
-
-AssignHeapAllocation_no_var(?heap, ?inmethod,?side_1):-
-  AssignHeapAllocation_no_var1(?heap, ?inmethod,?side_1),
-  ~AssignHeapAllocation_no_var2(?heap, ?inmethod,_).
 
 
 ReturnVar(?var, ?method,?side):-
@@ -415,10 +287,10 @@ VirtualMethodInvocation_Descriptor(?invocation, ?descriptor,?side):-
 
 VirtualMethodInvocation_Descriptor(?invocation, ?descriptor,?side),
 VirtualMethodInvocation_SimpleName(?invocation, ?simplename,?side):-
-  isVirtualMethodInvocation_Insn(?invocation,?side_1),
-  MethodInvocation_Method(?invocation, ?signature,?side_2),
-  Method_SimpleName(?signature, ?simplename,?side_3),
-  Method_Descriptor(?signature, ?descriptor,_),
+  isVirtualMethodInvocation_Insn(?invocation,?side_1), % 1,2
+  MethodInvocation_Method(?invocation, ?signature,?side_2), % 1,2
+  Method_SimpleName(?signature, ?simplename,?side_3), % play,0
+  Method_Descriptor(?signature, ?descriptor,_),   % 0
   ?sum = ?side_1 + ?side_2 + ?side_3,
   merge_strat(3,?sum,?side).
 
@@ -599,7 +471,7 @@ InitializedClass1(?class,?side):-
 
 InitializedClass1(?class,?side):-
   Reachable1(?inmethod,?side_1),
-  AssignHeapAllocation_no_var(?heap, ?inmethod,?side_2),
+  AssignHeapAllocation(?heap, _, ?inmethod,?side_2),
   HeapAllocation_Type(?heap, ?class,?side_3),
   ?sum = ?side_1 + ?side_2 + ?side_3,
   merge_strat(3,?sum,?side).
@@ -652,9 +524,6 @@ Assign1(?return, ?local,?side):-
   AssignReturnValue(?invocation, ?local,?side_3),
   ?sum = ?side_1 + ?side_2 + ?side_3,
   merge_strat(3,?sum,?side).
-
-
-
 
 VarPointsTo1(?heap, ?var,?side):-
   AssignHeapAllocation(?heap, ?var, ?inMethod,?side_1),
@@ -887,10 +756,10 @@ Assign(?actual, ?formal,?side_1):-
 @export VarPointsTo :- tsv{resource="VarPointsTo.tsv",format=(string,string,int)}.
 @export CallGraphEdge :- tsv{resource="CallGraphEdge.tsv",format=(string,string,int)}.
 @export Assign :- tsv{resource="Assign.tsv",format=(string,string,int)}.
-@export MethodLookup :- tsv{resource="MethodLookup.tsv",format=(string,string,string,string,int)}.
 @export AssignReturnValue :- tsv{resource="AssignReturnValue.tsv",format=(string,string,int)}.
 
 
+@export MethodLookup :- tsv{resource="MethodLookup.tsv",format=(string,string,string,string,int)}.
 @export isType :- tsv{resource="isType.tsv",format=(string,int)}.
 @export isReferenceType :- tsv{resource="isReferenceType.tsv",format=(string,int)}.
 @export isArrayType :- tsv{resource="isArrayType.tsv",format=(string,int)}.
@@ -923,9 +792,6 @@ Assign(?actual, ?formal,?side_1):-
 @export AssignCast_From :- tsv{resource="AssignCast_From.tsv",format=(string,string,int)}.
 @export AssignCast_Type :- tsv{resource="AssignCast_Type.tsv",format=(string,string,int)}.
 @export AssignLocal_From :- tsv{resource="AssignLocal_From.tsv",format=(string,string,int)}.
-@export AssignLocal_From1 :- tsv{resource="AssignLocal_From1.tsv",format=(string,string,int)}.
-@export AssignLocal_From2 :- tsv{resource="AssignLocal_From2.tsv",format=(string,string,int)}.
-
 @export AssignHeapAllocation_Heap :- tsv{resource="AssignHeapAllocation_Heap.tsv",format=(string,string,int)}.
 @export ReturnNonvoid_Var :- tsv{resource="ReturnNonvoid_Var.tsv",format=(string,string,int)}.
 @export MethodInvocation_Method :- tsv{resource="MethodInvocation_Method.tsv",format=(string,string,int)}.
@@ -936,12 +802,10 @@ Assign(?actual, ?formal,?side_1):-
 @export MethodInvocation_Base :- tsv{resource="MethodInvocation_Base.tsv",format=(string,string,int)}.
 @export Method_Descriptor :- tsv{resource="Method_Descriptor.tsv",format=(string,string,int)}.
 @export MethodImplemented :- tsv{resource="MethodImplemented.tsv",format=(string,string,string,string,int)}.
-
 @export DirectSubclass :- tsv{resource="DirectSubclass.tsv",format=(string,string,int)}.
 @export Subclass :- tsv{resource="Subclass.tsv",format=(string,string,int)}.
 @export Superclass :- tsv{resource="Superclass.tsv",format=(string,string,int)}.
 @export DirectSuperclass :- tsv{resource="DirectSuperclass.tsv",format=(string,string,int)}.
-
 @export Superinterface :- tsv{resource="Superinterface.tsv",format=(string,string,int)}.
 @export SubtypeOf :- tsv{resource="SubtypeOf.tsv",format=(string,string,int)}.
 @export SupertypeOf :- tsv{resource="SupertypeOf.tsv",format=(string,string,int)}.
@@ -957,21 +821,14 @@ Assign(?actual, ?formal,?side_1):-
 @export AssignLocal :- tsv{resource="AssignLocal.tsv",format=(string,string,string,int)}.
 @export AssignHeapAllocation :- tsv{resource="AssignHeapAllocation.tsv",format=(string,string,string,int)}.
 @export ReturnVar :- tsv{resource="ReturnVar.tsv",format=(string,string,int)}.
-@export AssignHeapAllocation_no_var :- tsv{resource="AssignHeapAllocation_no_var.tsv",format=(string,string,int)}.
-
 @export StaticMethodInvocation :- tsv{resource="StaticMethodInvocation.tsv",format=(string,string,string,int)}.
 @export SameMethod :- tsv{resource="SameMethod.tsv",format=(string,int)}.
 @export ClassInitializer :- tsv{resource="ClassInitializer.tsv",format=(string,string,int)}.
 @export InitializedClass :- tsv{resource="InitializedClass.tsv",format=(string,int)}.
-
-
 @export InstanceFieldPointsTo :- tsv{resource="InstanceFieldPointsTo.tsv",format=(string,string,string,int)}.
 @export StaticFieldPointsTo :- tsv{resource="StaticFieldPointsTo.tsv",format=(string,string,int)}.
-
-
 @export ArrayIndexPointsTo :- tsv{resource="ArrayIndexPointsTo.tsv",format=(string,string,int)}.
 @export MainClass :- tsv{resource="MainClass.tsv",format=(string,int)}.
-
-@export merge_strat :- tsv{resource="merge_strat.tsv",format=(int,int,int)}.
+@export merge_strat :- tsv{resource="merge_strat.tsv",format=(string,string,int)}.
 
 % Vergleichsversion, wo folding nur am Ende funktioniert

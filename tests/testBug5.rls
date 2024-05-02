@@ -1,0 +1,8 @@
+
+@import A :- tsv{resource="A.tsv",format=(int)}.
+
+B(?a):-
+    A(?a),
+    ?a < 1.
+
+@output B.

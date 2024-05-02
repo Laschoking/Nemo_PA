@@ -1,9 +1,7 @@
-
-%HeapAllocation_Type("<<main method array>>", "java.lang.String[]").
-%@output HeapAllocation_Type.
-
-@declare HeapAllocation_Type(any,any).
+B("a","<<main method array>>").
 HeapAllocation_Type(?heap, ?type) :-
   ?heap = "<<main method array>>",
-  ?type = "java.lang.String[]".
-@output HeapAllocation_Type.
+  B(?type,?heap).
+@export HeapAllocation_Type :- tsv{resource="h.tsv",format=(string,string)}.
+
+%HeapAllocation_Type("<<main method array>>", "java.lang.String[]").
