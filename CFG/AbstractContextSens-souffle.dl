@@ -1,0 +1,2215 @@
+
+.comp AbstractContextSensitivity<Configuration> {
+.decl ClassInitializer(?type:Type, ?method:Method)
+
+.decl InitializedClass(?classOrInterface:Type)
+.decl ImplicitReachable(?sig:Method)
+
+.decl ApplicationEntryPoint(?meth:Method)
+
+
+.decl ForcedReachable(?method:Method)
+.decl RunningThread(?hctx:configuration.HContext, ?value:Value)
+
+.decl ReachableCurrentThreadInvocation(?callerCtx:configuration.Context, ?local:Var)
+
+.decl FakeInvocation_ThreadGroupInit(?invo: MethodInvocation)
+
+.decl FakeInvocation_MainThreadInit(?invo: MethodInvocation)
+
+.decl FakeInvocation_SystemThreadGroupInit(?invo: MethodInvocation)
+.decl MockedMethodReturns(?method:Method, ?alloc:HeapAllocation, ?type:ReferenceType)
+.output MockedMethodReturns
+
+
+
+
+MockedMethodReturns(?method, ?value, ?type) :-
+  ?method = "<java.sql.DriverManager: java.sql.Connection getConnection(java.lang.String,java.util.Properties,java.lang.Class)>",
+  basic.SubtypeOf(?type, "java.sql.Connection"),
+  isClassType(?type),
+  ?value = cat("<mock SQL connection of type ", cat(?type, ">")).
+.decl StringFactoryVar(?var:Var)
+.decl StringFactoryVarPointsTo(?factoryHctx:configuration.HContext, ?factoryValue:Value, ?ctx:configuration.Context, ?var:Var)
+.decl AssignInvokedynamic(?insn:DynamicMethodInvocation_Insn, ?ret:Var, ?value:Value, ?type:Type)
+.output AssignInvokedynamic
+
+
+
+
+AssignInvokedynamic(?insn, ?ret, ?heap, "java.lang.String"),
+VarPointsTo(?hctx, ?heap, ?ctx, ?ret),
+Value_isMock(?heap), isValue(?heap), Value_Type(?heap, "java.lang.String"), Value_DeclaringType(?heap, "java.lang.Object")  :-
+  DynamicMethodInvocation_Bootstrap(?insn, "<java.lang.invoke.StringConcatFactory: java.lang.invoke.CallSite makeConcatWithConstants(java.lang.invoke.MethodHandles$Lookup,java.lang.String,java.lang.invoke.MethodType,java.lang.String,java.lang.Object[])>"),
+  Instruction_Method(?insn, ?method),
+  ReachableContext(?ctx, ?method),
+  isImmutableHContext(?hctx),
+  AssignReturnValue(?insn, ?ret),
+  ?heap = "<mock string concatenation result>".
+.decl Instruction_Throws(?hctx:configuration.HContext, ?value:Value, ?ctx:configuration.Context, ?insn:Instruction)
+.decl ThrowPointsTo(?hctx:configuration.HContext, ?value:Value, ?ctx:configuration.Context, ?method:Method)
+
+Instruction_Throws(?hctx, ?value, ?ctx, ?insn) :-
+  Throw(?insn, ?var),
+  VarPointsTo(?hctx, ?value, ?ctx, ?var).
+
+Instruction_Throws(?hctx, ?value, ?callerCtx, ?invocation) :-
+  ThrowPointsTo(?hctx, ?value, ?calleeCtx, ?tomethod),
+  CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?tomethod).
+ .plan 1:(2,1)
+ThrowPointsTo(?hctx, ?value, ?ctx, ?method) :-
+  Instruction_Throws(?hctx, ?value, ?ctx, ?insn),
+  Instruction_Method(?insn, ?method),
+  !basic.ExceptionHandler_InRange(_, ?insn).
+
+ThrowPointsTo(?hctx, ?value, ?ctx, ?method) :-
+  Instruction_Throws(?hctx, ?value, ?ctx, ?insn),
+  Value_Type(?value, ?valueType),
+  Instruction_Method(?insn, ?method),
+  basic.ExceptionHandler_SameInsn_Repr(?insn, ?repr),
+  basic.ExceptionHandler_SameBlock_Repr(?repr, ?block),
+  !basic.ExceptionHandler_TypeIsCaught(?valueType, ?block).
+
+
+
+ .plan 1:(2,1,3,4,5)
+
+
+VarPointsTo(?hctx, ?value, ?ctx, ?param) :-
+  Instruction_Throws(?hctx, ?value, ?ctx, ?insn),
+  Value_Type(?value, ?valueType),
+  basic.ExceptionHandler_InRange(?handler, ?insn),
+  ExceptionHandler_Type(?handler, ?handlerType),
+  basic.SubtypeOf(?valueType, ?handlerType),
+  ConcreteClass(?valueType),
+  ExceptionHandler_FormalParam(?handler, ?param),
+  !basic.ExceptionHandler_Impossible(?valueType, ?handler, ?insn).
+
+
+ .plan 1:(2,1,3,4,5,6,7)
+.type MethodType = Value
+.type ParamTypes = symbol
+.decl MethodType_ParamType(?mt:MethodType, ?index:number, ?pType:Type)
+.decl MethodType_ParamTypes(?mt:MethodType, ?paramTypes:ParamTypes)
+.decl MethodType_ReturnType(?mt:MethodType, ?retType:Type)
+.decl MethodType_Arity(?mt:MethodType, ?arity:number)
+
+
+.decl isInitialMethodType(?mt:MethodType)
+
+
+MethodType_ParamType(?mt, ?idx, ?type) :- _MethodTypeConstantParam(?mt, ?idx, ?type).
+MethodType_Arity(?mt, ?arity) :- MethodTypeConstant_Arity(?mt, ?arity).
+MethodType_ReturnType(?mt, ?retType) :- MethodTypeConstant_ReturnType(?mt, ?retType).
+MethodType_ParamTypes(?mt, ?paramTypes) :- MethodTypeConstant_ParamTypes(?mt, ?paramTypes).
+HeapAllocation_ContextInsensitive(?heap) :-
+  isMethodHandleConstant(?heap).
+
+.type MethodHandle = Value
+.decl MethodHandle_Method(?methodHandle:MethodHandle, ?method:Method)
+
+
+
+.decl MethodHandle_MethodType(?mh:MethodHandle, ?mt:MethodType)
+
+
+Value_isMock(?mt), isValue(?mt), Value_Type(?mt, "java.lang.invoke.MethodType"), Value_DeclaringType(?mt, "java.lang.Object") ,
+isInitialMethodType(?mt),
+MethodHandle_Method(?methodHandle, ?method),
+MethodHandle_MethodType(?methodHandle, ?mt),
+MethodType_Arity(?mt, ?arity),
+MethodType_ParamTypes(?mt, ?paramTypes),
+MethodType_ReturnType(?mt, ?retType) :-
+  MethodHandleConstant_Method(?methodHandle, ?method),
+  MethodHandleConstant_ParamTypes(?methodHandle, ?paramTypes),
+  MethodHandleConstant_ReturnType(?methodHandle, ?retType),
+  MethodHandleConstant_Arity(?methodHandle, ?arity),
+  ?mt =  cat("<method type (", cat(?paramTypes, cat(")", cat(?retType, ">")))) .
+
+
+
+
+.decl MethodHandleCallGraphEdge_Candidate(?callerCtx:configuration.Context, ?i:MethodInvocation, ?m:Method, ?mh:MethodHandle, ?name:symbol)
+MethodHandleCallGraphEdge_Candidate(?callerCtx, ?invo, ?method, ?mh, ?name) :-
+
+  ReachableContext(?callerCtx, ?containingMethod),
+  (_VirtualMethodInvocation(?invo, _, _, ?base, ?containingMethod) ;
+   _SpecialMethodInvocation(?invo, _, _, ?base, ?containingMethod)),
+  _PolymorphicInvocation(?invo, ?name),
+  VarPointsTo(_, ?mh, ?callerCtx, ?base),
+  MethodHandle_Method(?mh, ?method).
+.plan 1:(4,5,2,1,3), 2:(5,4,2,1,3)
+
+.decl MethodHandleCallGraphEdge(?callerCtx:configuration.Context, ?i:MethodInvocation, ?calleeCtx:configuration.Context, ?m:Method, ?mh:MethodHandle, ?name:symbol)
+configuration.StaticContextRequest(?callerCtx, ?invo) :-
+  MethodHandleCallGraphEdge_Candidate(?callerCtx, ?invo, ?method, _, _),
+  Method_Modifier("static", ?method).
+
+MethodHandleCallGraphEdge(?callerCtx, ?invo, ?calleeCtx, ?method, ?mh, ?name) :-
+  configuration.StaticContextResponse(?callerCtx, ?invo, ?calleeCtx),
+  MethodHandleCallGraphEdge_Candidate(?callerCtx, ?invo, ?method, ?mh, ?name).
+
+MethodHandleCallGraphEdge(?callerCtx, ?invo, ?calleeCtx, ?method, ?mh, ?name) :-
+  MethodHandleCallGraphEdge_Candidate(?callerCtx, ?invo, ?method, ?mh, ?name),
+  !Method_Modifier("static", ?method),
+
+  isImmutableContext(?calleeCtx).
+
+ReachableContext(?calleeCtx, ?method) :-
+  MethodHandleCallGraphEdge(_, _, ?calleeCtx, ?method, _, _).
+
+
+.decl BoxTypeConversion(?original:Type, ?new:Type)
+
+.decl BoxAllocation(?value:Value, ?type:Type)
+
+
+BoxTypeConversion(?t1, ?t2),
+Value_isMock(?mockAlloc), isValue(?mockAlloc), Value_Type(?mockAlloc, ?t2), Value_DeclaringType(?mockAlloc, "java.lang.Object") ,
+BoxAllocation(?mockAlloc, ?t2) :-
+  PrimitiveType_Boxed(?t1, ?wrapperT),
+  basic.SubtypeOf(?wrapperT, ?t2),
+  ?mockAlloc =  cat("<mock box allocation for type ", cat(?t2, ">")) .
+BoxTypeConversion(?t1, ?t2) :- PrimitiveType_Boxed(?t1, _), isNullType(?t2).
+BoxTypeConversion(?t1, ?t2) :- PrimitiveType_Boxed(_, ?t2), isNullType(?t1).
+BoxTypeConversion(?t1, ?t2) :- BoxTypeConversion(?t2, ?t1).
+
+.decl CompatibleTypes(?t:Type, ?tConv:Type)
+CompatibleTypes(?t, ?tConv) :- basic.SubtypeOf(?tConv, ?t).
+CompatibleTypes(?t, ?tConv) :- BoxTypeConversion(?t, ?tConv).
+
+
+.decl MethodHandleCGE_Arg(?callerCtx:configuration.Context, ?calleeCtx:configuration.Context, ?actual:Var, ?formal:Var, ?actualType:Type, ?formalType:Type, ?name:symbol)
+
+MethodHandleCGE_Arg(?callerCtx, ?calleeCtx, ?actual, ?formal, ?actualType, ?formalType, ?name) :-
+  MethodHandleCallGraphEdge(?callerCtx, ?invo, ?calleeCtx, ?method, _, ?name),
+  !Method_Modifier("static", ?method),
+  ActualParam(?idx, ?invo, ?actual),
+  ?idx > 0,
+  FormalParam(?idx - 1, ?method, ?formal),
+  Var_Type(?actual, ?actualType),
+  Var_Type(?formal, ?formalType).
+
+MethodHandleCGE_Arg(?callerCtx, ?calleeCtx, ?actual, ?formal, ?actualType, ?formalType, ?name) :-
+  MethodHandleCallGraphEdge(?callerCtx, ?invo, ?calleeCtx, ?method, _, ?name),
+  Method_Modifier("static", ?method),
+  ActualParam(?idx, ?invo, ?actual),
+  FormalParam(?idx, ?method, ?formal),
+  Var_Type(?actual, ?actualType),
+  Var_Type(?formal, ?formalType).
+
+
+
+VarPointsTo(?hctx, ?val, ?calleeCtx, ?formal) :-
+  MethodHandleCGE_Arg(?callerCtx, ?calleeCtx, ?actual, ?formal, ?actualType, ?formalType, _),
+  VarPointsTo(?hctx, ?val, ?callerCtx, ?actual),
+  basic.SubtypeOf(?actualType, ?formalType).
+VarPointsTo(?hctx, ?val, ?calleeCtx, ?this) :-
+  MethodHandleCallGraphEdge(?callerCtx, ?invo, ?calleeCtx, ?method, _, _),
+  !Method_Modifier("static", ?method),
+  ActualParam(0, ?invo, ?actual),
+  VarPointsTo(?hctx, ?val, ?callerCtx, ?actual),
+  ThisVar(?method, ?this),
+  Var_Type(?actual, ?actualType),
+  Var_Type(?this, ?thisType),
+  basic.SubtypeOf(?actualType, ?thisType).
+
+
+VarPointsTo(?hctx, ?val, ?callerCtx, ?var) :-
+  MethodHandleCallGraphEdge(?callerCtx, ?invo, ?calleeCtx, ?method, _, _),
+  ReturnVar(?ret, ?method),
+  VarPointsTo(?hctx, ?val, ?calleeCtx, ?ret),
+  AssignReturnValue(?invo, ?var),
+  Var_Type(?ret, ?retType),
+  Var_Type(?var, ?varType),
+  CompatibleTypes(?retType, ?varType).
+
+
+
+OpaqueCallGraphEdge(?invo, ?sig),
+Value_isMock(?adapterMH), isValue(?adapterMH), Value_Type(?adapterMH, "java.lang.invoke.MethodHandle"), Value_DeclaringType(?adapterMH, "java.lang.Object") ,
+
+VarPointsTo(?hctx, ?adapterMH, ?ctx, ?ret),
+
+MethodHandle_Method(?adapterMH, ?mhMethod),
+MethodHandle_MethodType(?adapterMH, ?mt) :-
+  _VirtualMethodInvocation(?invo, _, ?sig, ?base, ?method),
+  ReachableContext(?ctx, ?method),
+  ?sig = "<java.lang.invoke.MethodHandle: java.lang.invoke.MethodHandle asType(java.lang.invoke.MethodType)>",
+  VarPointsTo(?hctx, ?mh, ?ctx, ?base),
+  ActualParam(0, ?invo, ?arg),
+  VarPointsTo(_, ?mt, ?ctx, ?arg),
+  AssignReturnValue(?invo, ?ret),
+  MethodHandle_Method(?mh, ?mhMethod),
+  Method_ParamTypes(?mhMethod, _),
+  ?adapterMH = cat("<adapter for ", cat(?mh, cat(" as ", ?mt))).
+.decl MHLookup_Type(?value:Value, ?type:Type)
+VarPointsTo(?hctx, ?value, ?calleeCtx, ?thisVar),
+VarPointsTo(?hctx, ?value, ?callerCtx, ?ret),
+
+Value_isMock(?value), isValue(?value), Value_Type(?value, ?type), Value_DeclaringType(?value, "java.lang.Object")  :-
+  MethodHandleCallGraphEdge(?callerCtx, ?invo, ?calleeCtx, ?method, ?mh, _),
+  basic.ClassConstructor(?method, ?type),
+  ThisVar(?method, ?thisVar),
+  isImmutableHContext(?hctx),
+  ?value = cat(?type, cat(" value constructed by method handle ", ?mh)),
+  AssignReturnValue(?invo, ?ret),
+  Var_Type(?ret, ?retType),
+  basic.SubtypeOf(?type, ?retType).
+.decl ReachableInvokedynamic(?invokedynamic:DynamicMethodInvocation_Insn, ?dynName:symbol, ?dynRetType:Type, ?ctx:configuration.Context)
+ReachableInvokedynamic(?invokedynamic, ?dynName, ?dynRetType, ?ctx) :-
+  isDynamicMethodInvocation_Insn(?invokedynamic),
+  Instruction_Method(?invokedynamic, ?inMethod),
+  DynamicMethodInvocation_DynName(?invokedynamic, ?dynName),
+  DynamicMethodInvocation_DynReturnType(?invokedynamic, ?dynRetType),
+  ReachableContext(?ctx, ?inMethod).
+
+
+.decl isBootstrapMethodContext(?ctx:configuration.Context)
+isBootstrapMethodContext(?ctx) :- isImmutableContext(?ctx).
+
+
+.decl InvokedynamicBootCallGraphEdge(?callerCtx:configuration.Context, ?invokedynamic:DynamicMethodInvocation_Insn, ?calleeCtx:configuration.Context, ?bootMethod:Method)
+InvokedynamicBootCallGraphEdge(?callerCtx, ?invokedynamic, ?calleeCtx, ?bootMethod) :-
+  ReachableInvokedynamic(?invokedynamic, _, _, ?callerCtx),
+  DynamicMethodInvocation_Bootstrap(?invokedynamic, ?bootMethod),
+  isBootstrapMethodContext(?calleeCtx).
+
+ReachableContext(?calleeCtx, ?bootMethod) :-
+  InvokedynamicBootCallGraphEdge(_, _, ?calleeCtx, ?bootMethod).
+
+.decl Invokedynamic_MethodType(?invokedynamic:DynamicMethodInvocation_Insn, ?mt:MethodType)
+.decl PopulateMTParamTypes(?mt:Value, ?invokedynamic:DynamicMethodInvocation_Insn)
+
+
+Value_isMock(?mt), isValue(?mt), Value_Type(?mt, "java.lang.invoke.MethodType"), Value_DeclaringType(?mt, "java.lang.Object") ,
+MethodType_ReturnType(?mt, ?dynRetType),
+PopulateMTParamTypes(?mt, ?invokedynamic),
+Invokedynamic_MethodType(?invokedynamic, ?mt) :-
+  InvokedynamicBootCallGraphEdge(_, ?invokedynamic, _, _),
+  DynamicMethodInvocation_DynReturnType(?invokedynamic, ?dynRetType),
+  DynamicMethodInvocation_DynParamTypes(?invokedynamic, ?dynParamTypes),
+  ?mt =  cat("<method type (", cat(?dynParamTypes, cat(")", cat(?dynRetType, ">")))) .
+MethodType_ParamType(?mt, ?index, ?pType) :-
+  PopulateMTParamTypes(?mt, ?invokedynamic),
+  _DynamicMethodInvocation_DynParamType(?invokedynamic, ?index, ?pType).
+
+
+
+
+VarPointsTo(?immHctx, ?mockMHLookup, ?calleeCtx, ?caller),
+VarPointsTo(?immHctx, ?mt, ?calleeCtx, ?invokedTypeParam),
+
+Value_isMock(?mockMHLookup), isValue(?mockMHLookup), Value_Type(?mockMHLookup, "java.lang.invoke.MethodHandles$Lookup"), Value_DeclaringType(?mockMHLookup, "java.lang.Object") ,
+MHLookup_Type(?mockMHLookup, ?callerClass) :-
+  InvokedynamicBootCallGraphEdge(_, ?invokedynamic, ?calleeCtx, ?bootMethod),
+  FormalParam(0, ?bootMethod, ?caller),
+  FormalParam(2, ?bootMethod, ?invokedTypeParam),
+  Invokedynamic_MethodType(?invokedynamic, ?mt),
+  isImmutableHContext(?immHctx),
+  Instruction_Method(?invokedynamic, ?method),
+  Method_DeclaringType(?method, ?callerClass),
+  ?mockMHLookup =  cat("<mock method handles lookup object for type ", cat(?callerClass, ">")) .
+.decl MethodVarArgs(?method:Method, ?idx:number, ?formal:Var, ?type:ArrayType)
+MethodVarArgs(?method, ?idx, ?formal, ?type) :-
+  Method_Modifier("varargs", ?method),
+  Method_Arity(?method, ?arity),
+  ?idx = ?arity - 1,
+  FormalParam(?idx, ?method, ?formal),
+  Var_Type(?formal, ?type),
+  isArrayType(?type).
+
+
+
+
+
+ArrayIndexPointsTo(?immHctx, ?val, ?immHctx, ?mockArray),
+Value_isMock(?mockArray), isValue(?mockArray), Value_Type(?mockArray, ?varArgsType), Value_DeclaringType(?mockArray, "java.lang.Object") ,
+VarPointsTo(?immHctx, ?mockArray, ?calleeCtx, ?formalVarArgs) :-
+  InvokedynamicBootCallGraphEdge(_, ?invokedynamic, ?calleeCtx, ?bootMethod),
+  MethodVarArgs(?bootMethod, ?bootIdx, ?formalVarArgs, ?varArgsType),
+  BootstrapParam(?idx, ?invokedynamic, ?actual),
+  ?idx > ?bootIdx - 3,
+  VarPointsTo(_, ?val, _, ?actual),
+  isImmutableHContext(?immHctx),
+  ?mockArray =  cat("<bootstrap varargs array for ", cat(?invokedynamic, ">")) .
+
+
+VarPointsTo(?hctx, ?val, ?calleeCtx, ?formal) :-
+  InvokedynamicBootCallGraphEdge(_, ?invokedynamic, ?calleeCtx, ?bootMethod),
+  !Method_Modifier("varargs", ?bootMethod),
+  FormalParam(?idx + 3, ?bootMethod, ?formal),
+  BootstrapParam(?idx, ?invokedynamic, ?actual),
+  VarPointsTo(?hctx, ?val, _, ?actual).
+
+
+.type CallSite = Value
+.decl InvokedynamicCallSite(?callsite:CallSite, ?invokedynamic:DynamicMethodInvocation_Insn, ?dynName:symbol, ?K:number, ?ctx:configuration.Context)
+
+
+
+
+InvokedynamicCallSite(?callsite, ?invokedynamic, ?dynName, ?K, ?callerCtx) :-
+  ReachableInvokedynamic(?invokedynamic, ?dynName, _, ?callerCtx),
+  DynamicMethodInvocation_DynArity(?invokedynamic, ?K),
+  DynamicMethodInvocation_Bootstrap(?invokedynamic, ?bootMethod),
+  ReturnVar(?bootRetVar, ?bootMethod),
+  isBootstrapMethodContext(?calleeCtx),
+  VarPointsTo(_, ?callsite, ?calleeCtx, ?bootRetVar).
+
+
+
+.decl CallSiteContents(?invokedynamic:DynamicMethodInvocation_Insn, ?methodHandle:MethodHandle, ?method:Method, ?mt:MethodType, ?ctx:configuration.Context)
+CallSiteContents(?invokedynamic, ?methodHandle, ?method, ?mt, ?ctx) :-
+  InvokedynamicCallSite(?callsite, ?invokedynamic, _, _, ?ctx),
+  Invokedynamic_MethodType(?invokedynamic, ?mt),
+  InstanceFieldPointsTo(_, ?methodHandle, "<java.lang.invoke.CallSite: java.lang.invoke.MethodHandle target>", _, ?callsite),
+  MethodHandle_Method(?methodHandle, ?method).
+
+
+
+.decl CallSiteMatchesMethodHandleType(?invokedynamic:DynamicMethodInvocation_Insn, ?mh:MethodHandle, ?method:Method, ?ctx:configuration.Context)
+CallSiteMatchesMethodHandleType(?invokedynamic, ?mh, ?method, ?ctx) :-
+  CallSiteContents(?invokedynamic, ?mh, ?method, ?mtDyn, ?ctx),
+
+
+
+
+  MethodHandle_MethodType(?mh, ?mtDyn).
+
+
+
+CallSiteMatchesMethodHandleType(?invokedynamic, ?mh, ?method, ?ctx) :-
+  CallSiteContents(?invokedynamic, ?mh, ?method, ?mt, ?ctx),
+  MethodType_ReturnType(?mt, ?dynRetType),
+  basic.ClassConstructor(?method, ?dynRetType),
+  MethodHandle_Method(?mh, ?method).
+
+
+
+
+
+
+.decl StaticMethodHandleCall(?callerCtx:configuration.Context, ?invo:MethodInvocation, ?method:Method, ?mh:MethodHandle)
+StaticMethodHandleCall(?callerCtx, ?invokedynamic, ?method, ?mh),
+configuration.StaticContextRequest(?callerCtx, ?invokedynamic) :-
+  CallSiteMatchesMethodHandleType(?invokedynamic, ?mh, ?method, ?callerCtx),
+  Method_Modifier("static", ?method).
+MethodHandleCallGraphEdge(?callerCtx, ?invokedynamic, ?calleeCtx, ?method, ?mh, "invokeExact") :-
+  StaticMethodHandleCall(?callerCtx, ?invokedynamic, ?method, ?mh),
+  configuration.StaticContextResponse(?callerCtx, ?invokedynamic, ?calleeCtx).
+
+
+
+
+MethodHandleCallGraphEdge(?callerCtx, ?invokedynamic, ?calleeCtx, ?method, ?mh, "invokeExact") :-
+  CallSiteMatchesMethodHandleType(?invokedynamic, ?mh, ?method, ?callerCtx),
+  !Method_Modifier("static", ?method),
+  isImmutableContext(?calleeCtx).
+
+ReachableContext(?calleeCtx, ?callee) :-
+  MethodHandleCallGraphEdge(_, _, ?calleeCtx, ?callee, _, _).
+.decl LambdaMetafactoryInvoke(?invokedynamic:DynamicMethodInvocation_Insn)
+LambdaMetafactoryInvoke(?invokedynamic) :-
+  DynamicMethodInvocation_Bootstrap(?invokedynamic, ?method),
+  (?method =  "<java.lang.invoke.LambdaMetafactory: java.lang.invoke.CallSite metafactory(java.lang.invoke.MethodHandles$Lookup,java.lang.String,java.lang.invoke.MethodType,java.lang.invoke.MethodType,java.lang.invoke.MethodHandle,java.lang.invoke.MethodType)>"  ; ?method =  "<java.lang.invoke.LambdaMetafactory: java.lang.invoke.CallSite altMetafactory(java.lang.invoke.MethodHandles$Lookup,java.lang.String,java.lang.invoke.MethodType,java.lang.Object[])>" ).
+
+.decl ReachableLambdaMetafactoryInvoke(?invokedynamic:DynamicMethodInvocation_Insn, ?dynName:symbol, ?dynRetType:Type, ?ctx:configuration.Context)
+ReachableLambdaMetafactoryInvoke(?invokedynamic, ?dynName, ?dynRetType, ?ctx) :-
+  LambdaMetafactoryInvoke(?invokedynamic),
+  ReachableInvokedynamic(?invokedynamic, ?dynName, ?dynRetType, ?ctx).
+
+
+
+.decl UnhandledInvokedynamic(?invokedynamic:DynamicMethodInvocation_Insn, ?bootMethodId:symbol)
+
+UnhandledInvokedynamic(?invokedynamic, ?bootMethodId) :-
+  DynamicMethodInvocation_Bootstrap(?invokedynamic, ?bootMethodId),
+  !LambdaMetafactoryInvoke(?invokedynamic).
+.type Lambda = Value
+
+
+.decl LambdaObject(?invokedynamic:DynamicMethodInvocation_Insn, ?lambda:Lambda, ?dynName:symbol, ?K:number, ?implMethod:Method, ?ctx:configuration.Context)
+Value_isMock(?lambda), isValue(?lambda), Value_Type(?lambda, ?dynRetType), Value_DeclaringType(?lambda, "java.lang.Object") ,
+
+VarPointsTo(?hctx, ?lambda, ?callerCtx, ?ret),
+
+LambdaObject(?invokedynamic, ?lambda, ?dynName, ?K, ?implMethod, ?callerCtx) :-
+  ReachableLambdaMetafactoryInvoke(?invokedynamic, ?dynName, ?dynRetType, ?callerCtx),
+  DynamicMethodInvocation_DynArity(?invokedynamic, ?K),
+  BootstrapParam(1, ?invokedynamic, ?handleVar),
+  VarPointsTo(?hctx, ?handleVal, ?callerCtx, ?handleVar),
+  MethodHandleConstant_Method(?handleVal, ?implMethod),
+
+  Method_SimpleName(?implMethod, ?handleMeth),
+  Method_DeclaringType(?implMethod, ?handleType),
+  ?lambda =  cat(?invokedynamic, cat("::: ", cat(?dynRetType, cat("::: (Mock)::: ", cat("reference ", cat(?handleType, cat ("::", cat(?handleMeth, cat(" from ", cat(?implMethod, cat(" wrapped as ", cat(?dynRetType, cat(".", ?dynName))))))))))))) ,
+
+  AssignReturnValue(?invokedynamic, ?ret).
+
+
+
+
+.decl LambdaCaptured(?invokedynamic:DynamicMethodInvocation_Insn, ?val:Value, ?idx:number, ?hctx:configuration.HContext)
+LambdaCaptured(?invokedynamic, ?val, ?idx, ?hctx) :-
+  ReachableLambdaMetafactoryInvoke(?invokedynamic, _, _, ?callerCtx),
+  DynamicMethodInvocation_DynArity(?invokedynamic, ?K),
+  ?K > 0,
+  ActualParam(?idx, ?invokedynamic, ?actual),
+  VarPointsTo(?hctx, ?val, ?callerCtx, ?actual).
+
+
+
+
+
+
+
+
+.decl LambdaCallGraphEdge(?callerCtx:configuration.Context, ?i:MethodInvocation, ?calleeCtx:configuration.Context, ?m:Method, ?lambda:Lambda)
+
+
+
+
+
+LambdaCallGraphEdge(?callerCtx, ?i, ?calleeCtx, ?implMethod, ?lambda) :-
+  LambdaObject(_, ?lambda, ?dynName, _, ?implMethod, _),
+  VarPointsTo(_, ?lambda, ?callerCtx, ?var),
+  VirtualMethodInvocation_Base(?i, ?var),
+  VirtualMethodInvocation_SimpleName(?i, ?dynName),
+  isImmutableContext(?calleeCtx).
+
+ReachableContext(?calleeCtx, ?callee) :-
+  LambdaCallGraphEdge(_, _, ?calleeCtx, ?callee, _).
+
+
+
+VarPointsTo(?hctx, ?retVal, ?callerCtx, ?ret) :-
+  LambdaCallGraphEdge(?callerCtx, ?i, ?calleeCtx, ?method, _),
+  ReturnVar(?realReturnVar, ?method),
+  VarPointsTo(?hctx, ?retVal, ?calleeCtx, ?realReturnVar),
+  AssignReturnValue(?i, ?ret).
+
+
+
+.decl CalledInstanceImplMethod(?invokedynamic:DynamicMethodInvocation_Insn, ?implMethod:Method, ?this:Var, ?thisType:Type, ?calleeCtx:configuration.Context, ?lambda:Lambda)
+CalledInstanceImplMethod(?invokedynamic, ?implMethod, ?this, ?thisType, ?calleeCtx, ?lambda) :-
+  LambdaCallGraphEdge(_, _, ?calleeCtx, ?implMethod, ?lambda),
+  !Method_Modifier("static", ?implMethod),
+  LambdaObject(?invokedynamic, ?lambda, _, _, ?implMethod, _),
+  ThisVar(?implMethod, ?this),
+  Var_Type(?this, ?thisType).
+
+
+
+
+.decl Params_ReceiverShiftRight(?lambda:Lambda, ?implMethod:Method, ?shiftK:number, ?shiftN:number)
+Params_ReceiverShiftRight(?lambda, ?implMethod, 0, 0) :-
+  LambdaObject(_, ?lambda, _, _, ?implMethod, _),
+  Method_Modifier("static", ?implMethod).
+
+Params_ReceiverShiftRight(?lambda, ?implMethod, 0, 1) :-
+  CalledInstanceImplMethod(?invokedynamic, ?implMethod, _, _, _, ?lambda),
+  DynamicMethodInvocation_DynArity(?invokedynamic, 0).
+
+Params_ReceiverShiftRight(?lambda, ?implMethod, 1, 0) :-
+  CalledInstanceImplMethod(?invokedynamic, ?implMethod, _, _, _, ?lambda),
+  LambdaCaptured(?invokedynamic, _, 0, _).
+
+
+.decl LambdaArg(?calleeCtx:configuration.Context, ?formal:Var, ?formalType:Type, ?actual:Var, ?invokedynamic:DynamicMethodInvocation_Insn)
+
+
+LambdaArg(?calleeCtx, ?formal, ?formalType, ?actual, ?invokedynamic) :-
+  LambdaCallGraphEdge(_, ?i, ?calleeCtx, ?implMethod, ?lambda),
+  Params_ReceiverShiftRight(?lambda, ?implMethod, ?shiftK, ?shiftN),
+  LambdaObject(?invokedynamic, ?lambda, _, ?K, ?implMethod, _),
+  ActualParam(?idx, ?i, ?actual),
+  FormalParam(?K - ?shiftK + ?idx - ?shiftN, ?implMethod, ?formal),
+  Var_Type(?formal, ?formalType).
+
+
+
+VarPointsTo(?hctx, ?val, ?calleeCtx, ?formal) :-
+  LambdaArg(?calleeCtx, ?formal, ?formalType, ?actual, _),
+  VarPointsTo(?hctx, ?val, _, ?actual),
+  Value_Type(?val, ?valType),
+  basic.SubtypeOf(?valType, ?formalType).
+
+
+
+.decl BoxingFunction(?functionType:ReferenceType, ?primType:Type, ?refType:ReferenceType)
+BoxingFunction(?intArgLambdaType, "int", "java.lang.Integer") :-
+  ?intArgLambdaType = "java.util.function.IntBinaryOperator";
+  ?intArgLambdaType = "java.util.function.IntConsumer";
+  ?intArgLambdaType = "java.util.function.IntFunction";
+  ?intArgLambdaType = "java.util.function.IntPredicate";
+  ?intArgLambdaType = "java.util.function.IntToDoubleFunction";
+  ?intArgLambdaType = "java.util.function.IntToLongFunction";
+  ?intArgLambdaType = "java.util.function.IntUnaryOperator";
+  ?intArgLambdaType = "java.util.function.ObjIntConsumer".
+BoxingFunction(?longArgLambdaType, "long", "java.lang.Long") :-
+  ?longArgLambdaType = "java.util.function.LongBinaryOperator";
+  ?longArgLambdaType = "java.util.function.LongConsumer";
+  ?longArgLambdaType = "java.util.function.LongFunction";
+  ?longArgLambdaType = "java.util.function.LongPredicate";
+  ?longArgLambdaType = "java.util.function.LongToDoubleFunction";
+  ?longArgLambdaType = "java.util.function.LongToIntFunction";
+  ?longArgLambdaType = "java.util.function.LongUnaryOperator";
+  ?longArgLambdaType = "java.util.function.ObjLongConsumer".
+BoxingFunction(?doubleArgLambdaType, "double", "java.lang.Double") :-
+  ?doubleArgLambdaType = "java.util.function.DoubleBinaryOperator";
+  ?doubleArgLambdaType = "java.util.function.DoubleConsumer";
+  ?doubleArgLambdaType = "java.util.function.DoubleFunction";
+  ?doubleArgLambdaType = "java.util.function.DoublePredicate";
+  ?doubleArgLambdaType = "java.util.function.DoubleToIntFunction";
+  ?doubleArgLambdaType = "java.util.function.DoubleToLongFunction";
+  ?doubleArgLambdaType = "java.util.function.DoubleUnaryOperator";
+  ?doubleArgLambdaType = "java.util.function.ObjDoubleConsumer".
+
+VarPointsTo(?hctx, ?val, ?calleeCtx, ?formal) :-
+  LambdaArg(?calleeCtx, ?formal, ?formalType, ?actual, ?invokedynamic),
+  ReachableLambdaMetafactoryInvoke(?invokedynamic, _, ?dynRetType, _),
+  Var_Type(?actual, ?primType),
+  BoxingFunction(?dynRetType, ?primType, ?formalType),
+  BoxAllocation(?val, ?formalType),
+  isImmutableHContext(?hctx).
+
+
+VarPointsTo(?hctx, ?val, ?calleeCtx, ?formal) :-
+  LambdaCallGraphEdge(_, _, ?calleeCtx, ?implMethod, ?lambda),
+  Params_ReceiverShiftRight(?lambda, ?implMethod, ?shiftK, _),
+  LambdaObject(?invokedynamic, ?lambda, _, ?K, ?implMethod, _),
+  LambdaCaptured(?invokedynamic, ?val, ?idx, ?hctx),
+  ?idx + ?shiftK <= ?K,
+  FormalParam(?idx - ?shiftK, ?implMethod, ?formal),
+  Value_Type(?val, ?valType),
+  Var_Type(?formal, ?formalType),
+  basic.SubtypeOf(?valType, ?formalType).
+
+
+VarPointsTo(?hctx, ?thisValue, ?calleeCtx, ?this) :-
+  Params_ReceiverShiftRight(?lambda, ?implMethod, 1, 0),
+  CalledInstanceImplMethod(?invokedynamic, ?implMethod, ?this, ?thisType, ?calleeCtx, ?lambda),
+  LambdaCaptured(?invokedynamic, ?thisValue, 0, ?hctx),
+  Value_Type(?thisValue, ?thisValueType),
+  basic.SubtypeOf(?thisValueType, ?thisType).
+
+
+
+VarPointsTo(?hctx, ?argValue, ?calleeCtx, ?this) :-
+  LambdaCallGraphEdge(?callerCtx, ?i, ?calleeCtx, ?implMethod, ?lambda),
+  Params_ReceiverShiftRight(?lambda, ?implMethod, 0, 1),
+  ActualParam(0, ?i, ?actual),
+  VarPointsTo(?hctx, ?argValue, ?callerCtx, ?actual),
+  Value_Type(?argValue, ?argType),
+  ThisVar(?implMethod, ?this),
+  Var_Type(?this, ?thisType),
+  basic.SubtypeOf(?argType, ?thisType).
+
+
+
+
+VarPointsTo(?hctx, ?mockObj, ?callerCtx, ?var),
+VarPointsTo(?hctx, ?mockObj, ?calleeCtx, ?thisVar),
+Value_isMock(?mockObj), isValue(?mockObj), Value_Type(?mockObj, ?type), Value_DeclaringType(?mockObj, "java.lang.Object")  :-
+  LambdaCallGraphEdge(?callerCtx, ?i, ?calleeCtx, ?implMethod, _),
+  basic.ClassConstructor(?implMethod, ?type),
+  AssignReturnValue(?i, ?var),
+  ThisVar(?implMethod, ?thisVar),
+  ?mockObj = cat("<mock object of type ", cat(?type, cat(" constructed by constructor reference at ", cat(?i, ">")))),
+  isImmutableHContext(?hctx).
+  .decl FakeInvocation_RegisterFinalize0(?heap:HeapAllocation, ?invo:MethodInvocation)
+
+  .decl FakeInvocation_RegisterFinalize(?value:Value, ?invo:MethodInvocation)
+
+  .decl Value_isHeap(?value:Value)
+  .decl Value_isMock(?value:Value)
+
+
+
+
+  .decl Value_Num(?value:Value, ?const:symbol, ?valueType:Type)
+
+  .decl Value_isNonHeap(?value:Value)
+
+
+
+
+  .decl NotSpecialObject(?value:Value)
+
+  .decl Value_Type(?value:Value, ?type:Type)
+  .decl Value_DeclaringType(?value:Value, ?type:Type)
+
+
+  .decl Value_Null(?null:Value)
+.decl isContext(?ctx:configuration.Context)
+.decl isHContext(?hctx:configuration.HContext)
+
+
+
+.decl isImmutableContext(?ctx:configuration.Context)
+.decl isInitialContext(?ctx:configuration.Context)
+.decl isJVMStartupContext(?ctx:configuration.Context)
+.decl isClinitContext(?ctx:configuration.Context)
+.decl isImmutableHContext(?hctx:configuration.HContext)
+.decl isJVMStartupHContext(?hctx:configuration.HContext)
+
+
+.decl VarPointsTo(?hctx:configuration.HContext, ?value:Value, ?ctx:configuration.Context, ?var:Var)
+
+.decl InstanceFieldPointsTo(?hctx:configuration.HContext, ?value:Value, ?sig:Field, ?basehctx:configuration.HContext, ?basevalue:Value)
+
+.decl StaticFieldPointsTo(?hctx:configuration.HContext, ?value:Value, ?sig:Field)
+
+
+.decl ArrayIndexPointsTo(?hctx:configuration.HContext, ?value:Value, ?basehctx:configuration.HContext, ?basevalue:Value)
+.decl CallGraphEdge(?callerCtx:configuration.Context, ?invocation:MethodInvocation, ?calleeCtx:configuration.Context, ?method:Method) overridable
+.decl OpaqueCallGraphEdge(?invocation:MethodInvocation, ?method:Method)
+.decl Reachable(?method:Method)
+.decl ReachableClass(?class:ReferenceType)
+.decl ReachableContext(?ctx:configuration.Context, ?method:Method)
+.decl OptInterproceduralAssign(?toCtx:configuration.Context, ?to:Var, ?fromCtx:configuration.Context, ?from:Var)
+
+.decl OptLoadArrayIndex(?to:Var, ?base:Var)
+
+.decl OptStoreArrayIndex(?from:Var, ?base:Var)
+
+.decl OptArgAssign(?toCtx:configuration.Context, ?to:Var, ?fromCtx:configuration.Context, ?from:Var, ?allowedType:Type)
+
+
+.decl OptReturnAssign(?toCtx:configuration.Context, ?to:Var, ?fromCtx:configuration.Context, ?from:Var)
+
+
+.decl OptArgVarPointsTo(?hctx:configuration.HContext, ?value:Value, ?ctx:configuration.Context, ?var:Var)
+
+.decl OptRetVarPointsTo(?hctx:configuration.HContext, ?value:Value, ?ctx:configuration.Context, ?var:Var)
+
+.decl HeapInterproceduralAssign(?toCtx:configuration.Context, ?to:Var, ?fromCtx:configuration.Context, ?from:Var)
+
+.decl LoadHeapInstanceField(?ctx:configuration.Context, ?to:Var, ?sig:Field, ?basehctx:configuration.HContext, ?basevalue:Value)
+
+.decl StoreHeapInstanceField(?sig:Field, ?basehctx:configuration.HContext, ?basevalue:Value, ?ctx:configuration.Context, ?from:Var)
+
+.decl LoadHeapArrayIndex(?ctx:configuration.Context, ?to:Var, ?basehctx:configuration.HContext, ?basevalue:Value)
+
+.decl StoreHeapArrayIndex(?basehctx:configuration.HContext, ?basevalue:Value, ?ctx:configuration.Context, ?from:Var)
+.decl SystemThreadGroup(?hctx:configuration.HContext, ?value:Value)
+
+.decl MainThreadGroup(?hctx:configuration.HContext, ?value:Value)
+
+.decl MainThread(?hctx:configuration.HContext, ?value:Value)
+Value_DeclaringType(?value, "java.lang.System") :-
+   ?value = "<<string-constant>>",
+   isValue(?value) ;
+   ?value = "<<reflection-string-constant>>",
+   isValue(?value) ;
+   ?value = "<<string-buffer>>",
+   isValue(?value) ;
+   ?value = "<<string-builder>>",
+   isValue(?value) ;
+   ?value = "<<initial-context>>",
+   isValue(?value) ;
+   ?value = "<<jvm-startup-context>>",
+   isValue(?value) ;
+   ?value = "<<jvm-startup-hcontext>>",
+   isValue(?value) ;
+   ?value = "<<clinit-context>>",
+   isValue(?value) ;
+   ?value = "<<system-thread-group>>",
+   isValue(?value) ;
+   ?value = "<<main-thread-group>>",
+   isValue(?value) ;
+   ?value = "<<main-thread>>",
+   isValue(?value) ;
+   ?value = "<<immutable-context>>",
+   isValue(?value) ;
+   ?value = "<<immutable-hcontext>>",
+   isValue(?value) ;
+   ?value = "<<immutable>>",
+   isValue(?value).
+
+
+
+.decl PrimitiveType_Boxed(?type:Type, ?boxedType:Type)
+
+PrimitiveType_Boxed("boolean", "java.lang.Boolean" ).
+PrimitiveType_Boxed("byte" , "java.lang.Byte" ).
+PrimitiveType_Boxed("short" , "java.lang.Short" ).
+PrimitiveType_Boxed("char" , "java.lang.Character").
+PrimitiveType_Boxed("int" , "java.lang.Integer" ).
+PrimitiveType_Boxed("long" , "java.lang.Long" ).
+PrimitiveType_Boxed("float" , "java.lang.Float" ).
+PrimitiveType_Boxed("double" , "java.lang.Double" ).
+ClassInitializer(?type, ?method) :-
+   basic.MethodImplemented("<clinit>", "void()", ?type, ?method).
+InitializedClass(?superclass) :-
+   InitializedClass(?class),
+   DirectSuperclass(?class, ?superclass).
+
+InitializedClass(?superinterface) :-
+   InitializedClass(?classOrInterface),
+   DirectSuperinterface(?classOrInterface, ?superinterface).
+InitializedClass(?class) :-
+   basic.MainMethodDeclaration(?method),
+   Method_DeclaringType(?method, ?class).
+InitializedClass(?class) :-
+   Reachable(?inmethod),
+   AssignHeapAllocation(?heap, _, ?inmethod),
+   HeapAllocation_Type(?heap, ?class).
+InitializedClass(?class) :-
+   Reachable(?inmethod),
+   Instruction_Method(?invocation, ?inmethod),
+   isStaticMethodInvocation_Insn(?invocation),
+   MethodInvocation_Method(?invocation, ?signature),
+   Method_DeclaringType(?signature, ?class).
+InitializedClass(?classOrInterface) :-
+   Reachable(?inmethod),
+   StoreStaticField(_, ?signature, ?inmethod),
+   Field_DeclaringType(?signature, ?classOrInterface).
+InitializedClass(?classOrInterface) :-
+   Reachable(?inmethod),
+   LoadStaticField(?signature, _, ?inmethod),
+   Field_DeclaringType(?signature, ?classOrInterface).
+.decl FinalizeContextRequest(?callerCtx:configuration.Context, ?hctx:configuration.HContext, ?fakeinvo:MethodInvocation, ?heapValue:Value, ?register:Method, ?formal:Var)
+FinalizeContextRequest(?callerCtx, ?hctx, ?fakeinvo, ?heapValue, ?register, ?formal),
+configuration.ContextRequest(?callerCtx, ?hctx, ?fakeinvo, ?heapValue, ?register, 1) :-
+  FakeInvocation_RegisterFinalize(?heapValue, ?fakeinvo),
+  basic.AllocatedObjectSupportsFinalize(?heapValue, ?inmethod),
+  (!(HeapAllocation_Merge(?heapValue, _));
+  HeapAllocation_Merge(?heapValue, ?heapValue)),
+  ReachableContext(?callerCtx, ?inmethod),
+  ?register = "<java.lang.ref.Finalizer: void register(java.lang.Object)>",
+  isMethod(?register),
+  FormalParam(0, ?register, ?formal),
+  isImmutableHContext(?hctx).
+
+
+ReachableContext(?calleeCtx, ?register),
+VarPointsTo(?hctx, ?heapValue, ?calleeCtx, ?formal) :-
+  configuration.ContextResponse(?callerCtx, ?hctx, ?fakeinvo, ?heapValue, ?register, ?calleeCtx),
+  FinalizeContextRequest(?callerCtx, ?hctx, ?fakeinvo, ?heapValue, ?register, ?formal).
+.plan 1:(2,1)
+
+
+
+
+FakeInvocation_RegisterFinalize0(?val2,  cat("<register-finalize ", cat(?val1, cat( "/", cat(?val2, "  >")))) ),
+isInstruction( cat("<register-finalize ", cat(?val1, cat( "/", cat(?val2, "  >")))) ), isMethodInvocation( cat("<register-finalize ", cat(?val1, cat( "/", cat(?val2, "  >")))) )  :-
+    basic.AllocatedObjectSupportsFinalize(?val2, ?val1),
+    isMethod(?val1),
+    isHeapAllocation(?val2).
+ImplicitReachable("<java.lang.System: void initializeSystemClass()>") :- isMethod("<java.lang.System: void initializeSystemClass()>") .
+ImplicitReachable("<java.lang.Thread: void <init>(java.lang.ThreadGroup,java.lang.Runnable)>") :- isMethod("<java.lang.Thread: void <init>(java.lang.ThreadGroup,java.lang.Runnable)>") .
+ImplicitReachable("<java.lang.Thread: void <init>(java.lang.ThreadGroup,java.lang.String)>") :- isMethod("<java.lang.Thread: void <init>(java.lang.ThreadGroup,java.lang.String)>") .
+ImplicitReachable("<java.lang.ThreadGroup: void <init>()>") :- isMethod("<java.lang.ThreadGroup: void <init>()>") .
+ImplicitReachable("<java.lang.Thread: void exit()>") :- isMethod("<java.lang.Thread: void exit()>") .
+ImplicitReachable("<java.lang.ThreadGroup: void uncaughtException(java.lang.Thread,java.lang.Throwable)>") :- isMethod("<java.lang.ThreadGroup: void uncaughtException(java.lang.Thread,java.lang.Throwable)>") .
+ImplicitReachable("<java.lang.ClassLoader: void <init>()>") :- isMethod("<java.lang.ClassLoader: void <init>()>") .
+ImplicitReachable("<java.lang.ClassLoader: java.lang.Class loadClassInternal(java.lang.String)>") :- isMethod("<java.lang.ClassLoader: java.lang.Class loadClassInternal(java.lang.String)>") .
+ImplicitReachable("<java.lang.ClassLoader: void checkPackageAccess(java.lang.Class,java.security.ProtectionDomain)>") :- isMethod("<java.lang.ClassLoader: void checkPackageAccess(java.lang.Class,java.security.ProtectionDomain)>") .
+ImplicitReachable("<java.lang.ClassLoader: void addClass(java.lang.Class)>") :- isMethod("<java.lang.ClassLoader: void addClass(java.lang.Class)>") .
+ImplicitReachable("<java.lang.ClassLoader: long findNative(java.lang.ClassLoader,java.lang.String)>") :- isMethod("<java.lang.ClassLoader: long findNative(java.lang.ClassLoader,java.lang.String)>") .
+ImplicitReachable("<java.security.PrivilegedActionException: void <init>(java.lang.Exception)>") :- isMethod("<java.security.PrivilegedActionException: void <init>(java.lang.Exception)>") .
+ApplicationEntryPoint(?meth) :-
+  ForcedReachable(?meth),
+  ApplicationMethod(?meth).
+
+.decl ForcedReachableContext(?ctx:configuration.Context, ?meth:Method)
+
+
+ForcedReachableContext(?ctx, ?method) :-
+  ForcedReachable(?method),
+  isImmutableContext(?ctx).
+
+
+ReachableContext(?ctx, ?meth) :-
+  ForcedReachableContext(?ctx, ?meth).
+
+
+.decl FormalOfForcedReachableContext(?ctx:configuration.Context, ?formal:Var, ?formalType:Type)
+FormalOfForcedReachableContext(?ctx, ?formal, ?formalType) :-
+  ForcedReachableContext(?ctx, ?meth),
+  FormalParam(_, ?meth, ?formal),
+  Var_Type(?formal, ?formalType).
+
+.decl ApplicationConcreteType(?type:ClassType)
+
+ApplicationConcreteType(?type) :-
+    ApplicationClass(?type),
+    !isInterfaceType(?type),
+    !ClassModifier("abstract", ?type).
+
+
+
+
+
+.decl AllApplicationConcreteImplementations(?class:ClassType, ?type:Type)
+.decl TypeHasApplicationConcreteSubtypes(?type:Type)
+
+TypeHasApplicationConcreteSubtypes(?abstractType),
+AllApplicationConcreteImplementations(?class, ?abstractType) :-
+    ApplicationClass(?class),
+    basic.SubtypeOf(?class, ?abstractType),
+    ?abstractType != "java.lang.Object",
+    !ClassModifier("abstract", ?class).
+
+AllApplicationConcreteImplementations(?class, ?class) :- ConcreteClass(?class).
+
+.decl ServletParamType(?paramType:ReferenceType)
+ServletParamType(?paramType) :-
+  basic.SubtypeOf(?paramType, "javax.servlet.ServletRequest");
+  basic.SubtypeOf(?paramType, "javax.servlet.ServletResponse");
+  basic.SubtypeOf(?paramType, "org.springframework.http.HttpMethod");
+  basic.SubtypeOf(?paramType, "org.apache.commons.httpclient.HttpMethod");
+  basic.SubtypeOf(?paramType, "org.springframework.extensions.webscripts.WebScriptRequest");
+  basic.SubtypeOf(?paramType, "org.springframework.extensions.webscripts.WebScriptResponse");
+  basic.SubtypeOf(?paramType, "javax.servlet.http.HttpServletRequest");
+  basic.SubtypeOf(?paramType, "javax.servlet.http.HttpServletResponse");
+  basic.SubtypeOf(?paramType, "javax.servlet.http.HttpSessionEvent");
+  basic.SubtypeOf(?paramType, "javax.servlet.ServletContextEvent").
+
+
+.decl SpecialConcreteImplementations(?class:ClassType, ?type:ReferenceType)
+SpecialConcreteImplementations(?class, ?type) :-
+  isClassType(?class),
+  basic.SubtypeOf(?class, ?type),
+  ServletParamType(?type).
+
+.decl TypeToConcreteImplementation(?type:ReferenceType, ?class:ClassType)
+TypeToConcreteImplementation(?type, ?class) :-
+  AllApplicationConcreteImplementations(?class, ?type) ;
+  SpecialConcreteImplementations(?class, ?type).
+Value_isMock(?mockObj), isValue(?mockObj), Value_Type(?mockObj, ?class), Value_DeclaringType(?mockObj, "java.lang.Object") ,
+MockObjFromOpenProgramEntryPointArg(?mockObj),
+VarPointsTo(?hctx, ?mockObj, ?ctx, ?formal) :-
+  FormalOfForcedReachableContext(?ctx, ?formal, ?formalType),
+  TypeToConcreteImplementation(?formalType, ?class),
+  isImmutableHContext(?hctx),
+  ?mockObj = cat("<mock value for forced-reachable parameter ", cat(?class, ">")).
+
+
+UnmockableFormalOfForcedReachableContext(?formal, ?formalType) :-
+  FormalOfForcedReachableContext(_, ?formal, ?formalType),
+  !TypeToConcreteImplementation(?formalType, _).
+Value_isMock(?value), isValue(?value), Value_Type(?value, ?class), Value_DeclaringType(?value, "java.lang.Object") ,
+VarPointsTo(?hctx, ?value, ?ctx, ?receiver),
+MockObjFromOpenProgramEntryPointReceiver(?value),
+MockObject(?value, ?class) :-
+  ( ExercisedEntryPointMethod(?class, ?method)
+  ; (ForcedReachable(?method), Method_DeclaringType(?method, ?class))),
+  ThisVar(?method, ?receiver),
+  ?value =  cat(?class, "::MockObject") ,
+  mainAnalysis.isImmutableContext(?ctx),
+  mainAnalysis.isImmutableHContext(?hctx).
+ForcedReachable(?meth) :-
+  (KeepMethod(?meth) ; RootCodeElement(?meth)),
+  isMethod(?meth).
+
+
+
+
+ForcedReachable(?meth) :-
+  KeepClass(?class),
+  basic.ClassConstructor(?meth, ?class),
+  !FormalParam(_, ?meth, _).
+
+
+
+
+
+ForcedReachableContext(?ctx, ?method) :-
+  ( KeepClassMembers(?method) ; KeepClassesWithMembers(?method) ),
+  Method_DeclaringType(?method, ?type),
+  Method_DeclaringType(?someMethod, ?type),
+  Reachable(?someMethod),
+  isImmutableContext(?ctx).
+
+
+VarPointsTo(?hctx, ?argArray, ?ctx, ?args),
+ArrayIndexPointsTo(?hctx, ?argArrayContent, ?hctx, ?argArray) :-
+   isImmutableHContext(?hctx),
+   basic.MainMethodDeclaration(?mainMethod),
+   ReachableContext(?ctx, ?mainMethod),
+   FormalParam(0, ?mainMethod, ?args),
+   MainMethodArgArray(?argArray),
+   MainMethodArgArrayContent(?argArrayContent).
+.decl SimulateNativeAllocation(?strMethod: Method, ?strHeap: HeapAllocation, ?strConstructor: Method)
+
+
+AssignHeapAllocation(?strHeap, ?return, ?strMethod),
+Value_DeclaringType(?strHeap, ?strType) :-
+  SimulateNativeAllocation(?strMethod, ?strHeap, _),
+  Method_DeclaringType(?strMethod, ?strType),
+  NativeReturnVar(?return, ?strMethod),
+  isHeapAllocation(?strHeap).
+
+
+SpecialMethodInvocation_Base(?newInstrId, ?return),
+Instruction_Method(?newInstrId, ?strMethod),
+MethodInvocation_Method(?newInstrId, strConstructor),
+isInstruction(?newInstrId), isMethodInvocation(?newInstrId), isSpecialMethodInvocation_Insn(?newInstrId) ,
+Instruction_Index(?newInstrId, ?index) :-
+  SimulateNativeAllocation(?strMethod, _, strConstructor),
+  isMethod(?strMethod),
+  NativeReturnVar(?return, ?strMethod),
+  isMethod(strConstructor),
+  ?index = 1,
+  ?newInstrId = cat(?strMethod, cat("/native ", strConstructor)).
+
+.decl SimulatedNativeAllocation(?heap:HeapAllocation, ?method:Method)
+.output SimulatedNativeAllocation
+AssignLocal(?this, ?ret, ?method) :-
+  ?method = "<java.lang.Object: java.lang.Object clone()>",
+  isMethod(?method),
+  ThisVar(?method, ?this),
+  ReturnVar(?ret, ?method).
+StoreStaticField("<java.lang.System: void setIn0(java.io.InputStream)>/@parameter0", "<java.lang.System: java.io.InputStream in>", "<java.lang.System: void setIn0(java.io.InputStream)>") :- isMethod("<java.lang.System: void setIn0(java.io.InputStream)>"), isVar("<java.lang.System: void setIn0(java.io.InputStream)>/@parameter0"), isField("<java.lang.System: java.io.InputStream in>") .
+StoreStaticField("<java.lang.System: void setIn0(java.io.InputStream)>/v1", "<java.lang.System: java.io.InputStream in>", "<java.lang.System: void setIn0(java.io.InputStream)>") :- isMethod("<java.lang.System: void setIn0(java.io.InputStream)>"), isVar("<java.lang.System: void setIn0(java.io.InputStream)>/v1"), isField("<java.lang.System: java.io.InputStream in>") .
+StoreStaticField("<java.lang.System: void setOut0(java.io.PrintStream)>/@parameter0", "<java.lang.System: java.io.PrintStream out>", "<java.lang.System: void setOut0(java.io.PrintStream)>") :- isMethod("<java.lang.System: void setOut0(java.io.PrintStream)>"), isVar("<java.lang.System: void setOut0(java.io.PrintStream)>/@parameter0"), isField("<java.lang.System: java.io.PrintStream out>") .
+StoreStaticField("<java.lang.System: void setOut0(java.io.PrintStream)>/v1", "<java.lang.System: java.io.PrintStream out>", "<java.lang.System: void setOut0(java.io.PrintStream)>") :- isMethod("<java.lang.System: void setOut0(java.io.PrintStream)>"), isVar("<java.lang.System: void setOut0(java.io.PrintStream)>/v1"), isField("<java.lang.System: java.io.PrintStream out>") .
+StoreStaticField("<java.lang.System: void setErr0(java.io.PrintStream)>/@parameter0", "<java.lang.System: java.io.PrintStream err>", "<java.lang.System: void setErr0(java.io.PrintStream)>") :- isMethod("<java.lang.System: void setErr0(java.io.PrintStream)>"), isVar("<java.lang.System: void setErr0(java.io.PrintStream)>/@parameter0"), isField("<java.lang.System: java.io.PrintStream err>") .
+StoreStaticField("<java.lang.System: void setErr0(java.io.PrintStream)>/v1", "<java.lang.System: java.io.PrintStream err>", "<java.lang.System: void setErr0(java.io.PrintStream)>") :- isMethod("<java.lang.System: void setErr0(java.io.PrintStream)>"), isVar("<java.lang.System: void setErr0(java.io.PrintStream)>/v1"), isField("<java.lang.System: java.io.PrintStream err>") .
+isVar(cat(?invocation, "/@tmp-arraycopy")), Var_Type(cat(?invocation, "/@tmp-arraycopy"), ?tmpType), Var_DeclaringMethod(cat(?invocation, "/@tmp-arraycopy"), ?inmethod) ,
+LoadArrayIndex(?src, cat(?invocation, "/@tmp-arraycopy"), ?inmethod),
+StoreArrayIndex(cat(?invocation, "/@tmp-arraycopy"), ?dest, ?inmethod) :-
+   ?arraycopy = "<java.lang.System: void arraycopy(java.lang.Object,int,java.lang.Object,int,int)>",
+   isMethod(?arraycopy),
+   StaticMethodInvocation(?invocation, ?arraycopy, ?inmethod),
+   ActualParam(0, ?invocation, ?src),
+   ActualParam(2, ?invocation, ?dest),
+   isMethodInvocation(?invocation),
+   ?tmpType = "java.lang.Object",
+   isType(?tmpType).
+StoreArrayIndex(?from, ?base, ?inmethod) :-
+  ?casObject = "<sun.misc.Unsafe: boolean compareAndSwapObject(java.lang.Object,long,java.lang.Object,java.lang.Object)>",
+  isMethod(?casObject),
+  VirtualMethodInvocation(?invocation, ?casObject, ?inmethod),
+  ActualParam(0, ?invocation, ?base),
+  ActualParam(3, ?invocation, ?from).
+
+StoreArrayIndex(?from, ?base, ?inmethod) :-
+  (?putObj = "<sun.misc.Unsafe: void putObject(java.lang.Object,long,java.lang.Object)>";
+   ?putObj = "<sun.misc.Unsafe: void putObject(java.lang.Object,int,java.lang.Object)>";
+   ?putObj = "<sun.misc.Unsafe: void putObjectVolatile(java.lang.Object,long,java.lang.Object)>";
+   ?putObj = "<sun.misc.Unsafe: void putOrderedObject(java.lang.Object,long,java.lang.Object)>"),
+  isMethod(?putObj),
+  VirtualMethodInvocation(?invocation, ?putObj, ?inmethod),
+  ActualParam(0, ?invocation, ?base),
+  ActualParam(2, ?invocation, ?from).
+
+LoadArrayIndex(?base, ?to, ?inmethod) :-
+  (?getObj = "<sun.misc.Unsafe: java.lang.Object getObjectVolatile(java.lang.Object,long)>";
+   ?getObj = "<sun.misc.Unsafe: java.lang.Object getObject(java.lang.Object,long)>";
+   ?getObj = "<sun.misc.Unsafe: java.lang.Object getObject(java.lang.Object,int)>"),
+  isMethod(?getObj),
+  VirtualMethodInvocation(?invocation, ?getObj, ?inmethod),
+  ActualParam(0, ?invocation, ?base),
+  AssignReturnValue(?invocation, ?to).
+SimulatedNativeAllocation("<java.io.UnixFileSystem: java.lang.String[] list(java.io.File)>/new java.lang.String[]/0", "<java.io.UnixFileSystem: java.lang.String[] list(java.io.File)>"). SimulatedNativeAllocation("<java.io.UnixFileSystem: java.lang.String[] list(java.io.File)>/new java.lang.String/0", "<java.io.UnixFileSystem: java.lang.String[] list(java.io.File)>"). AssignHeapAllocation("<java.io.UnixFileSystem: java.lang.String[] list(java.io.File)>/new java.lang.String[]/0", ?return, "<java.io.UnixFileSystem: java.lang.String[] list(java.io.File)>") :- isMethod("<java.io.UnixFileSystem: java.lang.String[] list(java.io.File)>"), NativeReturnVar(?return, "<java.io.UnixFileSystem: java.lang.String[] list(java.io.File)>"), isHeapAllocation("<java.io.UnixFileSystem: java.lang.String[] list(java.io.File)>/new java.lang.String[]/0"). isVar(cat("<java.io.UnixFileSystem: java.lang.String[] list(java.io.File)>", "/@native-array-element")), Var_Type(cat("<java.io.UnixFileSystem: java.lang.String[] list(java.io.File)>", "/@native-array-element"), "java.lang.String"), Var_DeclaringMethod(cat("<java.io.UnixFileSystem: java.lang.String[] list(java.io.File)>", "/@native-array-element"), "<java.io.UnixFileSystem: java.lang.String[] list(java.io.File)>"), AssignHeapAllocation("<java.io.UnixFileSystem: java.lang.String[] list(java.io.File)>/new java.lang.String/0", cat("<java.io.UnixFileSystem: java.lang.String[] list(java.io.File)>", "/@native-array-element"), "<java.io.UnixFileSystem: java.lang.String[] list(java.io.File)>"), StoreArrayIndex(cat("<java.io.UnixFileSystem: java.lang.String[] list(java.io.File)>", "/@native-array-element"), ?base, "<java.io.UnixFileSystem: java.lang.String[] list(java.io.File)>") :- isMethod("<java.io.UnixFileSystem: java.lang.String[] list(java.io.File)>"), NativeReturnVar(?base, "<java.io.UnixFileSystem: java.lang.String[] list(java.io.File)>"), isType("java.lang.String"), isHeapAllocation("<java.io.UnixFileSystem: java.lang.String[] list(java.io.File)>/new java.lang.String/0") .
+isInstruction(cat("<java.lang.ref.Finalizer: void invokeFinalizeMethod(java.lang.Object)>", cat("/native ", "<java.lang.Object: void finalize()>"))), isMethodInvocation(cat("<java.lang.ref.Finalizer: void invokeFinalizeMethod(java.lang.Object)>", cat("/native ", "<java.lang.Object: void finalize()>"))), isVirtualMethodInvocation_Insn(cat("<java.lang.ref.Finalizer: void invokeFinalizeMethod(java.lang.Object)>", cat("/native ", "<java.lang.Object: void finalize()>"))) , VirtualMethodInvocation(cat("<java.lang.ref.Finalizer: void invokeFinalizeMethod(java.lang.Object)>", cat("/native ", "<java.lang.Object: void finalize()>")), "<java.lang.Object: void finalize()>", "<java.lang.ref.Finalizer: void invokeFinalizeMethod(java.lang.Object)>"), VirtualMethodInvocation_Base(cat("<java.lang.ref.Finalizer: void invokeFinalizeMethod(java.lang.Object)>", cat("/native ", "<java.lang.Object: void finalize()>")), ?base), Instruction_Method(cat("<java.lang.ref.Finalizer: void invokeFinalizeMethod(java.lang.Object)>", cat("/native ", "<java.lang.Object: void finalize()>")), "<java.lang.ref.Finalizer: void invokeFinalizeMethod(java.lang.Object)>"), MethodInvocation_Method(cat("<java.lang.ref.Finalizer: void invokeFinalizeMethod(java.lang.Object)>", cat("/native ", "<java.lang.Object: void finalize()>")), "<java.lang.Object: void finalize()>"), Instruction_Index(cat("<java.lang.ref.Finalizer: void invokeFinalizeMethod(java.lang.Object)>", cat("/native ", "<java.lang.Object: void finalize()>")), ?index) :- isMethod("<java.lang.ref.Finalizer: void invokeFinalizeMethod(java.lang.Object)>"), FormalParam(0, "<java.lang.ref.Finalizer: void invokeFinalizeMethod(java.lang.Object)>", ?base), isMethod("<java.lang.Object: void finalize()>"), ?index = 1. isInstruction(cat("<java.lang.ref.Finalizer: void invokeFinalizeMethod(java.lang.Object)>", cat("/native ", "<java.lang.Object: void finalize()>"))), isMethodInvocation(cat("<java.lang.ref.Finalizer: void invokeFinalizeMethod(java.lang.Object)>", cat("/native ", "<java.lang.Object: void finalize()>"))) , AssignReturnValue(cat("<java.lang.ref.Finalizer: void invokeFinalizeMethod(java.lang.Object)>", cat("/native ", "<java.lang.Object: void finalize()>")), ?return) :- isMethod("<java.lang.ref.Finalizer: void invokeFinalizeMethod(java.lang.Object)>"), NativeReturnVar(?return, "<java.lang.ref.Finalizer: void invokeFinalizeMethod(java.lang.Object)>") .
+isInstruction(cat("<java.security.AccessController: java.lang.Object doPrivileged(java.security.PrivilegedAction)>", cat("/native ", "<java.security.PrivilegedAction: java.lang.Object run()>"))), isMethodInvocation(cat("<java.security.AccessController: java.lang.Object doPrivileged(java.security.PrivilegedAction)>", cat("/native ", "<java.security.PrivilegedAction: java.lang.Object run()>"))), isVirtualMethodInvocation_Insn(cat("<java.security.AccessController: java.lang.Object doPrivileged(java.security.PrivilegedAction)>", cat("/native ", "<java.security.PrivilegedAction: java.lang.Object run()>"))) , VirtualMethodInvocation(cat("<java.security.AccessController: java.lang.Object doPrivileged(java.security.PrivilegedAction)>", cat("/native ", "<java.security.PrivilegedAction: java.lang.Object run()>")), "<java.security.PrivilegedAction: java.lang.Object run()>", "<java.security.AccessController: java.lang.Object doPrivileged(java.security.PrivilegedAction)>"), VirtualMethodInvocation_Base(cat("<java.security.AccessController: java.lang.Object doPrivileged(java.security.PrivilegedAction)>", cat("/native ", "<java.security.PrivilegedAction: java.lang.Object run()>")), ?base), Instruction_Method(cat("<java.security.AccessController: java.lang.Object doPrivileged(java.security.PrivilegedAction)>", cat("/native ", "<java.security.PrivilegedAction: java.lang.Object run()>")), "<java.security.AccessController: java.lang.Object doPrivileged(java.security.PrivilegedAction)>"), MethodInvocation_Method(cat("<java.security.AccessController: java.lang.Object doPrivileged(java.security.PrivilegedAction)>", cat("/native ", "<java.security.PrivilegedAction: java.lang.Object run()>")), "<java.security.PrivilegedAction: java.lang.Object run()>"), Instruction_Index(cat("<java.security.AccessController: java.lang.Object doPrivileged(java.security.PrivilegedAction)>", cat("/native ", "<java.security.PrivilegedAction: java.lang.Object run()>")), ?index) :- isMethod("<java.security.AccessController: java.lang.Object doPrivileged(java.security.PrivilegedAction)>"), FormalParam(0, "<java.security.AccessController: java.lang.Object doPrivileged(java.security.PrivilegedAction)>", ?base), isMethod("<java.security.PrivilegedAction: java.lang.Object run()>"), ?index = 1. isInstruction(cat("<java.security.AccessController: java.lang.Object doPrivileged(java.security.PrivilegedAction)>", cat("/native ", "<java.security.PrivilegedAction: java.lang.Object run()>"))), isMethodInvocation(cat("<java.security.AccessController: java.lang.Object doPrivileged(java.security.PrivilegedAction)>", cat("/native ", "<java.security.PrivilegedAction: java.lang.Object run()>"))) , AssignReturnValue(cat("<java.security.AccessController: java.lang.Object doPrivileged(java.security.PrivilegedAction)>", cat("/native ", "<java.security.PrivilegedAction: java.lang.Object run()>")), ?return) :- isMethod("<java.security.AccessController: java.lang.Object doPrivileged(java.security.PrivilegedAction)>"), NativeReturnVar(?return, "<java.security.AccessController: java.lang.Object doPrivileged(java.security.PrivilegedAction)>") .
+isInstruction(cat("<java.security.AccessController: java.lang.Object doPrivileged(java.security.PrivilegedAction,java.security.AccessControlContext)>", cat("/native ", "<java.security.PrivilegedAction: java.lang.Object run()>"))), isMethodInvocation(cat("<java.security.AccessController: java.lang.Object doPrivileged(java.security.PrivilegedAction,java.security.AccessControlContext)>", cat("/native ", "<java.security.PrivilegedAction: java.lang.Object run()>"))), isVirtualMethodInvocation_Insn(cat("<java.security.AccessController: java.lang.Object doPrivileged(java.security.PrivilegedAction,java.security.AccessControlContext)>", cat("/native ", "<java.security.PrivilegedAction: java.lang.Object run()>"))) , VirtualMethodInvocation(cat("<java.security.AccessController: java.lang.Object doPrivileged(java.security.PrivilegedAction,java.security.AccessControlContext)>", cat("/native ", "<java.security.PrivilegedAction: java.lang.Object run()>")), "<java.security.PrivilegedAction: java.lang.Object run()>", "<java.security.AccessController: java.lang.Object doPrivileged(java.security.PrivilegedAction,java.security.AccessControlContext)>"), VirtualMethodInvocation_Base(cat("<java.security.AccessController: java.lang.Object doPrivileged(java.security.PrivilegedAction,java.security.AccessControlContext)>", cat("/native ", "<java.security.PrivilegedAction: java.lang.Object run()>")), ?base), Instruction_Method(cat("<java.security.AccessController: java.lang.Object doPrivileged(java.security.PrivilegedAction,java.security.AccessControlContext)>", cat("/native ", "<java.security.PrivilegedAction: java.lang.Object run()>")), "<java.security.AccessController: java.lang.Object doPrivileged(java.security.PrivilegedAction,java.security.AccessControlContext)>"), MethodInvocation_Method(cat("<java.security.AccessController: java.lang.Object doPrivileged(java.security.PrivilegedAction,java.security.AccessControlContext)>", cat("/native ", "<java.security.PrivilegedAction: java.lang.Object run()>")), "<java.security.PrivilegedAction: java.lang.Object run()>"), Instruction_Index(cat("<java.security.AccessController: java.lang.Object doPrivileged(java.security.PrivilegedAction,java.security.AccessControlContext)>", cat("/native ", "<java.security.PrivilegedAction: java.lang.Object run()>")), ?index) :- isMethod("<java.security.AccessController: java.lang.Object doPrivileged(java.security.PrivilegedAction,java.security.AccessControlContext)>"), FormalParam(0, "<java.security.AccessController: java.lang.Object doPrivileged(java.security.PrivilegedAction,java.security.AccessControlContext)>", ?base), isMethod("<java.security.PrivilegedAction: java.lang.Object run()>"), ?index = 1. isInstruction(cat("<java.security.AccessController: java.lang.Object doPrivileged(java.security.PrivilegedAction,java.security.AccessControlContext)>", cat("/native ", "<java.security.PrivilegedAction: java.lang.Object run()>"))), isMethodInvocation(cat("<java.security.AccessController: java.lang.Object doPrivileged(java.security.PrivilegedAction,java.security.AccessControlContext)>", cat("/native ", "<java.security.PrivilegedAction: java.lang.Object run()>"))) , AssignReturnValue(cat("<java.security.AccessController: java.lang.Object doPrivileged(java.security.PrivilegedAction,java.security.AccessControlContext)>", cat("/native ", "<java.security.PrivilegedAction: java.lang.Object run()>")), ?return) :- isMethod("<java.security.AccessController: java.lang.Object doPrivileged(java.security.PrivilegedAction,java.security.AccessControlContext)>"), NativeReturnVar(?return, "<java.security.AccessController: java.lang.Object doPrivileged(java.security.PrivilegedAction,java.security.AccessControlContext)>") .
+isInstruction(cat("<java.security.AccessController: java.lang.Object doPrivileged(java.security.PrivilegedExceptionAction)>", cat("/native ", "<java.security.PrivilegedExceptionAction: java.lang.Object run()>"))), isMethodInvocation(cat("<java.security.AccessController: java.lang.Object doPrivileged(java.security.PrivilegedExceptionAction)>", cat("/native ", "<java.security.PrivilegedExceptionAction: java.lang.Object run()>"))), isVirtualMethodInvocation_Insn(cat("<java.security.AccessController: java.lang.Object doPrivileged(java.security.PrivilegedExceptionAction)>", cat("/native ", "<java.security.PrivilegedExceptionAction: java.lang.Object run()>"))) , VirtualMethodInvocation(cat("<java.security.AccessController: java.lang.Object doPrivileged(java.security.PrivilegedExceptionAction)>", cat("/native ", "<java.security.PrivilegedExceptionAction: java.lang.Object run()>")), "<java.security.PrivilegedExceptionAction: java.lang.Object run()>", "<java.security.AccessController: java.lang.Object doPrivileged(java.security.PrivilegedExceptionAction)>"), VirtualMethodInvocation_Base(cat("<java.security.AccessController: java.lang.Object doPrivileged(java.security.PrivilegedExceptionAction)>", cat("/native ", "<java.security.PrivilegedExceptionAction: java.lang.Object run()>")), ?base), Instruction_Method(cat("<java.security.AccessController: java.lang.Object doPrivileged(java.security.PrivilegedExceptionAction)>", cat("/native ", "<java.security.PrivilegedExceptionAction: java.lang.Object run()>")), "<java.security.AccessController: java.lang.Object doPrivileged(java.security.PrivilegedExceptionAction)>"), MethodInvocation_Method(cat("<java.security.AccessController: java.lang.Object doPrivileged(java.security.PrivilegedExceptionAction)>", cat("/native ", "<java.security.PrivilegedExceptionAction: java.lang.Object run()>")), "<java.security.PrivilegedExceptionAction: java.lang.Object run()>"), Instruction_Index(cat("<java.security.AccessController: java.lang.Object doPrivileged(java.security.PrivilegedExceptionAction)>", cat("/native ", "<java.security.PrivilegedExceptionAction: java.lang.Object run()>")), ?index) :- isMethod("<java.security.AccessController: java.lang.Object doPrivileged(java.security.PrivilegedExceptionAction)>"), FormalParam(0, "<java.security.AccessController: java.lang.Object doPrivileged(java.security.PrivilegedExceptionAction)>", ?base), isMethod("<java.security.PrivilegedExceptionAction: java.lang.Object run()>"), ?index = 1. isInstruction(cat("<java.security.AccessController: java.lang.Object doPrivileged(java.security.PrivilegedExceptionAction)>", cat("/native ", "<java.security.PrivilegedExceptionAction: java.lang.Object run()>"))), isMethodInvocation(cat("<java.security.AccessController: java.lang.Object doPrivileged(java.security.PrivilegedExceptionAction)>", cat("/native ", "<java.security.PrivilegedExceptionAction: java.lang.Object run()>"))) , AssignReturnValue(cat("<java.security.AccessController: java.lang.Object doPrivileged(java.security.PrivilegedExceptionAction)>", cat("/native ", "<java.security.PrivilegedExceptionAction: java.lang.Object run()>")), ?return) :- isMethod("<java.security.AccessController: java.lang.Object doPrivileged(java.security.PrivilegedExceptionAction)>"), NativeReturnVar(?return, "<java.security.AccessController: java.lang.Object doPrivileged(java.security.PrivilegedExceptionAction)>") .
+isInstruction(cat("<java.security.AccessController: java.lang.Object doPrivileged(java.security.PrivilegedExceptionAction,java.security.AccessControlContext)>", cat("/native ", "<java.security.PrivilegedExceptionAction: java.lang.Object run()>"))), isMethodInvocation(cat("<java.security.AccessController: java.lang.Object doPrivileged(java.security.PrivilegedExceptionAction,java.security.AccessControlContext)>", cat("/native ", "<java.security.PrivilegedExceptionAction: java.lang.Object run()>"))), isVirtualMethodInvocation_Insn(cat("<java.security.AccessController: java.lang.Object doPrivileged(java.security.PrivilegedExceptionAction,java.security.AccessControlContext)>", cat("/native ", "<java.security.PrivilegedExceptionAction: java.lang.Object run()>"))) , VirtualMethodInvocation(cat("<java.security.AccessController: java.lang.Object doPrivileged(java.security.PrivilegedExceptionAction,java.security.AccessControlContext)>", cat("/native ", "<java.security.PrivilegedExceptionAction: java.lang.Object run()>")), "<java.security.PrivilegedExceptionAction: java.lang.Object run()>", "<java.security.AccessController: java.lang.Object doPrivileged(java.security.PrivilegedExceptionAction,java.security.AccessControlContext)>"), VirtualMethodInvocation_Base(cat("<java.security.AccessController: java.lang.Object doPrivileged(java.security.PrivilegedExceptionAction,java.security.AccessControlContext)>", cat("/native ", "<java.security.PrivilegedExceptionAction: java.lang.Object run()>")), ?base), Instruction_Method(cat("<java.security.AccessController: java.lang.Object doPrivileged(java.security.PrivilegedExceptionAction,java.security.AccessControlContext)>", cat("/native ", "<java.security.PrivilegedExceptionAction: java.lang.Object run()>")), "<java.security.AccessController: java.lang.Object doPrivileged(java.security.PrivilegedExceptionAction,java.security.AccessControlContext)>"), MethodInvocation_Method(cat("<java.security.AccessController: java.lang.Object doPrivileged(java.security.PrivilegedExceptionAction,java.security.AccessControlContext)>", cat("/native ", "<java.security.PrivilegedExceptionAction: java.lang.Object run()>")), "<java.security.PrivilegedExceptionAction: java.lang.Object run()>"), Instruction_Index(cat("<java.security.AccessController: java.lang.Object doPrivileged(java.security.PrivilegedExceptionAction,java.security.AccessControlContext)>", cat("/native ", "<java.security.PrivilegedExceptionAction: java.lang.Object run()>")), ?index) :- isMethod("<java.security.AccessController: java.lang.Object doPrivileged(java.security.PrivilegedExceptionAction,java.security.AccessControlContext)>"), FormalParam(0, "<java.security.AccessController: java.lang.Object doPrivileged(java.security.PrivilegedExceptionAction,java.security.AccessControlContext)>", ?base), isMethod("<java.security.PrivilegedExceptionAction: java.lang.Object run()>"), ?index = 1. isInstruction(cat("<java.security.AccessController: java.lang.Object doPrivileged(java.security.PrivilegedExceptionAction,java.security.AccessControlContext)>", cat("/native ", "<java.security.PrivilegedExceptionAction: java.lang.Object run()>"))), isMethodInvocation(cat("<java.security.AccessController: java.lang.Object doPrivileged(java.security.PrivilegedExceptionAction,java.security.AccessControlContext)>", cat("/native ", "<java.security.PrivilegedExceptionAction: java.lang.Object run()>"))) , AssignReturnValue(cat("<java.security.AccessController: java.lang.Object doPrivileged(java.security.PrivilegedExceptionAction,java.security.AccessControlContext)>", cat("/native ", "<java.security.PrivilegedExceptionAction: java.lang.Object run()>")), ?return) :- isMethod("<java.security.AccessController: java.lang.Object doPrivileged(java.security.PrivilegedExceptionAction,java.security.AccessControlContext)>"), NativeReturnVar(?return, "<java.security.AccessController: java.lang.Object doPrivileged(java.security.PrivilegedExceptionAction,java.security.AccessControlContext)>") .
+SimulateNativeAllocation(
+  "<sun.misc.Perf: java.nio.ByteBuffer createLong(java.lang.String,int,int,long)>",
+  "<sun.misc.Perf: java.nio.ByteBuffer createLong(java.lang.String,int,int,long)>/new java.nio.DirectByteBuffer/0",
+  "<java.nio.DirectByteBuffer: void <init>()>").
+.decl StoreIntoWeakReference(?basehctx:configuration.HContext, ?basevalue:Value, ?ctx:configuration.Context, ?from:Var)
+.decl LoadFromReference(?ctx:configuration.Context, ?to:Var, ?basehctx:configuration.HContext, ?basevalue:Value)
+
+.decl StoreIntoWeakReferenceArgs(?from:Var, ?base:Var)
+StoreIntoWeakReferenceArgs(?from, ?base) :-
+  ?weakRefCtor = "<java.lang.ref.WeakReference: void <init>(java.lang.Object)>",
+  MethodInvocation_Method(?invo, ?weakRefCtor),
+  OptSpecialMethodInvocationBase(?invo, ?base),
+  ActualParam(0, ?invo, ?from).
+
+StoreIntoWeakReference(?basehctx, ?basevalue, ?ctx, ?from) :-
+  StoreIntoWeakReferenceArgs(?from, ?base),
+  VarPointsTo(?basehctx, ?basevalue, ?ctx, ?base).
+
+.decl LoadFromReferenceArgs(?base:Var, ?to:Var)
+LoadFromReferenceArgs(?base, ?to) :-
+  ?refGet = "<java.lang.ref.Reference: java.lang.Object getReferent()>",
+  MethodInvocation_Method(?invo, ?refGet),
+  OptSpecialMethodInvocationBase(?invo, ?base),
+  AssignReturnValue(?invo, ?to).
+
+LoadFromReference(?ctx, ?to, ?basehctx, ?basevalue) :-
+  LoadFromReferenceArgs(?base, ?to),
+  VarPointsTo(?basehctx, ?basevalue, ?ctx, ?base).
+
+HeapInterproceduralAssign(?ctxTo, ?to, ?ctxFrom, ?from) :-
+  LoadFromReference(?ctxTo, ?to, ?basehctx, ?basevalue),
+  StoreIntoWeakReference(?basehctx, ?basevalue, ?ctxFrom, ?from),
+  !Value_Null(?basevalue).
+  .plan 1:(2,1)
+.decl isNativeContext(?ctx:configuration.Context)
+isNativeContext(?ctx) :- isImmutableContext(?ctx).
+StaticFieldPointsTo(?hctx, ?value, ?pending) :-
+   ?pending = "<java.lang.ref.Reference: java.lang.ref.Reference pending>",
+   ( ?this = "<java.lang.ref.Reference: void <init>(java.lang.Object,java.lang.ref.ReferenceQueue)>/@this" ;
+   ?this = "<java.lang.ref.Reference: void <init>(java.lang.Object,java.lang.ref.ReferenceQueue)>/v1"),
+   isField(?pending),
+   isVar(?this),
+   VarPointsTo(?hctx, ?value, _, ?this).
+.decl HeapAllocation_ContextInsensitive(?heap:HeapAllocation)
+
+
+HeapAllocation_ContextInsensitive(?heap) :-
+  HeapAllocation_Merge(?heap, _).
+.decl HeapAllocation_Merge(?heap:HeapAllocation, ?mergeHeap:HeapAllocation)
+
+
+.decl HeapAllocation_Keep(?heap:HeapAllocation)
+.decl AssignNormalHeapAllocation(?heap:HeapAllocation, ?var:Var, ?inmethod:Method)
+.decl AssignContextInsensitiveHeapAllocation(?heap:HeapAllocation, ?var:Var, ?inmethod:Method)
+
+AssignNormalHeapAllocation(?heap, ?var, ?inmethod) :-
+  AssignHeapAllocation(?heap, ?var, ?inmethod),
+  !HeapAllocation_ContextInsensitive(?heap).
+
+AssignContextInsensitiveHeapAllocation(?mergeHeap, ?var, ?inmethod) :-
+  AssignHeapAllocation(?heap, ?var, ?inmethod),
+  HeapAllocation_Merge(?heap, ?mergeHeap).
+
+AssignContextInsensitiveHeapAllocation(?heap, ?var, ?inmethod) :-
+  AssignHeapAllocation(?heap, ?var, ?inmethod),
+  HeapAllocation_ContextInsensitive(?heap),
+  !(HeapAllocation_Merge(?heap, _)).
+.decl HeapRepresentative(?heap:HeapAllocation, ?heapRepr:symbol)
+.decl HeapIsMergedString(?heap:HeapAllocation)
+
+
+
+HeapIsMergedString(?heap) :-
+  HeapRepresentative("<<string-constant>>", ?heap).
+
+.decl HeapIsMergedStringFactory(?heap:HeapAllocation)
+
+
+HeapAllocation_Merge(?heap, ?heapRepr) :-
+  ?heapRepr = "<<string-constant>>",
+  HeapRepresentative(?heapRepr, ?heap).
+
+HeapIsMergedStringFactory(?heap) :-
+  HeapRepresentative("<<string-buffer>>", ?heap);
+  HeapRepresentative("<<string-builder>>", ?heap).
+
+HeapAllocation_Merge(?heap, ?heapRepr) :-
+  (?heapRepr = "<<string-buffer>>",
+   HeapRepresentative(?heapRepr, ?heap));
+  (?heapRepr = "<<string-builder>>",
+   HeapRepresentative(?heapRepr, ?heap));
+
+
+  (?heapRepr = "<<pystring-object>>",
+   HeapRepresentative(?heapRepr, ?heap)).
+
+.decl RepresentativesToPickFrom(?heapRepr:HeapAllocation, ?heap:HeapAllocation)
+
+RepresentativesToPickFrom(?heapRepr, ?heap) :-
+  HeapRepresentative(?heapRepr, ?heap),
+  !HeapIsMergedString(?heap),
+  !HeapIsMergedStringFactory(?heap),
+  !HeapAllocation_Keep(?heap).
+
+.decl MinRepresentativeHeapToPickFromOrdinal(?minHeapReprOrd:number, ?heap:HeapAllocation)
+
+MinRepresentativeHeapToPickFromOrdinal(?minHeapReprOrd, ?heap) :-
+  RepresentativesToPickFrom(_, ?heap),
+  ?minHeapReprOrd = min ord(?heapRepr): RepresentativesToPickFrom(?heapRepr, ?heap).
+
+HeapAllocation_Merge(?heap, ?mergeHeap) :-
+  isHeapAllocation(?mergeHeap),
+  ord(?mergeHeap) = ?minHeapReprOrd,
+  MinRepresentativeHeapToPickFromOrdinal(?minHeapReprOrd, ?heap).
+HeapRepresentative(?constant, ?heap) :-
+  isStringConstant(?heap),
+  ?constant = "<<string-constant>>",
+  isHeapAllocation(?constant),
+  !HeapAllocation_Keep(?heap).
+.decl ReflectionStringConstant(?heap:HeapAllocation)
+.decl ReflectionSubstringObject(?heap:HeapAllocation)
+HeapAllocation_ContextInsensitive(?heap) :-
+  isStringConstant(?heap),
+  !HeapRepresentative(_, ?heap).
+
+.decl NonTrivialStringConstant(?heap:StringConstant)
+
+NonTrivialStringConstant(?heap) :-
+  isStringConstant(?heap),
+  strlen(?heap) >= 7.
+.decl ClassNameMatchingStringConstant_Type(?type:Type, ?heap:HeapAllocation)
+.decl MethodNameMatchingStringConstant_Signature(?sig:Method, ?heap:HeapAllocation)
+.decl FieldNameMatchingStringConstant_Signature(?sig:Field, ?heap:HeapAllocation)
+
+.decl PreClassNameMatchingStringConstant(?heap:HeapAllocation)
+.decl PreClassNameMatchingStringConstant_Type(?type:Type, ?heap:HeapAllocation)
+.decl PreClassNameMatchingStringConstantExact_Type(?type:Type, ?heap:HeapAllocation)
+.decl PreClassNameMatchingStringConstantInexact_Type(?type:Type, ?heap:HeapAllocation)
+
+
+
+
+ClassNameMatchingStringConstant_Type(?type, ?heap) :-
+  PreClassNameMatchingStringConstant_Type(?type, ?heap).
+MethodNameMatchingStringConstant_Signature(?sig, ?heap) :-
+  PreMethodNameMatchingStringConstant_Signature(?sig, ?heap).
+FieldNameMatchingStringConstant_Signature(?sig, ?heap) :-
+  PreFieldNameMatchingStringConstant_Signature(?sig, ?heap).
+
+
+
+
+PreClassNameMatchingStringConstant(?string),
+PreClassNameMatchingStringConstant_Type(?type, ?string),
+PreClassNameMatchingStringConstantExact_Type(?type, ?string) :-
+  isStringConstant(?string),
+  isReferenceType(?type),
+
+  ApplicationClass(?type),
+
+
+
+
+
+
+
+
+  ord(?type) = ord(?string).
+
+.decl PreMethodNameMatchingStringConstant(?heap:HeapAllocation)
+.decl PreMethodNameMatchingStringConstant_Signature(?sig:Method, ?heap:HeapAllocation)
+.decl PreMethodNameMatchingStringConstantExact_Signature(?sig:Method, ?heap:HeapAllocation)
+.decl PreMethodNameMatchingStringConstantInexact_Signature(?sig:Method, ?heap:HeapAllocation)
+
+PreMethodNameMatchingStringConstant(?string),
+PreMethodNameMatchingStringConstant_Signature(?sig, ?string),
+PreMethodNameMatchingStringConstantExact_Signature(?sig, ?string) :-
+  isStringConstant(?string),
+
+
+
+
+
+
+  Method_SimpleName(?sig, ?string),
+  ?string != "<init>",
+  ?string != "<clinit>".
+
+.decl PreFieldNameMatchingStringConstant(?heap:HeapAllocation)
+.decl PreFieldNameMatchingStringConstant_Signature(?sig:Field, ?heap:HeapAllocation)
+.decl PreFieldNameMatchingStringConstantExact_Signature(?sig:Field, ?heap:HeapAllocation)
+.decl PreFieldNameMatchingStringConstantInexact_Signature(?sig:Field, ?heap:HeapAllocation)
+
+PreFieldNameMatchingStringConstant(?string),
+PreFieldNameMatchingStringConstant_Signature(?sig, ?string),
+PreFieldNameMatchingStringConstantExact_Signature(?sig, ?string) :-
+  isStringConstant(?string),
+
+
+
+
+
+
+
+  Field_SimpleName(?sig, ?string).
+HeapAllocation_ContextInsensitive(?heap) :-
+  isClassHeap(?heap).
+.decl MethodAllocationMergeThreshold(?t:number)
+
+MethodAllocationMergeThreshold(50).
+
+.decl ExceptionType(?type:Type)
+
+ExceptionType(?type) :-
+  ?throw = "java.lang.Throwable",
+  isType(?throw),
+  basic.SubtypeOf(?type, ?throw).
+
+.decl OptAssignHeapAllocation(?inmethod:Method, ?heap:HeapAllocation)
+
+OptAssignHeapAllocation(?inmethod, ?heap) :-
+  AssignHeapAllocation(?heap, _, ?inmethod).
+
+
+
+.decl ObjectMultipleAllocated(?heap:HeapAllocation)
+
+ObjectMultipleAllocated(?heap) :-
+  OptAssignHeapAllocation(?inmethod1, ?heap),
+  OptAssignHeapAllocation(?inmethod2, ?heap),
+  ?inmethod1 != ?inmethod2.
+
+.decl MethodAndTypeToHeap(?heap:HeapAllocation, ?heapType:Type, ?method:Method)
+
+MethodAndTypeToHeap(?heap, ?heaptype, ?meth) :-
+  AssignHeapAllocation(?heap, _, ?meth),
+  HeapAllocation_Type(?heap, ?heaptype),
+  !isStringConstant(?heap),
+  !StringFactoryHeap(?heap),
+  !HeapAllocation_EmptyArray(?heap),
+  !ObjectMultipleAllocated(?heap),
+  !HeapAllocation_Keep(?heap).
+
+.decl AllocationsPerMethodAndType(?type:Type, ?meth:Method, ?n:number)
+
+AllocationsPerMethodAndType(?type, ?meth, ?n) :-
+  MethodAndTypeToHeap(_, ?type, ?meth),
+  ?n = count : MethodAndTypeToHeap(_, ?type, ?meth).
+
+.decl AllocationShouldBeMergedPerMethod(?heaptype:Type, ?meth:Method)
+
+AllocationShouldBeMergedPerMethod(?heaptype, ?meth) :-
+  AllocationsPerMethodAndType(?heaptype, ?meth, ?n),
+  MethodAllocationMergeThreshold(?t),
+  ?n > ?t.
+
+.decl MethodAndTypeToMergedHeap(?heap:HeapAllocation, ?heaptype:Type, ?meth:Method)
+
+MethodAndTypeToMergedHeap(?heap, ?heaptype, ?meth) :-
+  AllocationShouldBeMergedPerMethod(?heaptype, ?meth),
+  MethodAndTypeToHeap(?heap, ?heaptype, ?meth).
+
+.decl MinHeapOrdinalPerMethodAndType(?ord:number, ?type:Type, ?meth:Method)
+.decl MethodAndTypeToRepresentative(?type:Type, ?meth:Method, ?reprHeap:HeapAllocation)
+
+MinHeapOrdinalPerMethodAndType(?minHeapOrd, ?type, ?meth) :-
+  MethodAndTypeToMergedHeap(_, ?type, ?meth),
+  ?minHeapOrd = min ord(?heap): MethodAndTypeToMergedHeap(?heap, ?type, ?meth).
+
+MethodAndTypeToRepresentative(?type, ?meth, ?representativeHeap) :-
+  isHeapAllocation(?representativeHeap),
+  MinHeapOrdinalPerMethodAndType(?minHeapOrd, ?type, ?meth),
+  ord(?representativeHeap) = ?minHeapOrd.
+
+
+HeapRepresentative(?representativeHeap, ?heap) :-
+  MethodAndTypeToRepresentative(?type, ?meth, ?representativeHeap),
+  MethodAndTypeToMergedHeap(?heap, ?type, ?meth).
+
+
+
+
+.decl ClassAndTypeToHeap(?heap:HeapAllocation, ?heaptype:Type, ?class:ReferenceType)
+.decl AllocationsPerClassAndType(?type:Type, ?class:ReferenceType, ?n:number)
+
+ClassAndTypeToHeap(?heap, ?heaptype, ?class) :-
+  MethodAndTypeToHeap(?heap, ?heaptype, ?meth),
+  Method_DeclaringType(?meth, ?class).
+
+AllocationsPerClassAndType(?type, ?class, ?n) :-
+  ClassAndTypeToHeap(_, ?type, ?class),
+  ?n = count : ClassAndTypeToHeap(_, ?type, ?class).
+
+
+.decl AllocationShouldBeMergedPerClass(?heaptype:Type, ?class:Type)
+
+.decl ClassAndTypeToMergedHeap(?heap:HeapAllocation, ?heaptype:Type, ?class:Type)
+
+ClassAndTypeToMergedHeap(?heap, ?heaptype, ?class) :-
+  AllocationShouldBeMergedPerClass(?heaptype, ?class),
+  ClassAndTypeToHeap(?heap, ?heaptype, ?class).
+
+.decl MinHeapOrdinalPerClassAndType(?minHeapOrd:number, ?type:Type, ?class:Type)
+.decl ClassAndTypeToRepresentative(?type:Type, ?class:Type, ?reprHeap:HeapAllocation)
+
+MinHeapOrdinalPerClassAndType(?minHeapOrd, ?type, ?class) :-
+  ClassAndTypeToMergedHeap(_, ?type, ?class),
+  ?minHeapOrd = min ord(?heap): ClassAndTypeToMergedHeap(?heap, ?type, ?class).
+
+ClassAndTypeToRepresentative(?type, ?class, ?representativeHeap) :-
+  isHeapAllocation(?representativeHeap),
+  MinHeapOrdinalPerClassAndType(?minHeapOrd, ?type, ?class),
+  ord(?representativeHeap) = ?minHeapOrd.
+
+
+HeapRepresentative(?representativeHeap, ?heap) :-
+  ClassAndTypeToRepresentative(?type, ?class, ?representativeHeap),
+  ClassAndTypeToMergedHeap(?heap, ?type, ?class).
+.decl ClassNameIndexes(?pos:number, ?type:ClassType)
+
+ClassNameIndexes(0, ?type) :-
+  isClassType(?type).
+
+ClassNameIndexes(?pos+1, ?t) :-
+  ClassNameIndexes(?pos, ?t),
+  ?pos+1 < strlen(?t).
+
+
+.decl DotsInClassName(?type:ClassType, ?pos:number)
+.decl NotLastDot(?pos:number, ?type:ClassType)
+.decl NotSecondLastDot(?pos:number, ?type:ClassType)
+.decl LastDot(?type:ClassType, ?pos:number)
+.decl SecondLastDot(?type:ClassType, ?pos:number)
+
+.decl Class_PackageHack(?type:ClassType, ?packageName:symbol)
+
+DotsInClassName(?type, ?pos) :-
+  ClassNameIndexes(?pos, ?type),
+  substr(?type, ?pos, 1) = ".".
+
+NotLastDot(?pos, ?type) :-
+  DotsInClassName(?type, ?pos),
+  DotsInClassName(?type, ?pos2),
+  ?pos2 > ?pos.
+
+NotSecondLastDot(?pos, ?type) :-
+  DotsInClassName(?type, ?pos),
+  DotsInClassName(?type, ?pos2),
+  ?pos2 > ?pos,
+  NotLastDot(?pos2, ?type).
+
+NotSecondLastDot(?pos, ?type) :-
+  LastDot(?type, ?pos).
+
+LastDot(?type, ?pos) :-
+  DotsInClassName(?type, ?pos),
+  !NotLastDot(?pos, ?type).
+
+SecondLastDot(?type, ?pos) :-
+  DotsInClassName(?type, ?pos),
+  !NotSecondLastDot(?pos, ?type).
+
+
+Class_PackageHack(?type, substr(?type, 0, ?secondLastPos)) :-
+  SecondLastDot(?type, ?secondLastPos),
+  isClassType(?type).
+
+Class_PackageHack(?type, substr(?type, 0, ?lastPos)) :-
+  !(SecondLastDot(?type, _)),
+  isClassType(?type),
+  LastDot(?type, ?lastPos).
+
+Class_PackageHack(?type, ?type) :-
+  !(LastDot(?type, _)),
+  isClassType(?type).
+
+.decl PackageAndTypeToHeap(?heap:HeapAllocation, ?heaptype:Type, ?packageName:symbol)
+.decl AllocationsPerPackageAndType(?type:Type, ?packageName:symbol, ?n:number)
+
+PackageAndTypeToHeap(?heap, ?heaptype, ?packageName) :-
+  ClassAndTypeToHeap(?heap, ?heaptype, ?class),
+  Class_PackageHack(?class, ?packageName).
+
+AllocationsPerPackageAndType(?type, ?packageName, ?n) :-
+  PackageAndTypeToHeap(_, ?type, ?packageName),
+  ?n = count : PackageAndTypeToHeap(_, ?type, ?packageName).
+
+
+.decl AllocationShouldBeMergedPerPackage(?heaptype:Type, ?packageName:symbol)
+
+.decl PackageAndTypeToMergedHeap(?heap:HeapAllocation, ?heaptype:Type, ?packageName:symbol)
+
+PackageAndTypeToMergedHeap(?heap, ?heaptype, ?packageName) :-
+  AllocationShouldBeMergedPerPackage(?heaptype, ?packageName),
+  PackageAndTypeToHeap(?heap, ?heaptype, ?packageName).
+
+.decl MinHeapOrdinalPerPackageAndType(?minHeapOrd:number, ?type:Type, ?packageName:symbol)
+.decl PackageAndTypeToRepresentative(?type:Type, ?packageName:symbol, ?representativeHeap:HeapAllocation)
+
+MinHeapOrdinalPerPackageAndType(?minHeapOrd, ?type, ?packageName) :-
+  PackageAndTypeToMergedHeap(_, ?type, ?packageName),
+  ?minHeapOrd = min ord(?heap): PackageAndTypeToMergedHeap(?heap, ?type, ?packageName).
+
+PackageAndTypeToRepresentative(?type, ?packageName, ?representativeHeap) :-
+  isHeapAllocation(?representativeHeap),
+  MinHeapOrdinalPerPackageAndType(?minHeapOrd, ?type, ?packageName),
+  ord(?representativeHeap) = ?minHeapOrd.
+
+
+HeapRepresentative(?representativeHeap, ?heap) :-
+  PackageAndTypeToRepresentative(?type, ?packageName, ?representativeHeap),
+  PackageAndTypeToMergedHeap(?heap, ?type, ?packageName).
+
+
+.decl TypeToHeap(?heap:HeapAllocation, ?heaptype:Type)
+.decl AllocationsPerType(?type:Type, ?n:number)
+
+TypeToHeap(?heap, ?heaptype) :-
+  ClassAndTypeToHeap(?heap, ?heaptype, _).
+
+AllocationsPerType(?type, ?n) :-
+  TypeToHeap(_, ?type),
+  ?n = count : TypeToHeap(_, ?type).
+
+
+.decl AllocationShouldBeMergedGlobally(?heaptype:Type)
+
+.decl TypeToMergedHeap(?heap:HeapAllocation, ?heaptype:Type)
+
+TypeToMergedHeap(?heap, ?heaptype) :-
+  AllocationShouldBeMergedGlobally(?heaptype),
+  TypeToHeap(?heap, ?heaptype).
+
+.decl MinHeapOrdinalPerType(?minHeapOrd:number, ?type:Type)
+.decl TypeToRepresentative(?type:Type, ?representativeHeap:HeapAllocation)
+
+MinHeapOrdinalPerType(?minHeapOrd, ?type) :-
+  TypeToMergedHeap(_, ?type),
+  ?minHeapOrd = min ord(?heap): TypeToMergedHeap(?heap, ?type).
+
+TypeToRepresentative(?type, ?representativeHeap) :-
+  isHeapAllocation(?representativeHeap),
+  MinHeapOrdinalPerType(?minHeapOrd, ?type),
+  ord(?representativeHeap) = ?minHeapOrd.
+
+
+HeapRepresentative(?representativeHeap, ?heap) :-
+  TypeToRepresentative(?type, ?representativeHeap),
+  TypeToMergedHeap(?heap, ?type).
+.decl SpecialLibraryObject(?heap:HeapAllocation)
+
+SpecialLibraryObject(?heap) :-
+  AssignHeapAllocation_Heap(?insn, ?heap),
+  Instruction_Method(?insn, ?method),
+  SpecialLibraryMethod(?method).
+
+.decl SpecialLibraryMethod(?method:Method)
+SpecialLibraryMethod(?method) :-
+  Method_DeclaringType(?method, ?class),
+  SpecialLibraryClass(?class).
+
+.decl SpecialLibraryClass(?class:Type)
+SpecialLibraryClass(?class) :-
+  isClassType(?class),
+  !ApplicationClass(?class),
+  !CollectionClass(?class).
+
+.decl CollectionClass(?class:Type)
+CollectionClass(?class) :-
+  isClassType(?class),
+  !ApplicationClass(?class),
+  basic.SubtypeOf(?class, ?superclass),
+  (?superclass = "java.util.Map";
+   ?superclass = "java.util.Collection";
+   ?superclass = "java.util.Iterable";
+   ?superclass = "java.util.Iterator";
+   ?superclass = "java.util.Comparator";
+   ?superclass = "java.util.Dictionary";
+   ?superclass = "java.util.TimSort";
+   ?superclass = "java.util.ComparableTimSort";
+   ?superclass = "java.util.Arrays";
+   ?superclass = "java.util.Objects";
+   ?superclass = "java.util.Collections").
+
+.decl CollectionInnerClass(?class:ClassType)
+
+CollectionInnerClass(?innerClass),
+CollectionClass(?innerClass) :-
+  CollectionInnerClassPrefix(?innerClassPrefix),
+  isClassType(?innerClass),
+  substr(?innerClass, 0, strlen(?innerClassPrefix)) = ?innerClassPrefix.
+
+.decl CollectionInnerClassPrefix(?innerClassPrefix:symbol)
+
+CollectionInnerClassPrefix(?innerClassPrefix) :-
+  CollectionClass(?class),
+  ?innerClassPrefix = cat(?class, "$").
+
+.output CollectionClass
+  HeapAllocation_ContextInsensitive(?heap) :-
+    SpecialLibraryObject(?heap),
+    !HeapRepresentative(_, ?heap).
+
+
+    AllocationShouldBeMergedPerMethod(?heaptype, ?meth) :-
+      AllocationsPerMethodAndType(?heaptype, ?meth, ?n),
+      ?n > 1,
+      Method_DeclaringType(?meth, ?class),
+      SpecialLibraryClass(?class).
+.decl _StringFactoryType(?type:Type)
+_StringFactoryType(?type) :-
+  ?type = "java.lang.StringBuffer" ;
+  ?type = "java.lang.StringBuilder".
+
+.decl StringFactoryHeap(?heap:HeapAllocation)
+StringFactoryHeap(?heap) :-
+  HeapAllocation_Type(?heap, ?heaptype),
+  _StringFactoryType(?heaptype).
+
+
+.decl StringFactoryType(?type:Type)
+StringFactoryType(?type) :-
+  _StringFactoryType(?type).
+HeapRepresentative("<<string-buffer>>", ?heap) :-
+  HeapAllocation_Type(?heap, "java.lang.StringBuffer"),
+  !HeapAllocation_Keep(?heap).
+
+HeapRepresentative("<<string-builder>>", ?heap) :-
+  HeapAllocation_Type(?heap, "java.lang.StringBuilder"),
+  !HeapAllocation_Keep(?heap).
+
+HeapRepresentative("<<pystring-object>>", ?heap) :-
+  HeapAllocation_Type(?heap, "org.python.core.PyString"),
+  !HeapAllocation_Keep(?heap).
+.decl ExceptionTypeToHeap(?heap:HeapAllocation, ?type:Type)
+
+ExceptionTypeToHeap(?heap, ?heaptype) :-
+  AssignHeapAllocation(?heap, _, _),
+  HeapAllocation_Type(?heap, ?heaptype),
+  ExceptionType(?heaptype).
+
+.decl ExceptionHeapTypeRepresentativeOrdinal(?type:Type, ?reprHeapOrd:number)
+
+ExceptionHeapTypeRepresentativeOrdinal(?type, ?representativeHeapOrd) :-
+  ExceptionTypeToHeap(_, ?type),
+  ?representativeHeapOrd = min ord(?heap) : ExceptionTypeToHeap(?heap, ?type).
+
+
+HeapRepresentative(?representativeHeap, ?heap) :-
+  ExceptionHeapTypeRepresentativeOrdinal(?heaptype, ?representativeHeapOrd),
+  ExceptionTypeToHeap(?heap, ?heaptype),
+  ord(?representativeHeap) = ?representativeHeapOrd,
+  isHeapAllocation(?representativeHeap).
+HeapAllocation_ContextInsensitive(?heap) :-
+  HeapAllocation_Type(?heap, ?type),
+  isArrayType(?type),
+  ComponentType(?type, ?componentType),
+  isPrimitiveType(?componentType).
+ReflectionStringConstant("int").
+ReflectionStringConstant("float").
+ReflectionStringConstant("double").
+ReflectionStringConstant("byte").
+ReflectionStringConstant("boolean").
+ReflectionStringConstant("char").
+ReflectionStringConstant("long").
+ReflectionStringConstant("short").
+ReflectionStringConstant("void").
+.decl _StringIterationTrick(?pos:number)
+_StringIterationTrick(0).
+_StringIterationTrick(?pos + 1) :- _StringIterationTrick(?pos), ?pos < 256.
+
+.decl RelevantSuffixPosition(?typeName: Type, ?pos:number)
+RelevantSuffixPosition(?typeName, ?pos) :-
+  isType(?typeName),
+  _StringIterationTrick(?pos), ?pos < strlen(?typeName).
+
+.decl Suffix(?type:Type, ?suffix:symbol, ?suffixLen:number)
+
+Suffix(?type, ?suffix, ?suffixLen) :-
+  RelevantSuffixPosition(?type, ?pos),
+  substr(?type, ?pos, 1) = ".",
+  ?suffixLen = strlen(?type) - ?pos - 1,
+  ?suffix = substr(?type, ?pos + 1, ?suffixLen).
+
+Suffix(?type, ?type, ?suffixLen) :-
+  isType(?type),
+  ?suffixLen = strlen(?type).
+
+.decl MinimalSuffixLen(?type:Type, ?suffixLen:number)
+
+MinimalSuffixLen(?type, ?suffixLen) :-
+  isType(?type),
+  ?suffixLen = min ?len : Suffix(?type, _, ?len).
+
+
+.decl MinimalSuffix(?type:Type, ?suffix:symbol)
+
+MinimalSuffix(?type, ?suffix) :-
+  MinimalSuffixLen(?type, ?suffixLen),
+  Suffix(?type, ?suffix, ?suffixLen).
+RunningThread(?hctx, ?value) :-
+    MainThread(?hctx, ?value).
+ReachableContext(?calleeCtx, ?run),
+VarPointsTo(?hctx, ?value, ?calleeCtx, ?runThis),
+RunningThread(?hctx, ?value)
+:-
+
+
+
+    ?start = "<java.lang.Thread: void start0()>",
+
+    ThisVar(?start, ?startThis),
+    CallGraphEdge(_, _, ?calleeCtx, ?start),
+    VarPointsTo(?hctx, ?value, ?calleeCtx, ?startThis),
+    Value_Type(?value, ?valuetype),
+    basic.MethodLookup("run", "void()", ?valuetype, ?run),
+    ThisVar(?run, ?runThis).
+VarPointsTo(?hctx, ?value, ?callerCtx, ?local) :-
+   ReachableCurrentThreadInvocation(?callerCtx, ?local),
+   RunningThread(?hctx, ?value).
+
+
+ReachableCurrentThreadInvocation(?callerCtx, ?local) :-
+   ?signature = "<java.lang.Thread: java.lang.Thread currentThread()>",
+   StaticMethodInvocation(?invocation, ?signature, ?inmethod),
+   ReachableContext(?callerCtx, ?inmethod),
+   AssignReturnValue(?invocation, ?local).
+configuration.ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?signature, 1) :-
+    SystemThreadGroup(?hctx, ?value),
+    isImmutableContext(?callerCtx),
+    FakeInvocation_ThreadGroupInit(?invo),
+    ?signature = "<java.lang.ThreadGroup: void <init>()>".
+
+
+
+VarPointsTo(?hctx, ?value, ?calleeCtx, ?this),
+
+isContext(?calleeCtx),
+ReachableContext(?calleeCtx, ?signature) :-
+    ?signature = "<java.lang.ThreadGroup: void <init>()>",
+    ThisVar(?signature, ?this),
+    SystemThreadGroup(?hctx, ?value),
+    configuration.ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?signature, 1),
+    configuration.ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?signature, ?calleeCtx).
+configuration.ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?signature, 1) :-
+    MainThreadGroup(?hctx, ?value),
+    isImmutableContext(?callerCtx),
+    FakeInvocation_ThreadGroupInit(?invo),
+    ?signature = "<java.lang.ThreadGroup: void <init>(java.lang.ThreadGroup,java.lang.String)>".
+
+
+VarPointsTo(?hctx, ?value, ?calleeCtx, ?this),
+VarPointsTo(?groupHCtx, ?group, ?calleeCtx, ?groupParam),
+
+isContext(?calleeCtx),
+ReachableContext(?calleeCtx, ?signature) :-
+    ?signature = "<java.lang.ThreadGroup: void <init>(java.lang.ThreadGroup,java.lang.String)>",
+    ThisVar(?signature, ?this),
+    MainThreadGroup(?hctx, ?value),
+    FormalParam(0, ?signature, ?groupParam),
+    SystemThreadGroup(?groupHCtx, ?group),
+    configuration.ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?signature, 1),
+    configuration.ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?signature, ?calleeCtx).
+configuration.ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?signature, 1) :-
+    MainThread(?hctx, ?value),
+    isImmutableContext(?callerCtx),
+    FakeInvocation_MainThreadInit(?invo),
+    ?signature = "<java.lang.Thread: void <init>(java.lang.ThreadGroup,java.lang.String)>".
+
+
+VarPointsTo(?hctx, ?value, ?calleeCtx, ?this),
+VarPointsTo(?groupHCtx, ?group, ?calleeCtx, ?groupParam),
+
+isContext(?calleeCtx),
+ReachableContext(?calleeCtx, ?signature) :-
+    ?signature = "<java.lang.Thread: void <init>(java.lang.ThreadGroup,java.lang.String)>",
+    ThisVar(?signature, ?this),
+    MainThread(?hctx, ?value),
+    FormalParam(0, ?signature, ?groupParam),
+    MainThreadGroup(?groupHCtx, ?group),
+    configuration.ContextRequest(?callerCtx, ?hctx, ?invo, ?value, ?signature, 1),
+    configuration.ContextResponse(?callerCtx, ?hctx, ?invo, ?value, ?signature, ?calleeCtx).
+
+
+
+FakeInvocation_ThreadGroupInit(?invo),
+isInstruction(?invo), isMethodInvocation(?invo)  :-
+  ?invo = "<thread-group-init>/0".
+
+FakeInvocation_MainThreadInit(?invo),
+isInstruction(?invo), isMethodInvocation(?invo)  :-
+  ?invo = "<main-thread-init>/0".
+
+FakeInvocation_SystemThreadGroupInit(?invo),
+isInstruction(?invo), isMethodInvocation(?invo)  :-
+  ?invo = "<system-thread-group-init>/0".
+FakeInvocation_RegisterFinalize(?heapValue, ?invo) :-
+  FakeInvocation_RegisterFinalize0(?heapValue, ?invo).
+
+Value_isHeap(?heapValue),
+isValue(?heapValue),
+Value_Type(?heapValue, ?type) :-
+  isHeapAllocation(?heapValue),
+  HeapAllocation_Type(?heapValue, ?type).
+Value_isNonHeap(?value) :-
+  Value_isMock(?value) ;
+  Value_Num(?value, _, _).
+
+Value_Null(?nullheap) :-
+  HeapAllocation_Null(?nullheap).
+
+
+Value_DeclaringType(?heapValue, ?type) :-
+  AssignHeapAllocation(?heapValue, _, ?inmethod),
+  Method_DeclaringType(?inmethod, ?type),
+  isNormalHeap(?heapValue).
+
+Value_DeclaringType(?heapValue, "java.lang.System") :-
+  isClassHeap(?heapValue).
+
+Value_DeclaringType(?heapValue, "java.lang.String") :-
+  isStringConstant(?heapValue).
+
+Value_DeclaringType(?value, "java.lang.Object") :-
+  Value_Null(?value);
+  MainMethodArgArray(?value);
+  MainMethodArgArrayContent(?value).
+
+Value_DeclaringType(?heapValue, "java.lang.invoke.MethodHandle") :-
+  isMethodHandleConstant(?heapValue).
+
+Value_DeclaringType(?heapValue, "java.lang.invoke.MethodType") :-
+  isMethodTypeConstant(?heapValue).
+
+Value_DeclaringType(?heapValue, ?type) :-
+  SimulatedNativeAllocation(?heapValue, ?method),
+  Method_DeclaringType(?method, ?type).
+
+
+NotSpecialObject(?value) :-
+  Value_isHeap(?value) ;
+  Value_isMock(?value) ;
+  Value_Num(?value, _, _).
+
+configuration.InitContextRequest("<<immutable-context>>").
+
+
+
+
+isImmutableContext(?ctx),
+isContext(?ctx) :-
+  ?s = "<<immutable-context>>",
+  configuration.InitContextRequest(?s),
+  configuration.InitContextResponse(?s, ?ctx).
+ApplicationEntryPoint(?method),
+ReachableContext(?initialContext, ?method) :-
+  isImmutableContext(?initialContext),
+  basic.MainMethodDeclaration(?method).
+
+
+ReachableContext(?ctx, ?method) :-
+  isImmutableContext(?ctx),
+  ImplicitReachable(?method).
+
+
+
+ReachableContext(?clinitContext, ?clinit) :-
+  isImmutableContext(?clinitContext),
+  InitializedClass(?class),
+  ClassInitializer(?class, ?clinit).
+
+configuration.InitHContextRequest("<<immutable-hcontext>>").
+
+
+isImmutableHContext(?hctx),
+isHContext(?hctx) :-
+  ?s = "<<immutable-hcontext>>",
+  configuration.InitHContextRequest(?s),
+  configuration.InitHContextResponse(?s, ?hctx).
+SystemThreadGroup(?hctx, ?alloc) :-
+  isImmutableHContext(?hctx),
+  ?alloc = "<<system-thread-group>>",
+  isValue(?alloc).
+
+MainThreadGroup(?hctx, ?alloc) :-
+  isImmutableHContext(?hctx),
+  ?alloc = "<<main-thread-group>>",
+  isValue(?alloc).
+
+MainThread(?hctx, ?alloc) :-
+  isImmutableHContext(?hctx),
+  ?alloc = "<<main-thread>>",
+  isValue(?alloc).
+.decl ReachableValue(?hctx:configuration.HContext, ?value: Value)
+
+ReachableValue(?hctx, ?heapValue) :-
+  AssignContextInsensitiveHeapAllocation(?heapValue, _, ?inmethod),
+  ReachableContext(_, ?inmethod),
+  isImmutableHContext(?hctx).
+
+isHContext(?newHCtx),
+ReachableValue(?newHCtx, ?heapValue) :-
+  configuration.RecordContextRequest(?ctx, ?heapValue, ?var),
+  configuration.RecordContextResponse(?ctx, ?heapValue, ?var, ?newHCtx).
+
+
+
+
+
+
+
+ReachableValue(?hctx, ?value) :-
+  VarPointsTo(?hctx, ?value, _, _).
+
+.decl TypeHasReachableValue(?valueType: Type)
+TypeHasReachableValue(?valueType) :-
+  ReachableValue(_, ?value),
+  Value_Type(?value, ?valueType).
+configuration.RecordContextRequest(?ctx, ?heapValue, ?var) :-
+  AssignNormalHeapAllocation(?heapValue, ?var, ?inmethod),
+  ReachableContext(?ctx, ?inmethod).
+
+
+
+VarPointsTo(?newHCtx, ?heapValue, ?ctx, ?var) :-
+  configuration.RecordContextRequest(?ctx, ?heapValue, ?var),
+  configuration.RecordContextResponse(?ctx, ?heapValue, ?var, ?newHCtx).
+
+VarPointsTo(?hctx, ?heapValue, ?ctx, ?var) :-
+  Reachable(?inmethod),
+  AssignContextInsensitiveHeapAllocation(?heapValue, ?var, ?inmethod),
+  ReachableContext(?ctx, ?inmethod),
+  isImmutableHContext(?hctx).
+  .plan 1:(4,3,2,1)
+VarPointsTo(?hctx, ?null, ?toCtx, ?to) :-
+   Reachable(?inmethod),
+   AssignNull(?to, ?inmethod),
+   Value_Null(?null),
+   ReachableContext(?toCtx, ?inmethod),
+   isImmutableHContext(?hctx).
+VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
+  VarPointsTo(?hctx, ?value, ?ctx, ?from),
+  AssignLocal(?from, ?to, _).
+VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
+  OptAssignCast(?type, ?to, ?from),
+  VarPointsTo(?hctx, ?value, ?ctx, ?from),
+  Value_Type(?value, ?valuetype),
+  basic.SupertypeOf(?type, ?valuetype).
+ .plan 2:(3,2,1,4)
+
+.decl OptAssignCast(?type:Type, ?to:Var, ?from:Var)
+OptAssignCast(?type, ?to, ?from) :-
+  Reachable(?inmethod),
+  AssignCast(?type, ?from, ?to, ?inmethod).
+LoadHeapInstanceField(?ctx, ?to, ?sig, ?basehctx, ?basevalue) :-
+  LoadInstanceField(?base, ?sig, ?to, _),
+  VarPointsTo(?basehctx, ?basevalue, ?ctx, ?base).
+
+StoreHeapInstanceField(?signature, ?basehctx, ?basevalue, ?ctx, ?from) :-
+  StoreInstanceField(?from, ?base, ?signature, _),
+  VarPointsTo(?basehctx, ?basevalue, ?ctx, ?base).
+
+
+
+
+
+
+
+
+HeapInterproceduralAssign(?ctxTo, ?to, ?ctxFrom, ?from) :-
+  LoadHeapInstanceField(?ctxTo, ?to, ?signature, ?basehctx, ?basevalue),
+  StoreHeapInstanceField(?signature, ?basehctx, ?basevalue, ?ctxFrom, ?from),
+  !Value_Null(?basevalue).
+ .plan 1:(2,1)
+
+VarPointsTo(?hctx, ?value, ?toCtx, ?to) :-
+  HeapInterproceduralAssign(?toCtx, ?to, ?fromCtx, ?from),
+  VarPointsTo(?hctx, ?value, ?fromCtx, ?from),
+  NotSpecialObject(?value).
+ .plan 1:(2,1,3), 2:(3,2,1)
+
+VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
+  LoadHeapInstanceField(?ctx, ?to, ?signature, ?basehctx, ?basevalue),
+  InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue).
+
+InstanceFieldPointsTo(?hctx, ?value, ?signature, ?basehctx, ?basevalue) :-
+  StoreHeapInstanceField(?signature, ?basehctx, ?basevalue, ?ctx, ?from),
+  VarPointsTo(?hctx, ?value, ?ctx, ?from),
+  NotSpecialObject(?value),
+  !Value_Null(?basevalue).
+ .plan 1:(2,1,3), 2:(3,2,1)
+VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
+  StaticFieldPointsTo(?hctx, ?value, ?sig),
+  LoadStaticField(?sig, ?to, ?inmethod),
+  ReachableContext(?ctx, ?inmethod).
+
+  .plan 1:(3,2,1)
+StaticFieldPointsTo(?hctx, ?value, ?signature) :-
+  ReachableStoreStaticFieldFrom(?from),
+  StoreStaticField(?from, ?signature, _),
+  VarPointsTo(?hctx, ?value, _, ?from).
+.decl ReachableStoreStaticFieldFrom(?from:Var)
+
+ReachableStoreStaticFieldFrom(?from) :-
+  Reachable(?inmethod),
+  StoreStaticField(?from, _, ?inmethod).
+.decl OptLoadHeapArrayIndex(?var:Var, ?value:Value)
+.decl Temp1(?value:Value, ?var:Var)
+.decl Temp2(?ctx:configuration.Context, ?var:Var, ?hctx:configuration.HContext, ?value:Value)
+
+OptLoadHeapArrayIndex(?to, ?basevalue) :-
+  LoadHeapArrayIndex(_, ?to, _, ?basevalue).
+
+Temp1(?basevalue, ?to) :-
+  NotEmptyArrayValue(?basevalue),
+  OptLoadHeapArrayIndex(?to, ?basevalue),
+  Value_Type(?basevalue, ?basevaluetype),
+  ComponentType(?basevaluetype, ?basecomponenttype),
+  Var_Type(?to, ?type),
+  basic.SupertypeOf(?type, ?basecomponenttype).
+
+Temp2(?ctx, ?to, ?basehctx, ?basevalue) :-
+  Temp1(?basevalue, ?to),
+  LoadHeapArrayIndex(?ctx, ?to, ?basehctx, ?basevalue).
+
+VarPointsTo(?hctx, ?value, ?ctx, ?to) :-
+  Temp2(?ctx, ?to, ?basehctx, ?basevalue),
+  ArrayIndexPointsTo(?hctx, ?value, ?basehctx, ?basevalue).
+.decl NotEmptyArrayValue(?value:Value)
+
+NotEmptyArrayValue(?heapValue) :-
+  Value_isHeap(?heapValue),
+  isHeapAllocation(?heapValue),
+  !HeapAllocation_EmptyArray(?heapValue).
+NotEmptyArrayValue(?value) :-
+  Value_isNonHeap(?value).
+
+LoadHeapArrayIndex(?ctx, ?to, ?basehctx, ?basevalue) :-
+  ReachableLoadArrayIndexBase(?base),
+  OptLoadArrayIndex(?to, ?base),
+  VarPointsTo(?basehctx, ?basevalue, ?ctx, ?base).
+
+OptLoadArrayIndex(?to, ?base) :-
+  LoadArrayIndex(?base, ?to, _).
+
+.decl ReachableLoadArrayIndexBase(?base:Var)
+
+ReachableLoadArrayIndexBase(?base) :-
+  Reachable(?inmethod),
+  LoadArrayIndex(?base, _, ?inmethod).
+.decl OptStoreIntoArray(?hctx:configuration.HContext, ?value:Value, ?basehctx:configuration.HContext, ?basevalue:Value)
+
+
+OptStoreIntoArray(?hctx, ?value, ?basehctx, ?basevalue) :-
+  StoreHeapArrayIndex(?basehctx, ?basevalue, ?ctx, ?from),
+  VarPointsTo(?hctx, ?value, ?ctx, ?from).
+ArrayIndexPointsTo(?hctx, ?value, ?basehctx, ?basevalue) :-
+  OptStoreIntoArray(?hctx, ?value, ?basehctx, ?basevalue),
+  NotSpecialObject(?value),
+  NotEmptyArrayValue(?basevalue),
+  Value_Type(?value, ?valuetype),
+  Value_Type(?basevalue, ?basevaluetype),
+  ComponentType(?basevaluetype, ?componenttype),
+  basic.SupertypeOf(?componenttype, ?valuetype).
+ .plan 1:(2,1,3,4,5,6,7),
+       2:(3,1,2,4,5,6,7),
+       3:(4,1,2,3,5,6,7),
+       4:(5,1,2,3,4,6,7)
+
+StoreHeapArrayIndex(?basehctx, ?basevalue, ?ctx, ?from) :-
+  ReachableStoreArrayIndexBase(?base),
+  OptStoreArrayIndex(?from, ?base),
+  VarPointsTo(?basehctx, ?basevalue, ?ctx, ?base).
+
+.decl ReachableStoreArrayIndexBase(?base:Var)
+
+ReachableStoreArrayIndexBase(?base) :-
+  Reachable(?inmethod),
+  StoreArrayIndex(_, ?base, ?inmethod).
+
+OptStoreArrayIndex(?from, ?base) :-
+  StoreArrayIndex(?from, ?base, _).
+OptArgAssign(?calleeCtx, ?formal, ?callerCtx, ?actual, ?allowedType) :-
+  CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?method),
+  ActualParam(?index, ?invocation, ?actual),
+  FormalParam(?index, ?method, ?formal),
+  Var_Type(?formal, ?allowedType).
+OptReturnAssign(?callerCtx, ?local, ?calleeCtx, ?return) :-
+  CallGraphEdge(?callerCtx, ?invocation, ?calleeCtx, ?method),
+  AssignReturnValue(?invocation, ?local),
+  ReturnVar(?return, ?method).
+
+VarPointsTo(?hctx, ?value, ?toCtx, ?to) :-
+  OptRetVarPointsTo(?hctx, ?value, ?fromCtx, ?from),
+  OptReturnAssign(?toCtx, ?to, ?fromCtx, ?from).
+  .plan 1:(2,1)
+
+
+
+OptArgVarPointsTo(?hctx, ?value, ?actualCtx, ?actual) :-
+  VarPointsTo(?hctx, ?value, ?actualCtx, ?actual),
+  ActualParam(_, _, ?actual).
+
+OptRetVarPointsTo(?hctx, ?value, ?returnCtx, ?return) :-
+  VarPointsTo(?hctx, ?value, ?returnCtx, ?return),
+  ReturnVar(?return, _).
+VarPointsTo(?hctx, ?value, ?toCtx, ?to) :-
+  OptArgVarPointsTo(?hctx, ?value, ?fromCtx, ?from),
+  OptArgAssign(?toCtx, ?to, ?fromCtx, ?from, ?allowedType),
+  Value_Type(?value, ?type),
+  basic.SubtypeOf(?type, ?allowedType).
+  .plan 1:(2,1,3,4)
+VarPointsTo(?hctx, ?value, ?toCtx, ?to) :-
+  OptInterproceduralAssign(?toCtx, ?to, ?fromCtx, ?from),
+  VarPointsTo(?hctx, ?value, ?fromCtx, ?from).
+.decl OptVirtualMethodInvocationBase(?invocation:MethodInvocation, ?base:Var)
+
+OptVirtualMethodInvocationBase(?invocation, ?base) :-
+  Reachable(?inmethod),
+  Instruction_Method(?invocation, ?inmethod),
+  VirtualMethodInvocation_Base(?invocation, ?base).
+
+
+
+
+
+
+
+
+
+configuration.ContextRequest(?callerCtx, ?hctx, ?invocation, ?value, ?tomethod, 1) :-
+  OptVirtualMethodInvocationBase(?invocation, ?base),
+  VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
+  Value_Type(?value, ?valuetype),
+  basic.ResolveInvocation(?valuetype, ?invocation, ?tomethod).
+VarPointsTo(?hctx, ?value, ?calleeCtx, ?this) :-
+  configuration.ContextRequest(?callerCtx, ?hctx, ?invocation, ?value, ?tomethod, _),
+  configuration.ContextResponse(?callerCtx, ?hctx, ?invocation, ?value, ?tomethod, ?calleeCtx),
+  ThisVar(?tomethod, ?this),
+  !Value_Null(?value).
+
+ .plan 1:(2,1,3)
+.decl OptSuperMethodInvocationBase(?invocation:MethodInvocation, ?base:Var)
+
+OptSuperMethodInvocationBase(?invocation, ?base) :-
+  Reachable(?inmethod),
+  Instruction_Method(?invocation, ?inmethod),
+  SuperMethodInvocation_Base(?invocation, ?base).
+
+configuration.ContextRequest(?callerCtx, ?hctx, ?invocation, ?value, ?tomethod, 1) :-
+  OptSuperMethodInvocationBase(?invocation, ?base),
+  VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
+  MethodInvocation_Method(?invocation, ?tomethod).
+.decl OptSpecialMethodInvocationBase(?invocation:MethodInvocation, ?base:Var)
+
+OptSpecialMethodInvocationBase(?invocation, ?base) :-
+  Reachable(?inmethod),
+  Instruction_Method(?invocation, ?inmethod),
+  SpecialMethodInvocation_Base(?invocation, ?base).
+
+configuration.ContextRequest(?callerCtx, ?hctx, ?invocation, ?value, ?tomethod, 1) :-
+  OptSpecialMethodInvocationBase(?invocation, ?base),
+  VarPointsTo(?hctx, ?value, ?callerCtx, ?base),
+  MethodInvocation_Method(?invocation, ?tomethod).
+ReachableContext(?ctx, ?method) :-
+  CallGraphEdge(_, _, ?ctx, ?method).
+
+Reachable(?method) :-
+  ReachableContext(_, ?method).
+
+ReachableClass(?class) :-
+  mainAnalysis.Reachable(?method),
+  Method_DeclaringType(?method, ?class).
+
+.decl AppReachable(?method:Method)
+
+AppReachable(?method) :-
+  Reachable(?method),
+  ApplicationMethod(?method).
+.decl ReachableAnnotationMethod(?method:Method, ?annotation:Annotation)
+
+ReachableAnnotationMethod(?annotMethod, ?annotation) :-
+  ReachableContext(_, ?method),
+  Method_Annotation(?method, ?annotation),
+  Method_DeclaringType(?annotMethod, ?annotation).
+
+ReachableContext(?ctx0, ?annotMethod) :-
+  ReachableAnnotationMethod(?annotMethod, _),
+  isImmutableContext(?ctx0).
+Value_isMock(?value), isValue(?value), Value_Type(?value, ?type), Value_DeclaringType(?value, "java.lang.Object") ,
+VarPointsTo(?hctx, ?value, ?ctx, ?return) :-
+  Instruction_Method(?invocation, ?inmethod),
+  ReachableContext(?ctx, ?inmethod),
+  MethodInvocation_Method(?invocation, ?method),
+  MockedMethodReturns(?method, ?value, ?type),
+  AssignReturnValue(?invocation, ?return),
+  isImmutableHContext(?hctx).
+
+
+.decl AnyCallGraphEdge(?instr:Instruction, ?method:Method)
+
+AnyCallGraphEdge(?i, ?m) :- CallGraphEdge(_, ?i, _, ?m).
+AnyCallGraphEdge(?i, ?m) :- InvokedynamicBootCallGraphEdge(_, ?i, _, ?m).
+AnyCallGraphEdge(?i, ?m) :- LambdaCallGraphEdge(_, ?i, _, ?m, _).
+AnyCallGraphEdge(?i, ?m) :- MethodHandleCallGraphEdge(_, ?i, _, ?m, _, _).
+AnyCallGraphEdge(?i, ?m) :- OpaqueCallGraphEdge(?i, ?m).
+.output Stats_Metrics(IO="file",filename="Stats_Metrics.csv",delimiter="\t")
+
+
+
+
+
+
+
+.output CallGraphEdge(IO="file",filename="CallGraphEdge.csv",delimiter="\t")
+.output AnyCallGraphEdge(IO="file",filename="AnyCallGraphEdge.csv",delimiter="\t")
+
+.output VarPointsTo(IO="file",filename="VarPointsTo.csv",delimiter="\t")
+.output ReachableContext(IO="file",filename="ReachableContext.csv",delimiter="\t")
+.output InstanceFieldPointsTo(IO="file",filename="InstanceFieldPointsTo.csv",delimiter="\t")
+.output StaticFieldPointsTo(IO="file",filename="StaticFieldPointsTo.csv",delimiter="\t")
+.output Reachable(IO="file",filename="Reachable.csv",delimiter="\t")
+
+
+
+
+
+
+.decl PhantomInvoke(?instruction:Instruction)
+
+PhantomInvoke(?instruction),
+isUnsupportedInstruction(?instruction) :-
+  MethodInvocation_Method(?instruction, ?method),
+  Method_DeclaringType(?method, ?pt),
+  PhantomType(?pt).
+
+PhantomInvoke(?instruction),
+isUnsupportedInstruction(?instruction) :-
+  MethodInvocation_Method(?instruction, ?method),
+  PhantomMethod(?method).
+
+.decl DeadInstruction(?i:Instruction)
+
+
+
+DeadInstruction(?instruction) :-
+  AssignHeapAllocation_Heap(?instruction, ?heap),
+  HeapAllocation_Type(?heap, ?pt),
+  PhantomType(?pt).
+
+DeadInstruction(?instruction) :-
+  (AssignCast_Type(?instruction, ?pt);
+   AssignInstanceOf_Type(?instruction, ?pt)),
+  PhantomType(?pt).
+
+DeadInstruction(?instruction) :-
+  PhantomInvoke(?instruction).
+
+
+
+DeadInstruction(?instruction) :-
+  MethodInvocation_Method(?instruction, ?method),
+  DeadMethod(?method).
+
+.decl DeadMethod(?m:Method)
+
+
+
+DeadMethod(?m) :- Instruction_Method(?i, ?m), DeadInstruction(?i).
+DeadMethod(?m) :- PhantomBasedMethod(?m).
+
+.decl DeadType(?type:Type)
+
+
+
+
+DeadType(?type) :-
+  Field_DeclaringType(?sig, ?type),
+  Field_Type(?sig, ?pt),
+  PhantomType(?pt).
+
+DeadType(?type) :-
+  PhantomBasedMethod(?m),
+  Method_DeclaringType(?m, ?type).
+
+DeadType(?type) :-
+  DeadMethod(?m),
+  Method_DeclaringType(?m, ?type).
+
+
+
+
+
+.decl RemovedMethod(?method:Method)
+
+RemovedMethod(?method) :-
+  PhantomMethod(?method),
+  Method_DeclaringType(?method, ?type),
+  !PhantomType(?type).
+
+  .init configuration = Configuration
+}

@@ -1,0 +1,93 @@
+decl Method_FirstInstruction(?method:symbol, ?insn:symbol)
+
+@export OptInstructionFromMethodIndex :- tsv{resource="OptInstructionFromMethodIndex.tsv",format=(?method:symbol, ?index:number, ?insn:symbol)}
+
+@export Instruction_Next :- tsv{resource="Instruction_Next.tsv",format=(?i:symbol, ?next:symbol)}
+
+@export Instruction_Prev :- tsv{resource="Instruction_Prev.tsv",format=(?i:symbol, ?prev:symbol)}
+
+@export JumpTarget :- tsv{resource="JumpTarget.tsv",format=(?insn:symbol, ?prev:symbol)}
+
+@export IsJumpTarget :- tsv{resource="IsJumpTarget.tsv",format=(?insn:symbol)}
+
+@export ExceptionHandlerFirstInstruction :- tsv{resource="ExceptionHandlerFirstInstruction.tsv",format=(?insn:symbol)}
+
+@export FallThrough :- tsv{resource="FallThrough.tsv",format=(?insn:symbol)}
+
+@export BasicBlockBegin :- tsv{resource="BasicBlockBegin.tsv",format=(?insn:symbol)}
+
+@export BasicBlockHead :- tsv{resource="BasicBlockHead.tsv",format=(?insn:symbol, ?headInsn:symbol)}
+
+@export BasicBlockTail :- tsv{resource="BasicBlockTail.tsv",format=(?headInsn:symbol, ?tailInsn:symbol)}
+
+@export BasicBlockEnd :- tsv{resource="BasicBlockEnd.tsv",format=(?insn:symbol)}
+
+@export UnconditionalControlTransfer :- tsv{resource="UnconditionalControlTransfer.tsv",format=(?insn:symbol)}
+
+@export MaySuccessorModuloThrow :- tsv{resource="MaySuccessorModuloThrow.tsv",format=(?next:symbol, ?prev:symbol)}
+
+@export MayPredecessorModuloThrow :- tsv{resource="MayPredecessorModuloThrow.tsv",format=(?prev:symbol, ?next:symbol)}
+
+@export MaySuccessorBBModuloThrow :- tsv{resource="MaySuccessorBBModuloThrow.tsv",format=(?next:symbol, ?prev:symbol)}
+
+@export MayPredecessorBBModuloThrow :- tsv{resource="MayPredecessorBBModuloThrow.tsv",format=(?prev:symbol, ?next:symbol)}
+
+@export Dominates :- tsv{resource="Dominates.tsv",format=(?dominator:symbol, ?insn:symbol)}
+
+@export DominatesItsPredecessorInstruction :- tsv{resource="DominatesItsPredecessorInstruction.tsv",format=(?prevInsn:symbol, ?insn:symbol)}
+
+@export DominatesItsSuccessorInstruction :- tsv{resource="DominatesItsSuccessorInstruction.tsv",format=(?insn:symbol, ?prevInsn:symbol)}
+
+@export NextInSamePhiNode :- tsv{resource="NextInSamePhiNode.tsv",format=(?insn1:symbol, ?insn2:symbol)}
+
+@export PhiNodeHead :- tsv{resource="PhiNodeHead.tsv",format=(?insn:symbol, ?headInsn:symbol)}
+
+@export InstructionInPhiNode :- tsv{resource="InstructionInPhiNode.tsv",format=(?insn:symbol, ?headInsn:symbol)}
+
+@export NextReturn :- tsv{resource="NextReturn.tsv",format=(?insn1:symbol, ?insn2:symbol)}
+
+@export NextInSameBasicBlock :- tsv{resource="NextInSameBasicBlock.tsv",format=(?insn:symbol, ?next:symbol)}
+
+@export PrevInSameBasicBlock :- tsv{resource="PrevInSameBasicBlock.tsv",format=(?insn:symbol, ?prev:symbol)}
+
+@export CFGRoot :- tsv{resource="CFGRoot.tsv",format=(?insn:symbol, ?method:symbol)}
+
+@export ExistsMayPredecessorBBModuloThrow :- tsv{resource="ExistsMayPredecessorBBModuloThrow.tsv",format=(?insn:symbol)}
+
+@export DoesNotDominate :- tsv{resource="DoesNotDominate.tsv",format=(?dominatorCandidate:symbol, ?insn:symbol)}
+
+@export OptReturnInsn :- tsv{resource="OptReturnInsn.tsv",format=(?insn:symbol, ?method:symbol)}
+
+@export HigherReturnIndex :- tsv{resource="HigherReturnIndex.tsv",format=(?insn:symbol, ?indexHigher:number)}
+
+@export NextReturnIndex :- tsv{resource="NextReturnIndex.tsv",format=(?returnInsn:symbol, ?nextReturnIndex:number)}
+
+@export ExistsPreviousReturn :- tsv{resource="ExistsPreviousReturn.tsv",format=(?insn:symbol)}
+
+@export BBHeadInMethod :- tsv{resource="BBHeadInMethod.tsv",format=(?insn:symbol, ?method:symbol)}
+
+@export SameMethodBBHeads :- tsv{resource="SameMethodBBHeads.tsv",format=(?insn1:symbol, ?insn2:symbol)}
+
+@export PredecessorBBsToSameBB :- tsv{resource="PredecessorBBsToSameBB.tsv",format=(?insn:symbol, ?prev1:symbol, ?prev2:symbol)}
+
+@export LargerPredecessorIndexToSameBB :- tsv{resource="LargerPredecessorIndexToSameBB.tsv",format=(?insn:symbol, ?indexLarge:number, ?prevSmall:symbol)}
+
+@export NextPredecessorIndexToSameBB :- tsv{resource="NextPredecessorIndexToSameBB.tsv",format=(?insn:symbol, ?prev:symbol, ?indexNext:number)}
+
+@export NextPredecessorToSameBB :- tsv{resource="NextPredecessorToSameBB.tsv",format=(?insn:symbol, ?pred:symbol, ?nextPred:symbol)}
+
+@export PreviousPredecessorToSameB :- tsv{resource="PreviousPredecessorToSameB.tsv",format=(?insn:symbol, ?nextPred:symbol, ?prevPred:symbol)}
+
+@export ExistsPreviousPredecessorToSameBB :- tsv{resource="ExistsPreviousPredecessorToSameBB.tsv",format=(?pred:symbol, ?insn:symbol)}
+
+@export NonDomPredecessorBBsToSameBB :- tsv{resource="NonDomPredecessorBBsToSameBB.tsv",format=(?insn:symbol, ?prev1:symbol, ?prev2:symbol) }
+
+@export LargerNonDomPredecessorIndexToSameBB :- tsv{resource="LargerNonDomPredecessorIndexToSameBB.tsv",format=(?insn:symbol, ?indexLarge:number, ?prevSmall:symbol)}
+
+@export NextNonDomPredecessorIndexToSameBB :- tsv{resource="NextNonDomPredecessorIndexToSameBB.tsv",format=(?insn:symbol, ?prev:symbol, ?indexNext:number)}
+
+@export NextNonDomPredecessorToSameBB :- tsv{resource="NextNonDomPredecessorToSameBB.tsv",format=(?insn:symbol, ?pred:symbol, ?nextPred:symbol)}
+
+@export PreviousNonDomPredecessorToSameBB :- tsv{resource="PreviousNonDomPredecessorToSameBB.tsv",format=(?insn:symbol, ?nextPred:symbol, ?prevPred:symbol) }
+
+@export ExistsPreviousNonDomPredecessorToSameBB :- tsv{resource="ExistsPreviousNonDomPredecessorToSameBB.tsv",format=(?pred:symbol, ?insn:symbol)}
