@@ -1,6 +1,3 @@
-% requires extended facts 
-
-
 @import Instruction_Method :- tsv{resource="Instruction_Method.csv",format=(string, string)} .
 @import Instruction_Index :- tsv{resource="Instruction_Index.csv",format=(string, int)} .
 @import AssignInstruction_To :- tsv{resource="AssignInstruction_To.csv",format=(string, string)} .
@@ -18,7 +15,7 @@
 @import isIf_Insn :- tsv{resource="isIf_Insn.csv",format=(string)} .
 @import Switch_DefaultTarget :- tsv{resource="Switch_DefaultTarget.csv",format=(string, int)} .
 @import Throw :- tsv{resource="Throw.facts",format=(string, int, string, string)} .
-
+% CFG
 
 Method_FirstInstruction(?method, ?insn) :-
    Instruction_Method(?insn, ?method),

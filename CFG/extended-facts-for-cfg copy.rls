@@ -1,0 +1,456 @@
+@import AssignBinop :- tsv{resource="AssignBinop.facts", format=(string, int, string, string)}
+@import AssignCast :- tsv{resource="AssignCast.facts", format=(string, int, string, string, string, string)}
+@import AssignCastNull :- tsv{resource="AssignCastNull.facts", format=(string, int, string, string, string)}
+@import AssignCastNumConstant :- tsv{resource="AssignCastNumConstant.facts", format=(string, int, string, string, string, string)}
+@import AssignHeapAllocation :- tsv{resource="AssignHeapAllocation.facts", format=(string, int, string, string, string, int)}
+@import AssignInstanceOf :- tsv{resource="AssignInstanceOf.facts", format=(string, int, string, string, string, string)}
+@import AssignLocal :- tsv{resource="AssignLocal.facts", format=(string, int, string, string, string, string)}
+@import AssignNull :- tsv{resource="AssignNull.facts", format=(string, int, string, string)}
+@import AssignNumConstant :- tsv{resource="AssignNumConstant.facts", format=(string, int, string, string, string)}
+@import AssignOperFrom :- tsv{resource="AssignOperFrom.facts", format=(string, int, string, string)}
+@import AssignOperFromConstant :- tsv{resource="AssignOperFromConstant.facts", format=(string, int, string, string)}
+@import AssignPhantomInvoke :- tsv{resource="AssignPhantomInvoke.facts", format=(string, int, string)}
+@import AssignReturnValue :- tsv{resource="AssignReturnValue.facts", format=(string, string)}
+@import AssignUnop :- tsv{resource="AssignUnop.facts", format=(string, int, string, string, string)}
+@import BootstrapParam :- tsv{resource="BootstrapParam.facts", format=(int, string, string)}
+@import BreakpointStmt :- tsv{resource="BreakpointStmt.facts", format=(string, int, string)}
+@import ClassArtifact :- tsv{resource="Class-Artifact.facts", format=(string, string, string, int)}
+@import ClassHeap :- tsv{resource="ClassHeap.facts", format=(string, string)}
+@import ClassModifier :- tsv{resource="ClassModifier.facts", format=(string, string)}
+@import ClassType :- tsv{resource="Method.facts", format=(string)}
+@import ComponentType :- tsv{resource="ArrayType.facts", format=(string, string)}
+@import DirectSuperclass :- tsv{resource="DirectSuperclass.facts", format=(string, string)}
+@import DirectSuperinterface :- tsv{resource="DirectSuperinterface.facts", format=(string, string)}
+@import DummyIfVar :- tsv{resource="DummyIfVar.facts", format=(string, string)}
+@import DynamicMethodInvocation :- tsv{resource="DynamicMethodInvocation.facts", format=(string, int, string, string, string, int, string, string)}
+@import DynamicMethodInvocation-ParamType :- tsv{resource="DynamicMethodInvocation-ParamType.facts", format=(string, int, string)}
+@import EmptyArray :- tsv{resource="EmptyArray.facts", format=(string)}
+@import EnterMonitor :- tsv{resource="EnterMonitor.facts", format=(string, int, string, string)}
+@import ExceptionHandler :- tsv{resource="ExceptionHandler.facts", format=(string, string, int, string, int, int)}
+@import ExceptionHandler-FormalParam :- tsv{resource="ExceptionHandler-FormalParam.facts", format=(string, string)}
+@import ExitMonitor :- tsv{resource="ExitMonitor.facts", format=(string, int, string, string)}
+@import Field :- tsv{resource="Field.facts", format=(Field, string, string, string)}
+@import Field-Modifier :- tsv{resource="Field-Modifier.facts", format=(string, string)}
+@import FormalParam :- tsv{resource="FormalParam.facts", format=(int, string, string)}
+@import Goto :- tsv{resource="Goto.facts", format=(Goto_Insn, int, int, string)}
+@import If :- tsv{resource="If.facts", format=(If_Insn, int, int, string)}
+@import IfConstant :- tsv{resource="IfConstant.facts", format=(string, int, string)}
+@import IfVar :- tsv{resource="IfVar.facts", format=(If_Insn, int, string)}
+@import InterfaceType :- tsv{resource="InterfaceType.facts", format=(InterfaceType)}
+@import LoadArrayIndex :- tsv{resource="LoadArrayIndex.facts", format=(string, int, string, string, string)}
+@import LoadInstanceField :- tsv{resource="LoadInstanceField.facts", format=(string, int, string, string, string, string)}
+@import LoadStaticField :- tsv{resource="LoadStaticField.facts", format=(string, int, string, string, string)}
+@import LookupSwitch :- tsv{resource="LookupSwitch.facts", format=(string, int, string, string)}
+@import LookupSwitch-DefaultTarget :- tsv{resource="Switch_Insn.facts", format=(string, int)}
+@import LookupSwitch-Target :- tsv{resource="Switch_Insn.facts", format=(string, int, int)}
+@import Method :- tsv{resource="Method.facts", format=(string, string, string, string, string, string, int)}
+@import MethodHandleConstant :- tsv{resource="MethodHandleConstant.facts", format=(string, string, string, string, int)}
+@import MethodInvocation-Line :- tsv{resource="MethodInvocation-Line.facts", format=(string, int)}
+@import MethodTypeConstant :- tsv{resource="MethodTypeConstant.facts", format=(string, int, string, string)}
+@import MethodTypeConstantParam :- tsv{resource="MethodTypeConstantParam.facts", format=(string, int, string)}
+@import Method-DeclaresException :- tsv{resource="Method-DeclaresException.facts", format=(string, string)}
+@import Method-Modifier :- tsv{resource="Method-Modifier.facts", format=(string, string)}
+@import NativeLibEntryPoint :- tsv{resource="NativeLibEntryPoint.facts", format=(string, string, string)}
+@import NativeMethodId :- tsv{resource="NativeMethodId.facts", format=(string, string)}
+@import NativeMethodTypeCandidate :- tsv{resource="NativeMethodTypeCandidate.facts", format=(string, string, string, int)}
+@import NativeNameCandidate :- tsv{resource="NativeNameCandidate.facts", format=(string, string, string, int)}
+@import NativeReturnVar :- tsv{resource="NativeReturnVar.facts", format=(string, string)}
+@import NativeXRef :- tsv{resource="NativeXRef.facts", format=(string, string, string, int)}
+@import NormalHeap :- tsv{resource="NormalHeap.facts", format=(string, string)}
+@import OperatorAt :- tsv{resource="OperatorAt.facts", format=(string, string)}
+@import PolymorphicInvocation :- tsv{resource="PolymorphicInvocation.facts", format=(string, string)}
+@import Return :- tsv{resource="Return.facts", format=(ReturnNonvoid_Insn, int, string, string)}
+@import ReturnVoid :- tsv{resource="ReturnVoid.facts", format=(string, int, string)}
+@import SpecialMethodInvocation :- tsv{resource="SpecialMethodInvocation.facts", format=(string, int, string, string, string, string)}
+@import StaticMethodInvocation :- tsv{resource="StaticMethodInvocation.facts", format=(string, int, string, string)}
+@import StoreArrayIndex :- tsv{resource="StoreArrayIndex.facts", format=(string, int, string, string, string)}
+@import StoreInstanceField :- tsv{resource="StoreInstanceField.facts", format=(string, int, string, string, string, string)}
+@import StoreStaticField :- tsv{resource="StoreStaticField.facts", format=(string, int, string, string, string)}
+@import StringConstant :- tsv{resource="StringConstant.facts", format=(string)}
+@import StringRaw :- tsv{resource="StringRaw.facts", format=(symbol, symbol)}
+@import SuperMethodInvocation :- tsv{resource="SuperMethodInvocation.facts", format=(string, int, string, string, string)}
+@import TableSwitch :- tsv{resource="TableSwitch.facts", format=(string, int, string, string)}
+@import TableSwitch-Default :- tsv{resource="Switch_Insn.facts", format=(string, int)}
+@import TableSwitch-Target :- tsv{resource="Switch_Insn.facts", format=(string, int, int)}
+@import ThisVar :- tsv{resource="Method.facts", format=(string, string)}
+@import Throw :- tsv{resource="Throw.facts", format=(string, int, string, string)}
+@import ThrowNull :- tsv{resource="ThrowNull.facts", format=(string, int, string)}
+
+
+% requires extended facts 
+
+
+
+% extended Facts:
+
+Throw(?insn, ?var) :-
+	isThrow_Insn(?insn),
+	Throw_Var(?insn, ?var).
+
+Switch_DefaultTarget(?instruction, ?target) :-
+  _TableSwitch_DefaultTarget(?instruction, ?target).
+
+Switch_DefaultTarget(?instruction, ?target) :-
+  _LookupSwitch_DefaultTarget(?instruction, ?target).
+
+isInstruction(?i) :-
+  isThrow_Insn(?i) ; isGoto_Insn(?i) ; isIf_Insn(?i) ; isSwitch_Insn(?i) ; isMonitorInstruction(?i) ;
+  isFieldInstruction(?i) ; isArrayInstruction(?i) ; isAssignInstruction(?i) ;
+  isReturnInstruction(?i) ; isMethodInvocation(?i) ; isUnsupportedInstruction(?i).
+
+Switch_Target(?instruction, ?value, ?target) :-
+  _TableSwitch_Target(?instruction, ?value, ?target).
+
+Switch_Target(?instruction, ?value, ?target) :-
+  _LookupSwitch_Target(?instruction, ?value, ?target).
+
+isSwitch_Insn(?i) :- isTableSwitch_Insn(?i) ; isLookupSwitch_Insn(?i).
+
+
+isReturnInstruction(?i) :- isReturnVoid_Insn(?i) ; isReturnNonvoid_Insn(?i).
+
+
+isAssignHeapAllocation_Insn(?instruction),
+Instruction_Index(?instruction, ?index),
+Instruction_Line(?instruction, ?linenumber),
+Instruction_Method(?instruction, ?string),
+AssignInstruction_To(?instruction, ?to),
+AssignHeapAllocation_Heap(?instruction, ?heap) :-
+  _AssignHeapAllocation(?instruction, ?index, ?heap, ?to, ?string, ?linenumber).
+
+isAssignLocal_Insn(?instruction),
+Instruction_Index(?instruction, ?index),
+Instruction_Method(?instruction, ?string),
+AssignLocal_From(?instruction, ?from),
+AssignInstruction_To(?instruction, ?to) :-
+  _AssignLocal(?instruction, ?index, ?from, ?to, ?string).
+
+isAssignBinop_Insn(?instruction),
+Instruction_Index(?instruction, ?index),
+Instruction_Method(?instruction, ?string),
+AssignInstruction_To(?instruction, ?to) :-
+  _AssignBinop(?instruction, ?index, ?to, ?string).
+
+isAssignUnop_Insn(?instruction),
+Instruction_Index(?instruction, ?index),
+Instruction_Method(?instruction, ?string),
+AssignInstruction_To(?instruction, ?to) :-
+  _AssignUnop(?instruction, ?index, ?to, ?string).
+
+isAssignCast_Insn(?instruction),
+Instruction_Index(?instruction, ?index),
+Instruction_Method(?instruction, ?string),
+AssignCast_Type(?instruction, ?type),
+AssignCast_From(?instruction, ?from),
+AssignInstruction_To(?instruction, ?to) :-
+  _AssignCast(?instruction, ?index, ?from, ?to, ?type, ?string).
+
+isAssignCastNumConstant_Insn(?instruction),
+Instruction_Index(?instruction, ?index),
+Instruction_Method(?instruction, ?string),
+AssignCast_Type(?instruction, ?type),
+AssignCastNumConstant_Id(?instruction, ?const),
+AssignInstruction_To(?instruction, ?to) :-
+  _AssignCastNumConstant(?instruction, ?index, ?const, ?to, ?type, ?string).
+
+isAssignCastNull_Insn(?instruction),
+Instruction_Index(?instruction, ?index),
+Instruction_Method(?instruction, ?string),
+AssignCast_Type(?instruction, ?type),
+AssignInstruction_To(?instruction, ?to) :-
+  _AssignCastNull(?instruction, ?index, ?to, ?type, ?string).
+
+isNumConstant(?const),
+isAssignNumConstant_Insn(?instruction),
+Instruction_Index(?instruction, ?index),
+Instruction_Method(?instruction, ?string),
+AssignNumConstant_Id(?instruction, ?const),
+AssignInstruction_To(?instruction, ?to) :-
+  _AssignNumConstant(?instruction, ?index, ?const, ?to, ?string).
+
+isAssignNull_Insn(?instruction),
+Instruction_Index(?instruction, ?index),
+Instruction_Method(?instruction, ?string),
+AssignInstruction_To(?instruction, ?to) :-
+  _AssignNull(?instruction, ?index, ?to, ?string).
+
+isAssignInstanceOf_Insn(?instruction),
+Instruction_Index(?instruction, ?index),
+Instruction_Method(?instruction, ?string),
+AssignInstanceOf_From(?instruction, ?from),
+AssignInstanceOf_Type(?instruction, ?type),
+AssignInstruction_To(?instruction, ?to) :-
+  _AssignInstanceOf(?instruction, ?index, ?from, ?to, ?type, ?string).
+
+
+isEnterMonitor_Insn(?instruction),
+Instruction_Index(?instruction, ?index),
+Instruction_Method(?instruction, ?string),
+EnterMonitor_Var(?instruction, ?var) :-
+  _EnterMonitor(?instruction, ?index, ?var, ?string).
+
+isExitMonitor_Insn(?instruction),
+Instruction_Index(?instruction, ?index),
+Instruction_Method(?instruction, ?string),
+ExitMonitor_Var(?instruction, ?var) :-
+  _ExitMonitor(?instruction, ?index, ?var, ?string).
+
+
+
+isMethod(?signature),
+isMethodInvocation(?instruction),
+Instruction_Index(?instruction, ?index),
+Instruction_Method(?instruction, ?string),
+MethodInvocation_Method(?instruction, ?signature) :-
+  _StaticMethodInvocation(?instruction, ?index, ?signature, ?string).
+
+isMethod(?signature),
+isMethodInvocation(?instruction),
+Instruction_Index(?instruction, ?index),
+Instruction_Method(?instruction, ?string),
+MethodInvocation_Method(?instruction, ?signature) :-
+  _SpecialMethodInvocation(?instruction, ?index, ?signature, _, ?string).
+
+isMethod(?signature),
+isMethodInvocation(?instruction),
+Instruction_Index(?instruction, ?index),
+Instruction_Method(?instruction, ?string),
+MethodInvocation_Method(?instruction, ?signature) :-
+  _VirtualMethodInvocation(?instruction, ?index, ?signature, _, ?string).
+
+
+isMethod(?signature),
+isMethodInvocation(?instruction),
+Instruction_Index(?instruction, ?index),
+Instruction_Method(?instruction, ?string),
+MethodInvocation_Method(?instruction, ?signature),
+isSuperMethodInvocation_Insn(?instruction),
+SuperMethodInvocation_Base(?instruction, ?base) :-
+  _SuperMethodInvocation(?instruction, ?index, ?signature, ?base, ?string).
+
+isDynamicMethodInvocation_Insn(?instruction),
+Instruction_Index(?instruction, ?index),
+Instruction_Method(?instruction, ?string),
+DynamicMethodInvocation_Bootstrap(?instruction, ?bootSignature),
+DynamicMethodInvocation_DynName(?instruction, ?dynName),
+DynamicMethodInvocation_DynReturnType(?instruction, ?dynRetType),
+DynamicMethodInvocation_DynParamTypes(?instruction, ?dynParamTypes),
+DynamicMethodInvocation_HandleTag(?instruction, ?tag),
+DynamicMethodInvocation_DynArity(?instruction, ?dynArity) :-
+  _DynamicMethodInvocation(?instruction, ?index, ?bootSignature, ?dynName, ?dynRetType, ?dynArity, ?dynParamTypes, ?tag, ?string).
+  
+
+
+isThrow_Insn(?instruction),
+Instruction_Index(?instruction, ?index),
+Instruction_Method(?instruction, ?string),
+Throw(?instruction, ?var),
+Throw_Var(?instruction, ?var) :-
+  _Throw(?instruction, ?index, ?var, ?string).
+
+isThrowNull_Insn(?instruction),
+Instruction_Index(?instruction, ?index),
+Instruction_Method(?instruction, ?string) :-
+  _ThrowNull(?instruction, ?index, ?string).
+
+isExceptionHandler(?handler),
+isInstruction(?handler),
+Instruction_Index(?handler, ?index),
+Instruction_Method(?handler, ?string),
+ExceptionHandler_Method(?handler, ?string),
+ExceptionHandler_Index(?handler, ?index),
+ExceptionHandler_Type(?handler, ?type),
+ExceptionHandler_Begin(?handler, ?begin),
+ExceptionHandler_End(?handler, ?end) :-
+  _ExceptionHandler(?handler, ?string, ?index, ?type, ?begin, ?end).
+
+isStoreInstanceField_Insn(?instruction),
+Instruction_Index(?instruction, ?index),
+Instruction_Method(?instruction, ?string),
+FieldInstruction_Signature(?instruction, ?signature),
+StoreInstanceField_Base(?instruction, ?base),
+StoreInstanceField_From(?instruction, ?from) :-
+  _StoreInstanceField(?instruction, ?index, ?from, ?base, ?signature, ?string).
+
+isLoadInstanceField_Insn(?instruction),
+Instruction_Index(?instruction, ?index),
+Instruction_Method(?instruction, ?string),
+FieldInstruction_Signature(?instruction, ?signature),
+LoadInstanceField_Base(?instruction, ?base),
+LoadInstanceField_To(?instruction, ?to) :-
+  _LoadInstanceField(?instruction, ?index, ?to, ?base, ?signature, ?string).
+
+isStoreStaticField_Insn(?instruction),
+Instruction_Index(?instruction, ?index),
+Instruction_Method(?instruction, ?string),
+FieldInstruction_Signature(?instruction, ?signature),
+StoreStaticField_From(?instruction, ?from) :-
+  _StoreStaticField(?instruction, ?index, ?from, ?signature, ?string).
+
+isLoadStaticField_Insn(?instruction),
+Instruction_Index(?instruction, ?index),
+Instruction_Method(?instruction, ?string),
+FieldInstruction_Signature(?instruction, ?signature),
+LoadStaticField_To(?instruction, ?to) :-
+  _LoadStaticField(?instruction, ?index, ?to, ?signature, ?string).
+
+isStoreArrayIndex_Insn(?instruction),
+Instruction_Index(?instruction, ?index),
+Instruction_Method(?instruction, ?string),
+StoreArrayIndex_Base(?instruction, ?base),
+StoreArrayIndex_From(?instruction, ?from) :-
+  _StoreArrayIndex(?instruction, ?index, ?from, ?base, ?string).
+
+isLoadArrayIndex_Insn(?instruction),
+Instruction_Index(?instruction, ?index),
+Instruction_Method(?instruction, ?string),
+LoadArrayIndex_Base(?instruction, ?base),
+LoadArrayIndex_To(?instruction, ?to) :-
+  _LoadArrayIndex(?instruction, ?index, ?to, ?base, ?string).
+
+isGoto_Insn(?instruction),
+Instruction_Index(?instruction, ?index),
+Instruction_Method(?instruction, ?string),
+Goto_Target(?instruction, ?to) :-
+  _Goto(?instruction, ?index, ?to, ?string).
+
+isIf_Insn(?instruction),
+Instruction_Index(?instruction, ?index),
+Instruction_Method(?instruction, ?string),
+If_Target(?instruction, ?to) :-
+  _If(?instruction, ?index, ?to, ?string).
+
+isTableSwitch_Insn(?instruction),
+Instruction_Index(?instruction, ?index),
+Instruction_Method(?instruction, ?string),
+Switch_Key(?instruction, ?key) :-
+  _TableSwitch(?instruction, ?index, ?key, ?string).
+
+isLookupSwitch_Insn(?instruction),
+Instruction_Index(?instruction, ?index),
+Instruction_Method(?instruction, ?string),
+Switch_Key(?instruction, ?key) :-
+  _LookupSwitch(?instruction, ?index, ?key, ?string).
+
+isReturnNonvoid_Insn(?instruction),
+Instruction_Index(?instruction, ?index),
+Instruction_Method(?instruction, ?string),
+ReturnNonvoid_Var(?instruction, ?var) :-
+  _Return(?instruction, ?index, ?var, ?string).
+
+isReturnVoid_Insn(?instruction),
+Instruction_Index(?instruction, ?index),
+Instruction_Method(?instruction, ?string) :-
+  _ReturnVoid(?instruction, ?index, ?string).
+
+isAssignPhantomInvoke(?instruction),
+Instruction_Index(?instruction, ?index),
+Instruction_Method(?instruction, ?string) :-
+  _AssignPhantomInvoke(?instruction, ?index, ?string).
+
+isBreakpointStmt(?instruction),
+Instruction_Index(?instruction, ?index),
+Instruction_Method(?instruction, ?string) :-
+  _BreakpointStmt(?instruction, ?index, ?string).
+
+Instruction_Index(?instruction, ?index),
+Instruction_Method(?instruction, ?string) :-
+  _UnsupportedInstruction(?instruction, ?index, ?string).
+
+
+@export Instruction_Method :- tsv{resource="Instruction_Method.csv",format=(string, string)} .
+@export Instruction_Index :- tsv{resource="Instruction_Index.csv",format=(string, int)} .
+@export AssignInstruction_To :- tsv{resource="AssignInstruction_To.csv",format=(string, string)} .
+@export isReturnInstruction :- tsv{resource="isReturnInstruction.csv",format=(string)} .
+@export isAssignLocal_Insn :- tsv{resource="isAssignLocal_Insn.csv",format=(string)} .
+@export isThrow_Insn :- tsv{resource="isThrow_Insn.csv",format=(string)} .
+@export isSwitch_Insn :- tsv{resource="isSwitch_Insn.csv",format=(string)} .
+@export isGoto_Insn :- tsv{resource="isGoto_Insn.csv",format=(string)} .
+@export ExceptionHandler_Method :- tsv{resource="ExceptionHandler_Method.csv",format=(string, string)} .
+@export ExceptionHandler_Index :- tsv{resource="ExceptionHandler_Index.csv",format=(string, int)} .
+@export Switch_Target :- tsv{resource="Switch_Target.csv",format=(string, int, int)} .
+@export If_Target :- tsv{resource="If_Target.csv",format=(string, int)} .
+@export Goto_Target :- tsv{resource="Goto_Target.csv",format=(string, int)} .
+@export isInstruction :- tsv{resource="isInstruction.csv",format=(string)} .
+@export isIf_Insn :- tsv{resource="isIf_Insn.csv",format=(string)} .
+@export Switch_DefaultTarget :- tsv{resource="Switch_DefaultTarget.csv",format=(string, int)} .
+@export Throw :- tsv{resource="Throw.facts",format=(string, int, string, string)} .
+
+
+@export AssignBinop :- tsv{resource="AssignBinop.facts", format=(string`, int, string, string)}
+@export AssignCast :- tsv{resource="AssignCast.facts", format=(string, int, string, string, string, string)}
+@export AssignCastNull :- tsv{resource="AssignCastNull.facts", format=(string, int, string, string, string)}
+@export AssignCastNumConstant :- tsv{resource="AssignCastNumConstant.facts", format=(string, int, string, string, string, string)}
+@export AssignHeapAllocation :- tsv{resource="AssignHeapAllocation.facts", format=(string, int, string, string, string, int)}
+@export AssignInstanceOf :- tsv{resource="AssignInstanceOf.facts", format=(string, int, string, string, string, string)}
+@export AssignLocal :- tsv{resource="AssignLocal.facts", format=(string, int, string, string, string, string)}
+@export AssignNull :- tsv{resource="AssignNull.facts", format=(string, int, string, string)}
+@export AssignNumConstant :- tsv{resource="AssignNumConstant.facts", format=(string, int, string, string, string)}
+@export AssignOperFrom :- tsv{resource="AssignOperFrom.facts", format=(string, int, string, string)}
+@export AssignOperFromConstant :- tsv{resource="AssignOperFromConstant.facts", format=(string, int, string, string)}
+@export AssignPhantomInvoke :- tsv{resource="AssignPhantomInvoke.facts", format=(string, int, string)}
+@export AssignReturnValue :- tsv{resource="AssignReturnValue.facts", format=(string, string)}
+@export AssignUnop :- tsv{resource="AssignUnop.facts", format=(string, int, string, string, string)}
+@export BootstrapParam :- tsv{resource="BootstrapParam.facts", format=(int, string, string)}
+@export BreakpointStmt :- tsv{resource="BreakpointStmt.facts", format=(string, int, string)}
+@export ClassArtifact :- tsv{resource="Class-Artifact.facts", format=(string, string, string, int)}
+@export ClassHeap :- tsv{resource="ClassHeap.facts", format=(string, string)}
+@export ClassModifier :- tsv{resource="ClassModifier.facts", format=(string, string)}
+@export ClassType :- tsv{resource="Method.facts", format=(string)}
+@export ComponentType :- tsv{resource="ArrayType.facts", format=(string, string)}
+@export DirectSuperclass :- tsv{resource="DirectSuperclass.facts", format=(string, string)}
+@export DirectSuperinterface :- tsv{resource="DirectSuperinterface.facts", format=(string, string)}
+@export DummyIfVar :- tsv{resource="DummyIfVar.facts", format=(If_Insn, string)}
+@export DynamicMethodInvocation :- tsv{resource="DynamicMethodInvocation.facts", format=(string, int, string, string, string, int, string, string)}
+@export DynamicMethodInvocation-ParamType :- tsv{resource="DynamicMethodInvocation-ParamType.facts", format=(string, int, Type)}
+@export EmptyArray :- tsv{resource="EmptyArray.facts", format=(HeapAllocation)}
+@export EnterMonitor :- tsv{resource="EnterMonitor.facts", format=(EnterMonitor_Insn, int, string, string)}
+@export ExceptionHandler :- tsv{resource="ExceptionHandler.facts", format=(string, string, int, string, int, int)}
+@export ExceptionHandler-FormalParam :- tsv{resource="ExceptionHandler-FormalParam.facts", format=(string, string)}
+@export ExitMonitor :- tsv{resource="ExitMonitor.facts", format=(string, int, string, string)}
+@export Field :- tsv{resource="Field.facts", format=(Field, string, string, string)}
+@export Field-Modifier :- tsv{resource="Field-Modifier.facts", format=(string, string)}
+@export FormalParam :- tsv{resource="FormalParam.facts", format=(int, string, string)}
+@export Goto :- tsv{resource="Goto.facts", format=(Goto_Insn, int, int, string)}
+@export If :- tsv{resource="If.facts", format=(If_Insn, int, int, string)}
+@export IfConstant :- tsv{resource="IfConstant.facts", format=(string, int, string)}
+@export IfVar :- tsv{resource="IfVar.facts", format=(If_Insn, int, string)}
+@export InterfaceType :- tsv{resource="InterfaceType.facts", format=(InterfaceType)}
+@export LoadArrayIndex :- tsv{resource="LoadArrayIndex.facts", format=(string, int, string, string, string)}
+@export LoadInstanceField :- tsv{resource="LoadInstanceField.facts", format=(string, int, string, string, string, string)}
+@export LoadStaticField :- tsv{resource="LoadStaticField.facts", format=(string, int, string, string, string)}
+@export LookupSwitch :- tsv{resource="LookupSwitch.facts", format=(string, int, string, string)}
+@export LookupSwitch-DefaultTarget :- tsv{resource="Switch_Insn.facts", format=(string, int)}
+@export LookupSwitch-Target :- tsv{resource="Switch_Insn.facts", format=(string, int, int)}
+@export Method :- tsv{resource="Method.facts", format=(string, string, string, string, string, string, int)}
+@export MethodHandleConstant :- tsv{resource="MethodHandleConstant.facts", format=(string, string, string, string, int)}
+@export MethodInvocation-Line :- tsv{resource="MethodInvocation-Line.facts", format=(string, int)}
+@export MethodTypeConstant :- tsv{resource="MethodTypeConstant.facts", format=(string, int, string, string)}
+@export MethodTypeConstantParam :- tsv{resource="MethodTypeConstantParam.facts", format=(string, int, string)}
+@export Method-DeclaresException :- tsv{resource="Method-DeclaresException.facts", format=(string, string)}
+@export Method-Modifier :- tsv{resource="Method-Modifier.facts", format=(string, string)}
+@export NativeLibEntryPoint :- tsv{resource="NativeLibEntryPoint.facts", format=(string, string, string)}
+@export NativeMethodId :- tsv{resource="NativeMethodId.facts", format=(string, string)}
+@export NativeMethodTypeCandidate :- tsv{resource="NativeMethodTypeCandidate.facts", format=(string, string, string, int)}
+@export NativeNameCandidate :- tsv{resource="NativeNameCandidate.facts", format=(string, string, string, int)}
+@export NativeReturnVar :- tsv{resource="NativeReturnVar.facts", format=(string, string)}
+@export NativeXRef :- tsv{resource="NativeXRef.facts", format=(string, string, string, int)}
+@export NormalHeap :- tsv{resource="NormalHeap.facts", format=(string, string)}
+@export OperatorAt :- tsv{resource="OperatorAt.facts", format=(string, string)}
+@export PolymorphicInvocation :- tsv{resource="PolymorphicInvocation.facts", format=(string, string)}
+@export Return :- tsv{resource="Return.facts", format=(ReturnNonvoid_Insn, int, string, string)}
+@export ReturnVoid :- tsv{resource="ReturnVoid.facts", format=(string, int, string)}
+@export SpecialMethodInvocation :- tsv{resource="SpecialMethodInvocation.facts", format=(string, int, string, string, string, string)}
+@export StaticMethodInvocation :- tsv{resource="StaticMethodInvocation.facts", format=(string, int, string, string)}
+@export StoreArrayIndex :- tsv{resource="StoreArrayIndex.facts", format=(string, int, string, string, string)}
+@export StoreInstanceField :- tsv{resource="StoreInstanceField.facts", format=(string, int, string, string, string, string)}
+@export StoreStaticField :- tsv{resource="StoreStaticField.facts", format=(string, int, string, string, string)}
+@export StringConstant :- tsv{resource="StringConstant.facts", format=(string)}
+@export StringRaw :- tsv{resource="StringRaw.facts", format=(symbol, symbol)}
+@export SuperMethodInvocation :- tsv{resource="SuperMethodInvocation.facts", format=(string, int, string, string, string)}
+@export TableSwitch :- tsv{resource="TableSwitch.facts", format=(string, int, string, string)}
+@export TableSwitch-Default :- tsv{resource="Switch_Insn.facts", format=(string, int)}
+@export TableSwitch-Target :- tsv{resource="Switch_Insn.facts", format=(string, int, int)}
+@export ThisVar :- tsv{resource="Method.facts", format=(string, string)}
+@export Throw :- tsv{resource="Throw.facts", format=(string, int, string, string)}
+@export ThrowNull :- tsv{resource="ThrowNull.facts", format=(string, int, string)}

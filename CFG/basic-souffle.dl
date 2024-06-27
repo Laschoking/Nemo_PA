@@ -1,0 +1,725 @@
+.type Value = symbol
+.type ArrayType = ReferenceType
+.type ClassType = ReferenceType
+.type ExceptionHandler = Instruction
+.type HeapAllocation = Value
+.type Instruction = symbol
+.type InterfaceType = ReferenceType
+.type JVMDescriptor = symbol
+.type MethodDescriptor = symbol
+.type Method = symbol
+.type MethodHandleConstant = HeapAllocation
+.type MethodTypeConstant = HeapAllocation
+.type MethodInvocation = Instruction
+.type MethodType = Value
+.type MethodHandle = Value
+.type Modifier = symbol
+.type NullType = ReferenceType
+.type PrimitiveType = Type
+.type ReferenceType = Type
+.type SuperMethodInvocation_Insn = MethodInvocation
+.type Type = symbol
+.type Var = symbol
+.type VirtualMethodInvocation_Insn = MethodInvocation
+
+.decl ExceptionHandler_InRange(?handler:ExceptionHandler, ?instruction:Instruction)
+.decl ExceptionHandler_Before(?before:ExceptionHandler, ?handler:ExceptionHandler)
+.decl ExceptionHandler_SameInsn_Repr(?insn:Instruction, ?repr:ExceptionHandler)
+.decl ExceptionHandler_SameInsn_PartialOrder(?h1:ExceptionHandler, ?h2:ExceptionHandler, ?insn:Instruction)
+.decl ExceptionHandler_SameBlock_Repr(?handler:ExceptionHandler, ?repr:ExceptionHandler)
+.decl ExceptionHandler_SameBlock_PartialOrder(?repr:ExceptionHandler, ?handler:ExceptionHandler)
+.decl ExceptionHandler_TypeIsCaught(?type:Type, ?block:ExceptionHandler)
+.decl ExceptionHandler_Impossible(?type:Type, ?h2:ExceptionHandler, ?insn:Instruction)
+.decl AllocatedObjectSupportsFinalize(?heap:HeapAllocation, ?inmethod:Method)
+.decl OverridesFinalize(?class:Type)
+.decl MethodLookup(?simplename:symbol, ?descriptor:MethodDescriptor, ?type:ReferenceType, ?method:Method)
+.decl _MethodLookup_WithLen(?simplename:symbol, ?descriptor:MethodDescriptor, ?type:ReferenceType, ?method:Method, ?len:number)
+.decl _MethodLookup_MoreThanOne(?simplename:symbol, ?descriptor:MethodDescriptor, ?type:ReferenceType)
+.decl _MethodLookup_ClassResolution(?simplename:symbol, ?descriptor:MethodDescriptor, ?type:ReferenceType, ?method:Method)
+.decl _MethodLookup_ClosestInterface(?simplename:symbol, ?descriptor:MethodDescriptor, ?type:ReferenceType, ?method:Method)
+.decl _MethodLookup_MultiClosestInterfaces(?simplename:symbol, ?descriptor:MethodDescriptor, ?type:ReferenceType)
+.decl _MethodLookup_ImpossibleClosest(?simplename:symbol, ?descriptor:MethodDescriptor, ?type:ReferenceType, ?method:Method)
+.decl MethodImplemented(?simplename:symbol, ?descriptor:MethodDescriptor, ?type:ReferenceType, ?method:Method)
+.decl MethodOverridesOther(?methodSub:Method, ?methodSuper:Method)
+.decl _BridgeMethod(?bridge:Method, ?name:symbol, ?type:Type)
+.decl MethodMightBeCovariantBridge(?bridge:Method, ?meth:Method)
+.decl MethodNotCovariantBridge(?meth1:Method, ?meth2:Method)
+.decl Method_CovariantBridge(?bridge:Method, ?cometh:Method)
+.decl MethodImplementedModuloCovariance(?simplename:symbol, ?descriptor:MethodDescriptor, ?type:ReferenceType, ?method:Method)
+.decl ResolveInvocation(?type:Type, ?invocation:MethodInvocation, ?tomethod:Method)
+.decl VirtualMethodInvocation_BaseType(?invocation:MethodInvocation, ?type:Type)
+.decl ConcreteMethodDeclared(?meth:Method, ?class:ClassType)
+.decl MethodDeclaredOrInherited(?meth:Method, ?class:ReferenceType)
+.decl MethodsOfSameOrSuperType(?method1:Method, ?method2:Method)
+.decl MethodsOfSameNonSDKType(?method1:Method, ?method2:Method, ?class:Type)
+.decl Superinterface(?k:InterfaceType, ?c:ReferenceType)
+.decl DirectSubclass(?a:ClassType, ?c:ClassType)
+.decl Subclass(?c:ClassType, ?a:ClassType)
+.decl Superclass(?c:ClassType, ?a:ClassType)
+.decl SubtypeOf(?subtype:Type, ?type:Type)
+.decl SupertypeOf(?supertype:Type, ?type:Type)
+.decl Unsubclassable(?type:ReferenceType)
+.decl Subclassable(?type:ReferenceType)
+.decl SubtypeOfDifferent(?subtype:Type, ?type:Type)
+.decl ClassConstructor(?method:Method, ?type:ClassType)
+.decl Class_InterestingSubtype(?class:ReferenceType, ?subClass:ReferenceType)
+.decl _Valid_Type(?type:ReferenceType)
+.decl PossibleNativeCodeTargetMethod(?method:Method, ?function:symbol, ?file:symbol)
+.decl PossibleNativeCodeTargetMethodLocalized(?method:Method, ?function:symbol, ?file:symbol)
+.decl OverloadedJNIMethod(?javaMethod:Method, ?type:ReferenceType, ?name:symbol, ?descriptor:symbol)
+.decl JNIMethod_NativeId(?javaMethod:Method, ?nativeId:symbol)
+.decl AnyMainMethodDeclaration(?method:Method, ?type:ClassType)
+.decl MainMethodDeclaration(?method:Method)
+
+.decl ExceptionHandler_Method(?handler:symbol, ?inmethod:symbol)
+.decl ExceptionHandler_Index(?handler:symbol, ?index:number)
+.decl Instruction_Method(?insn:symbol, ?inMethod:symbol)
+.decl Instruction_Index(?insn:symbol, ?index:number)
+.decl Instruction_Next(?i:symbol, ?next:symbol)
+.decl Instruction_Prev(?i:symbol, ?prev:symbol)
+.decl Method_FirstInstruction(?method:symbol, ?insn:symbol)
+
+.decl AssignHeapAllocation(?heap:HeapAllocation, ?to:Var, ?inmethod:Method)
+.decl ClassModifier(?mod:Modifier, ?class:ReferenceType)
+.decl ComponentType(?arrayType:ArrayType, ?componentType:Type)
+.decl ConcreteClass(?ref:ClassType)
+.decl DirectSuperclass(?class:ClassType, ?superclass:ClassType)
+.decl DirectSuperinterface(?ref:ReferenceType, ?interface:InterfaceType)
+.decl FormalParam(?index:number, ?method:Method, ?var:Var)
+.decl isArrayType(?t:ArrayType)
+.decl isClassType(?t:ClassType)
+.decl isExceptionHandler(?handler:ExceptionHandler)
+.decl isIntegerType(?type:Type)
+.decl isInterfaceType(?t:InterfaceType)
+.decl isMethod(?m:Method)
+.decl isPrimitiveType(?t:PrimitiveType)
+.decl isReferenceType(?t:ReferenceType)
+.decl isType(?t:Type)
+.decl MainClass(?class:ClassType)
+.decl SuperMethodInvocation(?invocation:MethodInvocation, ?signature:Method, ?inmethod:Method)
+.decl VirtualMethodInvocation(?invocation:MethodInvocation, ?signature:Method, ?inmethod:Method)
+
+.decl ExceptionHandler_Begin(?handler:ExceptionHandler, ?index:number)
+.decl ExceptionHandler_End(?handler:ExceptionHandler, ?index:number)
+.decl ExceptionHandler_Previous(?handler:ExceptionHandler, ?previous:ExceptionHandler)
+.decl ExceptionHandler_Type(?handler:ExceptionHandler, ?type:Type)
+.decl HeapAllocation_Type(?heap:HeapAllocation, ?type:ReferenceType)
+.decl Method_DeclaringType(?method:Method, ?declaringType:ReferenceType)
+.decl Method_Descriptor(?method:Method, ?descriptor:MethodDescriptor)
+.decl Method_JVMDescriptor(?method:Method, ?descriptor:JVMDescriptor)
+.decl Method_Modifier(?mod:Modifier, ?method:Method)
+.decl Method_ReturnType(?method:Method, ?returnType:Type)
+.decl Method_SimpleName(?method:Method, ?simpleName:symbol)
+.decl _NativeMethodId(?javaMethod:Method, ?nativeId:symbol)
+.decl _NativeMethodTypeCandidate(?lib:symbol, ?function:symbol, ?descriptor:symbol, ?offset2:number)
+.decl _NativeNameCandidate(?lib:symbol, ?function:symbol, ?name:symbol, ?offset1:number)
+.decl _NativeXRef(?string:symbol, ?lib:symbol, ?function:symbol, ?dataAddr:number)
+.decl SuperMethodInvocation_Base(?invocation:SuperMethodInvocation_Insn, ?base:Var)
+.decl SuperMethodInvocation_Descriptor(?invocation:MethodInvocation, ?descriptor:MethodDescriptor)
+.decl SuperMethodInvocation_SimpleName(?invocation:MethodInvocation, ?simplename:symbol)
+.decl Type_byte(?t:PrimitiveType)
+.decl Type_char(?t:PrimitiveType)
+.decl Type_double(?t:PrimitiveType)
+.decl Type_float(?t:PrimitiveType)
+.decl Type_int(?t:PrimitiveType)
+.decl Type_long(?t:PrimitiveType)
+.decl Type_null(?t:NullType)
+.decl Type_short(?t:PrimitiveType)
+.decl _Var_Type(?var:Var, ?type:Type)
+.decl Var_Type(?var:Var, ?type:Type)
+.decl VirtualMethodInvocation_Base(?invocation:VirtualMethodInvocation_Insn, ?base:Var)
+.decl VirtualMethodInvocation_Descriptor(?invocation:MethodInvocation, ?descriptor:MethodDescriptor)
+.decl VirtualMethodInvocation_SimpleName(?invocation:MethodInvocation, ?simplename:symbol)
+
+.input AssignHeapAllocation(filename="AssignHeapAllocation.csv")
+.input ClassModifier(filename="ClassModifier.csv")
+.input ComponentType(filename="ComponentType.csv")
+.input ConcreteClass(filename="ConcreteClass.csv")
+.input DirectSuperclass(filename="DirectSuperclass.csv")
+.input DirectSuperinterface(filename="DirectSuperinterface.csv")
+.input ExceptionHandler_Begin(filename="ExceptionHandler_Begin.csv")
+.input ExceptionHandler_End(filename="ExceptionHandler_End.csv")
+.input ExceptionHandler_Index(filename="ExceptionHandler_Index.csv")
+.input ExceptionHandler_Method(filename="ExceptionHandler_Method.csv")
+.input ExceptionHandler_Previous(filename="ExceptionHandler_Previous.csv")
+.input ExceptionHandler_Type(filename="ExceptionHandler_Type.csv")
+.input FormalParam(filename="FormalParam.csv")
+.input HeapAllocation_Type(filename="HeapAllocation_Type.csv")
+.input Instruction_Index(filename="Instruction_Index.csv")
+.input Instruction_Method(filename="Instruction_Method.csv")
+.input Instruction_Next(filename="Instruction_Next.csv")
+.input Instruction_Prev(filename="Instruction_Prev.csv")
+.input isArrayType(filename="isArrayType.csv")
+.input isClassType(filename="isClassType.csv")
+.input isExceptionHandler(filename="isExceptionHandler.csv")
+.input isInterfaceType(filename="isInterfaceType.csv")
+.input isMethod(filename="isMethod.csv")
+.input isPrimitiveType(filename="isPrimitiveType.csv")
+.input isReferenceType(filename="isReferenceType.csv")
+.input isType(filename="isType.csv")
+.input MainClass(filename="MainClass.csv")
+.input Method_DeclaringType(filename="Method_DeclaringType.csv")
+.input Method_Descriptor(filename="Method_Descriptor.csv")
+.input Method_FirstInstruction(filename="Method_FirstInstruction.csv")
+.input Method_JVMDescriptor(filename="Method_JVMDescriptor.csv")
+.input Method_Modifier(filename="Method_Modifier.csv")
+.input Method_ReturnType(filename="Method_ReturnType.csv")
+.input Method_SimpleName(filename="Method_SimpleName.csv")
+.input _NativeMethodId(filename="_NativeMethodId.csv")
+.input _NativeMethodTypeCandidate(filename="_NativeMethodTypeCandidate.csv")
+.input _NativeNameCandidate(filename="_NativeNameCandidate.csv")
+.input _NativeXRef(filename="_NativeXRef.csv")
+.input SuperMethodInvocation(filename="SuperMethodInvocation.csv")
+.input SuperMethodInvocation_Base(filename="SuperMethodInvocation_Base.csv")
+.input SuperMethodInvocation_Descriptor(filename="SuperMethodInvocation_Descriptor.csv")
+.input SuperMethodInvocation_SimpleName(filename="SuperMethodInvocation_SimpleName.csv")
+.input Type_byte(filename="Type_byte.csv")
+.input Type_char(filename="Type_char.csv")
+.input Type_double(filename="Type_double.csv")
+.input Type_float(filename="Type_float.csv")
+.input Type_int(filename="Type_int.csv")
+.input Type_long(filename="Type_long.csv")
+.input Type_null(filename="Type_null.csv")
+.input Type_short(filename="Type_short.csv")
+.input _Var_Type(filename="_Var_Type.csv")
+.input Var_Type(filename="Var_Type.csv")
+.input VirtualMethodInvocation(filename="VirtualMethodInvocation.csv")
+.input VirtualMethodInvocation_Base(filename="VirtualMethodInvocation_Base.csv")
+.input VirtualMethodInvocation_Descriptor(filename="VirtualMethodInvocation_Descriptor.csv")
+.input VirtualMethodInvocation_SimpleName(filename="VirtualMethodInvocation_SimpleName.csv")
+
+
+
+ExceptionHandler_TypeIsCaught(?type, ?block) :-
+	ExceptionHandler_InRange(?handler, ?insn),
+	ExceptionHandler_SameInsn_Repr(?insn, ?repr),
+	ExceptionHandler_SameBlock_Repr(?repr, ?block),
+	ExceptionHandler_Type(?handler, ?handlerType),
+	SubtypeOf(?type, ?handlerType),
+	ConcreteClass(?type).
+
+ExceptionHandler_Impossible(?type, ?h2, ?insn) :-
+	ExceptionHandler_InRange(?h1, ?insn),
+	ExceptionHandler_InRange(?h2, ?insn),
+	ExceptionHandler_Before(?h1, ?h2),
+	ExceptionHandler_Type(?h1, ?h1Type),
+	ExceptionHandler_Type(?h2, ?h2Type),
+	SubtypeOf(?type, ?h1Type),
+	SubtypeOf(?type, ?h2Type),
+	ConcreteClass(?type).
+
+ExceptionHandler_InRange(?handler, ?instruction) :-
+	ExceptionHandler_Method(?handler, ?method),
+	Instruction_Method(?instruction, ?method),
+	Instruction_Index(?instruction, ?index),
+	ExceptionHandler_Begin(?handler, ?beginIndex),
+	?beginIndex <= ?index,
+	ExceptionHandler_End(?handler, ?endIndex),
+	?endIndex > ?index.
+
+ExceptionHandler_Before(?previous, ?handler) :-
+	ExceptionHandler_Previous(?handler, ?previous).
+
+ExceptionHandler_Before(?before, ?handler) :-
+	ExceptionHandler_Before(?middle, ?handler),
+	ExceptionHandler_Previous(?middle, ?before).
+ExceptionHandler_SameInsn_PartialOrder(?h1, ?h2, ?insn) :-
+	ExceptionHandler_InRange(?h1, ?insn),
+	ExceptionHandler_InRange(?h2, ?insn),
+	ExceptionHandler_Before(?h1, ?h2).
+
+ExceptionHandler_SameInsn_Repr(?insn, ?handler) :-
+	ExceptionHandler_InRange(?handler, ?insn),
+	!ExceptionHandler_SameInsn_PartialOrder(_, ?handler, ?insn).
+ExceptionHandler_SameBlock_PartialOrder(?h1, ?h2) :-
+	ExceptionHandler_Before(?h1, ?h2),
+	ExceptionHandler_Index(?h1, ?h1Index),
+	ExceptionHandler_Index(?h2, ?h2Index),
+	?h1Index = ?h2Index.
+
+ExceptionHandler_SameBlock_Repr(?handler, ?handler) :-
+	isExceptionHandler(?handler),
+	!ExceptionHandler_SameBlock_PartialOrder(_, ?handler).
+
+ExceptionHandler_SameBlock_Repr(?handler, ?repr) :-
+
+	ExceptionHandler_SameBlock_PartialOrder(?repr, ?handler),
+	!ExceptionHandler_SameBlock_PartialOrder(_, ?repr).
+
+AllocatedObjectSupportsFinalize(?heap, ?inmethod) :-
+    AssignHeapAllocation(?heap, _, ?inmethod),
+    HeapAllocation_Type(?heap, ?class),
+    OverridesFinalize(?class).
+
+OverridesFinalize(?class) :-
+    MethodLookup("finalize", "void()", ?class, ?method),
+    ?method != "<java.lang.Object: void finalize()>".
+
+MethodLookup(?simplename, ?descriptor, ?type, ?method) :-
+    _MethodLookup_WithLen(?simplename, ?descriptor, ?type, ?method, _),
+    !_MethodLookup_MoreThanOne(?simplename, ?descriptor, ?type).
+
+
+MethodLookup(?simplename, ?descriptor, ?type, ?method) :-
+    _MethodLookup_ClassResolution(?simplename, ?descriptor, ?type, ?method).
+
+
+MethodLookup(?simplename, ?descriptor, ?type, ?method) :-
+    _MethodLookup_ClosestInterface(?simplename, ?descriptor, ?type, ?method),
+    !_MethodLookup_MultiClosestInterfaces(?simplename, ?descriptor, ?type).
+
+
+MethodLookup(?simplename, ?descriptor, ?type, ?method) :-
+    _MethodLookup_ClosestInterface(?simplename, ?descriptor, ?type, ?method),
+    !_MethodLookup_ImpossibleClosest(?simplename, ?descriptor, ?type, ?method).
+
+
+_MethodLookup_WithLen(?simplename, ?descriptor, ?type, ?method, 0) :-
+    MethodImplemented(?simplename, ?descriptor, ?type, ?method).
+
+_MethodLookup_WithLen(?simplename, ?descriptor, ?type, ?method, n + 1) :-
+    DirectSuperclass(?type, ?supertype),
+    _MethodLookup_WithLen(?simplename, ?descriptor, ?supertype, ?method, n),
+    !MethodImplemented(?simplename, ?descriptor, ?type, _).
+
+_MethodLookup_WithLen(?simplename, ?descriptor, ?type, ?method, n + 1) :-
+    DirectSuperinterface(?type, ?supertype),
+    _MethodLookup_WithLen(?simplename, ?descriptor, ?supertype, ?method, n),
+    !MethodImplemented(?simplename, ?descriptor, ?type, _).
+
+_MethodLookup_MoreThanOne(?simplename, ?descriptor, ?type) :-
+    _MethodLookup_WithLen(?simplename, ?descriptor, ?type, ?method1, _),
+    _MethodLookup_WithLen(?simplename, ?descriptor, ?type, ?method2, _),
+    ?method1 != ?method2.
+
+_MethodLookup_ClassResolution(?simplename, ?descriptor, ?type, ?method) :-
+    _MethodLookup_MoreThanOne(?simplename, ?descriptor, ?type),
+    _MethodLookup_WithLen(?simplename, ?descriptor, ?type, ?method, _),
+    Method_DeclaringType(?method, ?supertype),
+    isClassType(?supertype).
+
+_MethodLookup_ClosestInterface(?simplename, ?descriptor, ?type, ?method) :-
+    _MethodLookup_MoreThanOne(?simplename, ?descriptor, ?type),
+    ?minLen = min ?len : { _MethodLookup_WithLen(?simplename, ?descriptor, ?type, _, ?len) },
+    _MethodLookup_WithLen(?simplename, ?descriptor, ?type, ?method, ?minLen),
+    !_MethodLookup_ClassResolution(?simplename, ?descriptor, ?type, _).
+
+_MethodLookup_MultiClosestInterfaces(?simplename, ?descriptor, ?type) :-
+    _MethodLookup_ClosestInterface(?simplename, ?descriptor, ?type, ?method1),
+    _MethodLookup_ClosestInterface(?simplename, ?descriptor, ?type, ?method2),
+    ?method1 != ?method2.
+
+_MethodLookup_ImpossibleClosest(?simplename, ?descriptor, ?type, ?method2) :-
+    _MethodLookup_ClosestInterface(?simplename, ?descriptor, ?type, ?method1),
+    _MethodLookup_ClosestInterface(?simplename, ?descriptor, ?type, ?method2),
+    Method_DeclaringType(?method1, ?type1),
+    Method_DeclaringType(?method2, ?type2),
+    SubtypeOf(?type1, ?type2),
+    ?type1 != ?type2.
+
+MethodOverridesOther(?methSub, ?methSuper) :-
+  SubtypeOf(?subtype, ?supertype),
+  Method_DeclaringType(?methSuper, ?supertype),
+  Method_SimpleName(?methSuper, ?simplename),
+  Method_Descriptor(?methSuper, ?descriptor),
+  MethodLookup(?simplename, ?descriptor, ?subtype, ?methSub),
+  ?methSub != ?methSuper.
+
+MethodLookup(?simplename, ?descriptor, ?arraytype, ?method) :-
+    isArrayType(?arraytype),
+    isType(?objectType),
+    MethodImplemented(?simplename, ?descriptor, ?objectType, ?method),
+    ?objectType = "java.lang.Object".
+
+MethodImplemented(?simplename, ?descriptor, ?type, ?method) :-
+    Method_SimpleName(?method, ?simplename),
+    Method_Descriptor(?method, ?descriptor),
+    Method_DeclaringType(?method, ?type),
+    ! Method_Modifier("abstract", ?method).
+
+_BridgeMethod(?bridge, ?name, ?type) :-
+   Method_Modifier("bridge", ?bridge),
+   Method_SimpleName(?bridge, ?name),
+   Method_DeclaringType(?bridge, ?type),
+   ?name != "<clinit>",
+   ?name != "<init>".
+
+MethodMightBeCovariantBridge(?bridge, ?meth) :-
+   Method_SimpleName(?meth, ?name),
+   _BridgeMethod(?bridge, ?name, ?bridgetype),
+
+   Method_DeclaringType(?meth, ?bridgetype),
+   !Method_Modifier("bridge", ?meth).
+
+MethodNotCovariantBridge(?meth1, ?meth2) :-
+   MethodMightBeCovariantBridge(?meth1, ?meth2),
+   FormalParam(?sameIndex, ?meth1, ?formal1),
+   _Var_Type(?formal1, ?type1),
+   FormalParam(?sameIndex, ?meth2, ?formal2),
+   _Var_Type(?formal2, ?type2),
+   ?type1 != ?type2.
+
+MethodNotCovariantBridge(?meth1, ?meth2) :-
+   MethodMightBeCovariantBridge(?meth1, ?meth2),
+   FormalParam(?sameIndex, ?meth1, _),
+   !FormalParam(?sameIndex, ?meth2, _).
+
+MethodNotCovariantBridge(?meth1, ?meth2) :-
+   MethodMightBeCovariantBridge(?meth1, ?meth2),
+   FormalParam(?sameIndex, ?meth2, _),
+   !FormalParam(?sameIndex, ?meth1, _).
+
+
+Method_CovariantBridge(?bridge, ?cometh) :-
+   MethodMightBeCovariantBridge(?bridge, ?cometh),
+   !MethodNotCovariantBridge(?bridge, ?cometh),
+   Method_ReturnType(?bridge, ?retType),
+   Method_ReturnType(?cometh, ?coRetType),
+   SubtypeOfDifferent(?coRetType, ?retType).
+
+
+
+MethodImplementedModuloCovariance(?name, ?descriptor, ?type, ?method) :-
+    MethodImplemented(?name, ?descriptor, ?type, ?method).
+
+MethodImplementedModuloCovariance(?name, ?descriptor, ?type, ?comethod) :-
+    MethodImplementedModuloCovariance(?name, _, ?type, ?comethod),
+    Method_CovariantBridge(?method, ?comethod),
+    Method_SimpleName(?method, ?name),
+    Method_Descriptor(?method, ?descriptor).
+
+VirtualMethodInvocation_BaseType(?invocation, ?basetype) :-
+    VirtualMethodInvocation_Base(?invocation, ?base),
+    Var_Type(?base, ?basetype).
+
+ResolveInvocation(?type, ?invocation, ?tomethod) :-
+    VirtualMethodInvocation_SimpleName(?invocation, ?simplename),
+    VirtualMethodInvocation_Descriptor(?invocation, ?descriptor),
+    VirtualMethodInvocation_BaseType(?invocation, ?basetype),
+    SubtypeOf(?type, ?basetype),
+    MethodLookup(?simplename, ?descriptor, ?type, ?tomethod).
+
+ResolveInvocation(?basetype, ?invocation, ?tomethod) :-
+    SuperMethodInvocation_SimpleName(?invocation, ?simplename),
+    SuperMethodInvocation_Descriptor(?invocation, ?descriptor),
+    SuperMethodInvocation_Base(?invocation, ?base),
+    Var_Type(?base, ?basetype),
+    DirectSuperclass(?basetype, ?supertype),
+    MethodLookup(?simplename, ?descriptor, ?supertype, ?tomethod).
+
+ConcreteMethodDeclared(?meth, ?class) :-
+  isClassType(?class),
+  Method_DeclaringType(?meth, ?class),
+  !Method_Modifier("abstract", ?meth).
+
+MethodDeclaredOrInherited(?meth, ?class) :-
+  Method_DeclaringType(?meth, ?class).
+
+MethodDeclaredOrInherited(?meth, ?class) :-
+  MethodDeclaredOrInherited(?meth, ?superClass),
+  DirectSuperclass(?class, ?superClass).
+
+MethodDeclaredOrInherited(?meth, ?class) :-
+  MethodDeclaredOrInherited(?meth, ?superInterface),
+  !Method_Modifier("abstract", ?meth),
+  DirectSuperinterface(?class, ?superInterface).
+
+MethodsOfSameOrSuperType(?method1, ?method2) :-
+  MethodDeclaredOrInherited(?method1, ?class),
+  MethodDeclaredOrInherited(?method2, ?class).
+
+MethodsOfSameNonSDKType(?method1, ?method2, ?class) :-
+  Method_DeclaringType(?method1, ?class),
+  !match("java.*", ?class),
+  !match("sun.*", ?class),
+  Method_DeclaringType(?method2, ?class).
+
+Superinterface(?k, ?c) :-
+    DirectSuperinterface(?c, ?k).
+Superinterface(?k, ?c) :-
+    DirectSuperinterface(?c, ?j),
+    Superinterface(?k, ?j).
+Superinterface(?k, ?c) :-
+
+    DirectSuperclass(?c, ?super),
+    Superinterface(?k, ?super).
+
+DirectSubclass(?a, ?c) :-
+    DirectSuperclass(?a, ?c).
+Subclass(?c, ?a) :-
+    DirectSubclass(?a, ?c).
+Subclass(?c, ?a) :-
+    Subclass(?b, ?a),
+    DirectSubclass(?b, ?c).
+Superclass(?c, ?a) :-
+    Subclass(?a, ?c).
+
+SupertypeOf(?s, ?t) :-
+    SubtypeOf(?t, ?s).
+SubtypeOf(?s, ?s) :-
+    isClassType(?s).
+
+SubtypeOf(?s, ?t) :-
+    Subclass(?t, ?s).
+SubtypeOf(?s, ?t) :-
+    isClassType(?s),
+    Superinterface(?t, ?s).
+SubtypeOf(?s, ?t) :-
+    isInterfaceType(?s),
+    isType(?t),
+    ?t = "java.lang.Object".
+SubtypeOf(?s, ?s) :-
+    isInterfaceType(?s).
+
+SubtypeOf(?s, ?t) :-
+    isInterfaceType(?s),
+    Superinterface(?t, ?s).
+SubtypeOf(?s, ?t) :-
+    isArrayType(?s),
+    isType(?t),
+    ?t = "java.lang.Object".
+SubtypeOf(?s, ?t) :-
+    isArrayType(?s),
+    isArrayType(?t),
+    ComponentType(?s, ?sc),
+    ComponentType(?t, ?sc),
+    isPrimitiveType(?sc).
+SubtypeOf(?s, ?t) :-
+    ComponentType(?s, ?sc),
+    ComponentType(?t, ?tc),
+    isReferenceType(?sc),
+    isReferenceType(?tc),
+    SubtypeOf(?sc, ?tc).
+SubtypeOf(?s, ?t) :-
+    isArrayType(?s),
+    isInterfaceType(?t),
+    isType(?t),
+    ?t = "java.lang.Cloneable".
+
+SubtypeOf(?s, ?t) :-
+    isArrayType(?s),
+    isInterfaceType(?t),
+    isType(?t),
+    ?t = "java.io.Serializable".
+SubtypeOf(?s, ?t) :-
+    Type_null(?s),
+    isReferenceType(?t),
+    ?t != ?s.
+SubtypeOf(?s, ?t) :-
+    Type_float(?s),
+    Type_double(?t).
+
+SubtypeOf(?s, ?t) :-
+    Type_long(?s),
+    Type_float(?t).
+
+SubtypeOf(?s, ?t) :-
+    Type_int(?s),
+    Type_long(?t).
+
+SubtypeOf(?s, ?t) :-
+    Type_char(?s),
+    Type_int(?t).
+
+SubtypeOf(?s, ?t) :-
+    Type_short(?s),
+    Type_int(?t).
+
+SubtypeOf(?s, ?t) :-
+    Type_byte(?s),
+    Type_short(?t).
+SubtypeOf(?t, ?t) :-
+    isType(?t).
+
+SubtypeOfDifferent(?s, ?t) :-
+    SubtypeOf(?s, ?t),
+    ?s != ?t.
+
+Unsubclassable("java.lang.ClassLoader").
+Unsubclassable("java.lang.SecurityManager").
+
+
+Subclassable(?type) :-
+    ClassModifier("public", ?type),
+    ! ClassModifier("final", ?type),
+    ClassConstructor(?method, ?type),
+    Method_Modifier("public", ?method),
+    ! Unsubclassable(?type).
+
+Subclassable(?type) :-
+    ClassModifier("public", ?type),
+    ! ClassModifier("final", ?type),
+    ClassConstructor(?method, ?type),
+    Method_Modifier("protected", ?method),
+    ! Unsubclassable(?type).
+
+ClassConstructor(method, type) :-
+    isClassType(type),
+    MethodLookup(_, _, type, method),
+    isMethod(method),
+    match(".*<init>.*", method).
+
+Class_InterestingSubtype(?class, ?subClass) :-
+  SubtypeOf(?subClass, ?class),
+  _Valid_Type(?class),
+  _Valid_Type(?subClass).
+
+_Valid_Type(?type) :-
+  isReferenceType(?type),
+  (isClassType(?type) ; isInterfaceType(?type)).
+
+isIntegerType(?type) :-
+  Type_byte(?type) ; Type_short(?type) ; Type_int(?type) ; Type_long(?type).
+
+PossibleNativeCodeTargetMethod(?method, ?function, ?file) :-
+  _NativeMethodTypeCandidate(?file, ?function, ?descriptor, _),
+  _NativeNameCandidate(?file, ?function, ?name, _),
+  Method_SimpleName(?method, ?name),
+  Method_JVMDescriptor(?method, ?descriptor).
+
+PossibleNativeCodeTargetMethod(?method, "<<UNKNOWN>>", ?file) :-
+  _NativeMethodTypeCandidate(?file, ?function, ?descriptor, _),
+  _NativeNameCandidate(?file, ?function, ?name, _),
+  _NativeXRef(?descriptor, ?file, _, ?descriptorRefAddr),
+  _NativeXRef(?name, ?file, _, ?nameRefAddr),
+  Method_SimpleName(?method, ?name),
+  Method_JVMDescriptor(?method, ?descriptor),
+  (?nameRefAddr - ?descriptorRefAddr) <=  15 ,
+  (?descriptorRefAddr - ?nameRefAddr) <=  15 .
+
+PossibleNativeCodeTargetMethodLocalized(?method, ?function, ?file) :-
+  PossibleNativeCodeTargetMethod(?method, ?function, ?file),
+  ?function != "-".
+
+OverloadedJNIMethod(?javaMethod, ?type, ?name, ?descriptor) :-
+  Method_Modifier("native", ?javaMethod),
+  Method_SimpleName(?javaMethod, ?name),
+  Method_Descriptor(?javaMethod, ?descriptor),
+  Method_DeclaringType(?javaMethod, ?type),
+  MethodLookup(?name, _, ?type, ?method1),
+  MethodLookup(?name, _, ?type, ?method2),
+  ?method1 != ?method2.
+
+JNIMethod_NativeId(?javaMethod, ?nativeId) :-
+  _NativeMethodId(?javaMethod, ?nativeId),
+  isMethod(?javaMethod).
+
+JNIMethod_NativeId(?javaMethod, ?nativeId) :-
+  OverloadedJNIMethod(?javaMethod, _, _, ?descriptor),
+  _NativeMethodId(?javaMethod, ?nativeIdBase),
+  ?nativeId = cat(?nativeIdBase, cat("__", ?descriptor)).
+
+AnyMainMethodDeclaration(?method, ?type) :-
+   Method_DeclaringType(?method, ?type),
+   Method_SimpleName(?method, "main"),
+   Method_Descriptor(?method, "void(java.lang.String[])"),
+   Method_Modifier("public", ?method),
+   Method_Modifier("static", ?method).
+
+MainMethodDeclaration(?method) :-
+  MainClass(?type),
+  AnyMainMethodDeclaration(?method, ?type).
+
+.output ExceptionHandler_InRange
+.output ExceptionHandler_Before
+.output ExceptionHandler_SameInsn_Repr
+.output ExceptionHandler_SameInsn_PartialOrder
+.output ExceptionHandler_SameBlock_Repr
+.output ExceptionHandler_SameBlock_PartialOrder
+.output ExceptionHandler_TypeIsCaught
+.output ExceptionHandler_Impossible
+.output AllocatedObjectSupportsFinalize
+.output OverridesFinalize
+.output MethodLookup
+.output _MethodLookup_WithLen
+.output _MethodLookup_MoreThanOne
+.output _MethodLookup_ClassResolution
+.output _MethodLookup_ClosestInterface
+.output _MethodLookup_MultiClosestInterfaces
+.output _MethodLookup_ImpossibleClosest
+.output MethodImplemented
+.output MethodOverridesOther
+.output _BridgeMethod
+.output MethodMightBeCovariantBridge
+.output MethodNotCovariantBridge
+.output Method_CovariantBridge
+.output MethodImplementedModuloCovariance
+.output ResolveInvocation
+.output VirtualMethodInvocation_BaseType
+.output ConcreteMethodDeclared
+.output MethodDeclaredOrInherited
+.output MethodsOfSameOrSuperType
+.output MethodsOfSameNonSDKType
+.output Superinterface
+.output DirectSubclass
+.output Subclass
+.output Superclass
+.output SubtypeOf
+.output SupertypeOf
+.output Unsubclassable
+.output Subclassable
+.output SubtypeOfDifferent
+.output ClassConstructor
+.output Class_InterestingSubtype
+.output _Valid_Type
+.output PossibleNativeCodeTargetMethod
+.output PossibleNativeCodeTargetMethodLocalized
+.output OverloadedJNIMethod
+.output JNIMethod_NativeId
+.output AnyMainMethodDeclaration
+.output MainMethodDeclaration
+.output ExceptionHandler_Method
+.output ExceptionHandler_Index
+.output Instruction_Method
+.output Instruction_Index
+.output Method_FirstInstruction
+.output AssignHeapAllocation
+.output ClassModifier
+.output ComponentType
+.output ConcreteClass
+.output DirectSuperclass
+.output DirectSuperinterface
+.output FormalParam
+.output isArrayType
+.output isClassType
+.output isExceptionHandler
+.output isIntegerType
+.output isInterfaceType
+.output isMethod
+.output isPrimitiveType
+.output isReferenceType
+.output isType
+.output MainClass
+.output SuperMethodInvocation
+.output VirtualMethodInvocation
+.output ExceptionHandler_Begin
+.output ExceptionHandler_End
+.output ExceptionHandler_Previous
+.output ExceptionHandler_Type
+.output HeapAllocation_Type
+.output Method_DeclaringType
+.output Method_Descriptor
+.output Method_JVMDescriptor
+.output Method_Modifier
+.output Method_ReturnType
+.output Method_SimpleName
+.output _NativeMethodId
+.output _NativeMethodTypeCandidate
+.output _NativeNameCandidate
+.output _NativeXRef
+.output SuperMethodInvocation_Base
+.output SuperMethodInvocation_Descriptor
+.output SuperMethodInvocation_SimpleName
+.output Type_byte
+.output Type_char
+.output Type_double
+.output Type_float
+.output Type_int
+.output Type_long
+.output Type_null
+.output Type_short
+.output _Var_Type
+.output Var_Type
+.output VirtualMethodInvocation_Base
+.output VirtualMethodInvocation_Descriptor
+.output VirtualMethodInvocation_SimpleName
