@@ -40,11 +40,11 @@ true("true"^^xsd:boolean).
 
 % assume that no relations with more than 9 relations exist
 
-Method_Descriptor(?method, ?descriptor, ?side) :-
-  Method_ReturnType(?method, ?returnType,?side_1),
-  Method_ParamTypes(?method, ?params,?side_2),
-  ?descriptor = CONCAT(?returnType, CONCAT( "(", CONCAT(?params, ")"))),
-  merge_strat(2, ?side_1 + ?side_2,?side).
+%Method_Descriptor(?method, ?descriptor, ?side) :-
+%  Method_ReturnType(?method, ?returnType,?side_1),
+%  Method_ParamTypes(?method, ?params,?side_2),
+%  ?descriptor = CONCAT(?returnType, CONCAT( "(", CONCAT(?params, ")"))),
+%  merge_strat(2, ?side_1 + ?side_2,?side).
 
 
 MainClass(?b,?side):-
@@ -290,7 +290,7 @@ VirtualMethodInvocation_SimpleName(?invocation, ?simplename,?side):-
   isVirtualMethodInvocation_Insn(?invocation,?side_1), % 1,2
   MethodInvocation_Method(?invocation, ?signature,?side_2), % 1,2
   Method_SimpleName(?signature, ?simplename,?side_3), % play,0
-  Method_Descriptor(?signature, ?descriptor,?side_4),   
+  Method_Descriptor(?signature, ?descriptor,?side_4),
   ?sum = ?side_1 + ?side_2 + ?side_3 + ?side_4,
   merge_strat(4,?sum,?side).
 
@@ -443,7 +443,7 @@ MainMethodDeclaration(?method,?side):-
   Method_Modifier("static", ?method,?side_5),
   ~SameMethod(?method,?side_1),~SameMethod(?method,?side_2),
   ~SameMethod(?method,?side_3),~SameMethod(?method,?side_4),
-  ~SameMethod(?method,?side_5),  
+  ~SameMethod(?method,?side_5),
   ?sum = ?side_1 + ?side_2  + ?side_3 + ?side_4 + ?side_5,
   merge_strat(5,?sum,?side).
 
@@ -452,119 +452,119 @@ ClassInitializer(?type, ?method,?side):-
   MethodImplemented("<clinit>", "void()", ?type, ?method,?side).
 
 
-InitializedClass1(?superclass,?side):-
-  InitializedClass1(?class,?side_1),
+InitializedClass(?superclass,?side):-
+  InitializedClass(?class,?side_1),
   DirectSuperclass(?class, ?superclass,?side_2),
   ?sum = ?side_1 + ?side_2,
   merge_strat(2,?sum,?side).
 
-InitializedClass1(?superinterface,?side):-
-  InitializedClass1(?classOrInterface,?side_1),
+InitializedClass(?superinterface,?side):-
+  InitializedClass(?classOrInterface,?side_1),
   DirectSuperinterface(?classOrInterface, ?superinterface,?side_2),
   ?sum = ?side_1 + ?side_2,
   merge_strat(2,?sum,?side).
 
 
-InitializedClass1(?class,?side):-
+InitializedClass(?class,?side):-
   MainMethodDeclaration(?method,?side_1),
   Method_DeclaringType(?method, ?class,?side_2),
   ?sum = ?side_1 + ?side_2,
   merge_strat(2,?sum,?side).
 
 
-InitializedClass1(?class,?side):-
-  Reachable1(?inmethod,?side_1),
+InitializedClass(?class,?side):-
+  Reachable(?inmethod,?side_1),
   AssignHeapAllocation(?heap, _, ?inmethod,?side_2),
   HeapAllocation_Type(?heap, ?class,?side_3),
   ?sum = ?side_1 + ?side_2 + ?side_3,
   merge_strat(3,?sum,?side).
 
 
-InitializedClass1(?class,?side):-
-  Reachable1(?inmethod,?side),
-  Instruction_Method(?invocation, ?inmethod,?side_1),
-  isStaticMethodInvocation_Insn(?invocation,?side_2),
-  MethodInvocation_Method(?invocation, ?signature,?side_3),
-  Method_DeclaringType(?signature, ?class,?side_4),
-  ?sum = ?side_1 + ?side_2 + ?side_3 + ?side_4,
-  merge_strat(4,?sum,?side).
+InitializedClass(?class,?side):-
+  Reachable(?inmethod,?side_1),
+  Instruction_Method(?invocation, ?inmethod,?side_2),
+  isStaticMethodInvocation_Insn(?invocation,?side_3),
+  MethodInvocation_Method(?invocation, ?signature,?side_4),
+  Method_DeclaringType(?signature, ?class,?side_5),
+  ?sum = ?side_1 + ?side_2 + ?side_3 + ?side_4 + ?side_5,
+  merge_strat(5,?sum,?side).
 
 
-InitializedClass1(?classOrInterface,?side):-
- Reachable1(?inmethod,?side_1),
+InitializedClass(?classOrInterface,?side):-
+ Reachable(?inmethod,?side_1),
  StoreStaticField(_, ?signature, ?inmethod,?side_2),
  Field_DeclaringType(?signature, ?classOrInterface,?side_3),
   ?sum = ?side_1 + ?side_2 + ?side_3,
   merge_strat(3,?sum,?side).
 
 
-InitializedClass1(?classOrInterface,?side):-
- Reachable1(?inmethod,?side_1),
+InitializedClass(?classOrInterface,?side):-
+ Reachable(?inmethod,?side_1),
  LoadStaticField(?signature, _, ?inmethod,?side_2),
  Field_DeclaringType(?signature, ?classOrInterface, ?side_3),
   ?sum = ?side_1 + ?side_2 + ?side_3,
   merge_strat(3,?sum,?side).
 
 
-Reachable1(?clinit,?side):-
- InitializedClass1(?class,?side_1),
+Reachable(?clinit,?side):-
+ InitializedClass(?class,?side_1),
  ClassInitializer(?class, ?clinit,?side_2),
   ?sum = ?side_1 + ?side_2,
   merge_strat(2,?sum,?side).
 
 
-Assign1(?actual, ?formal,?side):-
-  CallGraphEdge1(?invocation, ?method,?side_1),
+Assign(?actual, ?formal,?side):-
+  CallGraphEdge(?invocation, ?method,?side_1),
   FormalParam(?index, ?method, ?formal,?side_2),
   ActualParam(?index, ?invocation, ?actual,?side_3),
   ?sum = ?side_1 + ?side_2 + ?side_3,
   merge_strat(3,?sum,?side).
 
 
-Assign1(?return, ?local,?side):-
-  CallGraphEdge1(?invocation, ?method,?side_1),
+Assign(?return, ?local,?side):-
+  CallGraphEdge(?invocation, ?method,?side_1),
   ReturnVar(?return, ?method,?side_2),
   AssignReturnValue(?invocation, ?local,?side_3),
   ?sum = ?side_1 + ?side_2 + ?side_3,
   merge_strat(3,?sum,?side).
 
-VarPointsTo1(?heap, ?var,?side):-
+VarPointsTo(?heap, ?var,?side):-
   AssignHeapAllocation(?heap, ?var, ?inMethod,?side_1),
-  Reachable1(?inMethod,?side_2),
+  Reachable(?inMethod,?side_2),
   ?sum = ?side_1 + ?side_2,
   merge_strat(2,?sum,?side).
 
 
-VarPointsTo1(?heap, ?to,?side):-
-  Assign1(?from, ?to,?side_1),
-  VarPointsTo1(?heap, ?from,?side_2),
+VarPointsTo(?heap, ?to,?side):-
+  Assign(?from, ?to,?side_1),
+  VarPointsTo(?heap, ?from,?side_2),
   ?sum = ?side_1 + ?side_2,
   merge_strat(2,?sum,?side).
 
 
-VarPointsTo1(?heap, ?to,?side):-
-  Reachable1(?inmethod,?side_1),
+VarPointsTo(?heap, ?to,?side):-
+  Reachable(?inmethod,?side_1),
   AssignLocal(?from, ?to, ?inmethod,?side_2),
-  VarPointsTo1(?heap, ?from,?side_3),
+  VarPointsTo(?heap, ?from,?side_3),
   ?sum = ?side_1 + ?side_2 + ?side_3,
   merge_strat(3,?sum,?side).
 
  
-VarPointsTo1(?heap, ?to,?side):-
-  Reachable1(?method,?side_1),
+VarPointsTo(?heap, ?to,?side):-
+  Reachable(?method,?side_1),
   AssignCast(?type, ?from, ?to, ?method,?side_2),
   SupertypeOf(?type, ?heaptype,?side_3),
   HeapAllocation_Type(?heap, ?heaptype,?side_4),
-  VarPointsTo1(?heap, ?from,?side_5),
+  VarPointsTo(?heap, ?from,?side_5),
   ?sum = ?side_1 + ?side_2 + ?side_3 + ?side_4 + ?side_5,
   merge_strat(5,?sum,?side).
 
  
-ArrayIndexPointsTo1(?baseheap, ?heap,?side):-
-  Reachable1(?inmethod,?side_1),
+ArrayIndexPointsTo(?baseheap, ?heap,?side):-
+  Reachable(?inmethod,?side_1),
   StoreArrayIndex(?from, ?base, ?inmethod,?side_2),
-  VarPointsTo1(?baseheap, ?base,?side_3),
-  VarPointsTo1(?heap, ?from,?side_4),
+  VarPointsTo(?baseheap, ?base,?side_3),
+  VarPointsTo(?heap, ?from,?side_4),
   HeapAllocation_Type(?heap, ?heaptype,?side_5),
   HeapAllocation_Type(?baseheap, ?baseheaptype,?side_6),
   ComponentType(?baseheaptype, ?componenttype,?side_7),
@@ -573,11 +573,11 @@ ArrayIndexPointsTo1(?baseheap, ?heap,?side):-
   merge_strat(7,?sum,?side).
 
 
-VarPointsTo1(?heap, ?to,?side):-
-  Reachable1(?inmethod,?side_1),
+VarPointsTo(?heap, ?to,?side):-
+  Reachable(?inmethod,?side_1),
   LoadArrayIndex(?base, ?to, ?inmethod,?side_2),
-  VarPointsTo1(?baseheap, ?base,?side_3),
-  ArrayIndexPointsTo1(?baseheap, ?heap,?side_4),
+  VarPointsTo(?baseheap, ?base,?side_3),
+  ArrayIndexPointsTo(?baseheap, ?heap,?side_4),
   Var_Type(?to, ?type,?side_5),
   HeapAllocation_Type(?baseheap, ?baseheaptype,?side_6),
   ComponentType(?baseheaptype, ?basecomponenttype,?side_7),
@@ -585,42 +585,42 @@ VarPointsTo1(?heap, ?to,?side):-
   ?sum = ?side_1 + ?side_2 + ?side_3 + ?side_4 + ?side_5 + ?side_6 + ?side_7 + ?side_8,
   merge_strat(8,?sum,?side).
 
-VarPointsTo1(?heap, ?to,?side):-
-  Reachable1(?inmethod,?side_1),
+VarPointsTo(?heap, ?to,?side):-
+  Reachable(?inmethod,?side_1),
   LoadInstanceField(?base, ?signature, ?to, ?inmethod,?side_2),
-  VarPointsTo1(?baseheap, ?base,?side_3),
-  InstanceFieldPointsTo1(?heap, ?signature, ?baseheap,?side_4),
+  VarPointsTo(?baseheap, ?base,?side_3),
+  InstanceFieldPointsTo(?heap, ?signature, ?baseheap,?side_4),
   ?sum = ?side_1 + ?side_2 + ?side_3 + ?side_4 ,
   merge_strat(4,?sum,?side).
  
-InstanceFieldPointsTo1(?heap, ?fld, ?baseheap,?side):-
-  Reachable1(?inmethod,?side_1),
+InstanceFieldPointsTo(?heap, ?fld, ?baseheap,?side):-
+  Reachable(?inmethod,?side_1),
   StoreInstanceField(?from, ?base, ?fld, ?inmethod,?side_2),
-  VarPointsTo1(?heap, ?from,?side_3),
-  VarPointsTo1(?baseheap, ?base,?side_4),
+  VarPointsTo(?heap, ?from,?side_3),
+  VarPointsTo(?baseheap, ?base,?side_4),
   ?sum = ?side_1 + ?side_2 + ?side_3 + ?side_4,
   merge_strat(4,?sum,?side).
  
-VarPointsTo1(?heap, ?to,?side):-
-  Reachable1(?inmethod,?side_1),
+VarPointsTo(?heap, ?to,?side):-
+  Reachable(?inmethod,?side_1),
   LoadStaticField(?fld, ?to, ?inmethod,?side_2),
-  StaticFieldPointsTo1(?heap, ?fld,?side_3),
+  StaticFieldPointsTo(?heap, ?fld,?side_3),
   ?sum = ?side_1 + ?side_2 + ?side_3,
   merge_strat(3,?sum,?side).
   
-StaticFieldPointsTo1(?heap, ?fld,?side):-
-  Reachable1(?inmethod,?side_1),
+StaticFieldPointsTo(?heap, ?fld,?side):-
+  Reachable(?inmethod,?side_1),
   StoreStaticField(?from, ?fld, ?inmethod,?side_2),
-  VarPointsTo1(?heap, ?from,?side_3),
+  VarPointsTo(?heap, ?from,?side_3),
   ?sum = ?side_1 + ?side_2 + ?side_3,
   merge_strat(3,?sum,?side).
 
 
-VarPointsTo1(?heap, ?this,?side):-
-  Reachable1(?inMethod,?side_1),
+VarPointsTo(?heap, ?this,?side):-
+  Reachable(?inMethod,?side_1),
   Instruction_Method(?invocation, ?inMethod,?side_2),
   VirtualMethodInvocation_Base(?invocation, ?base,?side_3),
-  VarPointsTo1(?heap, ?base,?side_4),
+  VarPointsTo(?heap, ?base,?side_4),
   HeapAllocation_Type(?heap, ?heaptype,?side_5),
   VirtualMethodInvocation_SimpleName(?invocation, ?simplename,?side_6),
   VirtualMethodInvocation_Descriptor(?invocation, ?descriptor,?side_7),
@@ -633,12 +633,12 @@ VarPointsTo1(?heap, ?this,?side):-
 % the ?base-variable is compared in the rule but never added
 % so we need to fold bc. both side have different ?base values but the are not included in the result
 
-Reachable1(?toMethod,?side),
-CallGraphEdge1(?invocation, ?toMethod,?side):-
-  Reachable1(?inMethod,?side_1),
+Reachable(?toMethod,?side),
+CallGraphEdge(?invocation, ?toMethod,?side):-
+  Reachable(?inMethod,?side_1),
   Instruction_Method(?invocation, ?inMethod,?side_2),
   VirtualMethodInvocation_Base(?invocation, ?base,?side_3),
-  VarPointsTo1(?heap, ?base,?side_4),
+  VarPointsTo(?heap, ?base,?side_4),
   HeapAllocation_Type(?heap, ?heaptype,?side_5),
   VirtualMethodInvocation_SimpleName(?invocation, ?simplename,?side_6),
   VirtualMethodInvocation_Descriptor(?invocation, ?descriptor,?side_7),
@@ -647,112 +647,28 @@ CallGraphEdge1(?invocation, ?toMethod,?side):-
   merge_strat(8,?sum,?side).
  
 
-Reachable1(?tomethod,?side),
-CallGraphEdge1(?invocation, ?tomethod,?side):-
-  Reachable1(?inmethod,?side_1),
+Reachable(?tomethod,?side),
+CallGraphEdge(?invocation, ?tomethod,?side):-
+  Reachable(?inmethod,?side_1),
   StaticMethodInvocation(?invocation, ?tomethod, ?inmethod,?side_2),
   ?sum = ?side_1 + ?side_2,
   merge_strat(2,?sum,?side).
 
-Reachable1(?tomethod,?side),
-CallGraphEdge1(?invocation, ?tomethod,?side),
-VarPointsTo1(?heap, ?this,?side):-
-  Reachable1(?inmethod,?side_1),
+Reachable(?tomethod,?side),
+CallGraphEdge(?invocation, ?tomethod,?side),
+VarPointsTo(?heap, ?this,?side):-
+  Reachable(?inmethod,?side_1),
   Instruction_Method(?invocation, ?inmethod,?side_2),
   SpecialMethodInvocation_Base(?invocation, ?base,?side_3),
-  VarPointsTo1(?heap, ?base,?side_4),
+  VarPointsTo(?heap, ?base,?side_4),
   MethodInvocation_Method(?invocation, ?tomethod,?side_5),
   ThisVar(?tomethod, ?this,?side_6),
   ?sum = ?side_1 + ?side_2 + ?side_3 + ?side_4 + ?side_5 + ?side_6 ,
   merge_strat(6,?sum,?side).
  
-Reachable1(?method,?side):-
+Reachable(?method,?side):-
   MainMethodDeclaration(?method,?side).
 
-
-% more folding yeah :'(
-
-
-CallGraphEdge(?invocation, ?toMethod,0),
-CallGraphEdge2(?invocation, ?toMethod,0):-
-  CallGraphEdge1(?invocation, ?toMethod,?side_1),
-  CallGraphEdge1(?invocation, ?toMethod,?side_2),
-  ?side_1 != ?side_2.
-
-CallGraphEdge(?invocation, ?toMethod,?side_1):-
-  CallGraphEdge1(?invocation, ?toMethod,?side_1),
-  ~CallGraphEdge2(?invocation, ?toMethod,_).
-  
-VarPointsTo(?heap, ?this,0),
-VarPointsTo2(?heap, ?this,0):-
-  VarPointsTo1(?heap, ?this,?side_1),
-  VarPointsTo1(?heap, ?this,?side_2),
-  ?side_1 != ?side_2.
-
-VarPointsTo(?heap, ?this,?side_1):-
-  VarPointsTo1(?heap, ?this,?side_1),
-  ~VarPointsTo2(?heap, ?this,_).
-
-
-StaticFieldPointsTo(?heap, ?fld,0),
-StaticFieldPointsTo2(?heap, ?fld,0):-
-  StaticFieldPointsTo1(?heap, ?fld,?side_1),
-  StaticFieldPointsTo1(?heap, ?fld,?side_2),
-  ?side_1 != ?side_2.
-
-StaticFieldPointsTo(?heap, ?fld,?side_1):-
-  StaticFieldPointsTo1(?heap, ?fld,?side_1),
-  ~StaticFieldPointsTo2(?heap, ?fld,_).
-
-Reachable(?method,0),
-Reachable2(?method,0):-
-  Reachable1(?method,?side_1),
-  Reachable1(?method,?side_2),
-  ?side_1 != ?side_2.
-
-Reachable(?method,?side_1):-
-  Reachable1(?method,?side_1),
-  ~Reachable2(?method,_).
-
-ArrayIndexPointsTo(?baseheap,?heap,0),
-ArrayIndexPointsTo2(?baseheap,?heap,0):-
-  ArrayIndexPointsTo1(?baseheap,?heap,?side_1),
-  ArrayIndexPointsTo1(?baseheap,?heap,?side_2),
-  ?side_1 != ?side_2.
-
-ArrayIndexPointsTo(?baseheap,?heap,?side_1):-
-  ArrayIndexPointsTo1(?baseheap,?heap,?side_1),
-  ~ArrayIndexPointsTo2(?baseheap,?heap,_).
-
-InstanceFieldPointsTo(?heap,?fld,?baseheap,0),
-InstanceFieldPointsTo2(?heap,?fld,?baseheap,0):-
-  InstanceFieldPointsTo1(?heap,?fld,?baseheap,?side_1),
-  InstanceFieldPointsTo1(?heap,?fld,?baseheap,?side_2),
-  ?side_1 != ?side_2.
-
-InstanceFieldPointsTo(?heap,?fld,?baseheap,?side_1):-
-  InstanceFieldPointsTo1(?heap,?fld,?baseheap,?side_1),
-  ~InstanceFieldPointsTo2(?heap,?fld,?baseheap,_).
-
-InitializedClass(?class,0),
-InitializedClass2(?class,0):-
-    InitializedClass1(?class,?side_1),
-    InitializedClass1(?class,?side_2),
-    ?side_1 != ?side_2.
-
-InitializedClass(?class,?side_1):-
-    InitializedClass1(?class,?side_1),
-    ~InitializedClass2(?class,_).
-
-Assign(?actual, ?formal,0),
-Assign2(?actual, ?formal,0):-
-    Assign1(?actual, ?formal,?side_1),
-    Assign1(?actual, ?formal,?side_2),
-    ?side_1 != ?side_2.
-
-Assign(?actual, ?formal,?side_1):-
-    Assign1(?actual, ?formal,?side_1),
-    ~Assign2(?actual, ?formal,_).
 
 
 @export Reachable :- tsv{resource="Reachable.tsv",format=(string,int)}.
@@ -834,5 +750,4 @@ Assign(?actual, ?formal,?side_1):-
 @export MainClass :- tsv{resource="MainClass.tsv",format=(string,int)}.
 @export merge_strat :- tsv{resource="merge_strat.tsv",format=(string,string,int)}.
 
-%% Vergleichsversion, wo folding nur am Ende funktioniert
-%
+% Vergleichsversion, wo folding nur am Ende funktioniert

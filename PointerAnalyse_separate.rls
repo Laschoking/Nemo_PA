@@ -39,10 +39,10 @@ true("true"^^xsd:boolean).
 @import z_Return :- tsv{resource="Return.tsv",format=(string, int, string, string)}.
 
 
-Method_Descriptor(?method, ?descriptor) :-
-  Method_ReturnType(?method, ?returnType),
-  Method_ParamTypes(?method, ?params),
-  ?descriptor = CONCAT(?returnType, "(", ?params, ")").
+%Method_Descriptor(?method, ?descriptor) :-
+%  Method_ReturnType(?method, ?returnType),
+%  Method_ParamTypes(?method, ?params),
+%  ?descriptor = CONCAT(?returnType, "(", ?params, ")").
   
 
 MainClass(?b):-
@@ -135,11 +135,6 @@ Method_DeclaringType(?method, ?declaringType),
 Method_ReturnType(?method, ?returnType):-
   z_Method(?method, ?simplename, ?params, ?declaringType, ?returnType, _, _).
   
-% Method_Descriptor(?method, ?returnType ):-
-%  Method_ReturnType(?method, ?returnType),
-  %Method_ParamTypes(?method, ?params).
-  %?descriptor = ?returnType .
-  %cat(?returnType, cat("(", cat(?params, ")"))).
 
 Instruction_Method(?instruction, ?method),
 FieldInstruction_Signature(?instruction, ?signature),
